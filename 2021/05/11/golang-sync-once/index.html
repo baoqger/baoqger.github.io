@@ -10,12 +10,12 @@
   <meta name="description" content="BackgroundIn the following series of posts, I will take an in-depth look at the synchronization primitives provided by Golang.  Although the recommended synchronization mechanism in Golang is channel,">
 <meta property="og:type" content="article">
 <meta property="og:title" content=" Golang synchronization primitives source code analysis: part one - sync.Once">
-<meta property="og:url" content="http://yoursite.com/2021/05/11/golang-sync-cond/index.html">
+<meta property="og:url" content="http://yoursite.com/2021/05/11/golang-sync-once/index.html">
 <meta property="og:site_name" content="Hexo">
 <meta property="og:description" content="BackgroundIn the following series of posts, I will take an in-depth look at the synchronization primitives provided by Golang.  Although the recommended synchronization mechanism in Golang is channel,">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2021-05-11T12:07:55.000Z">
-<meta property="article:modified_time" content="2021-05-13T23:34:15.796Z">
+<meta property="article:modified_time" content="2021-05-29T02:32:24.375Z">
 <meta property="article:author" content="John Doe">
 <meta name="twitter:card" content="summary">
   
@@ -66,9 +66,9 @@
   </div>
 </header>
       <div class="outer">
-        <section id="main"><article id="post-golang-sync-cond" class="article article-type-post" itemscope itemprop="blogPost">
+        <section id="main"><article id="post-golang-sync-once" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2021/05/11/golang-sync-cond/" class="article-date">
+    <a href="/2021/05/11/golang-sync-once/" class="article-date">
   <time datetime="2021-05-11T12:07:55.000Z" itemprop="datePublished">2021-05-11</time>
 </a>
     
@@ -128,7 +128,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="http://yoursite.com/2021/05/11/golang-sync-cond/" data-id="ckonjcx6o0008fus83agshp8a" class="article-share-link">Share</a>
+      <a data-url="http://yoursite.com/2021/05/11/golang-sync-once/" data-id="ckp952wdd0005ehs86bjeh177" class="article-share-link">Share</a>
       
       
     </footer>
@@ -137,11 +137,11 @@
     
 <nav id="article-nav">
   
-    <a href="/2021/05/14/hystrix-circuit-breaker/" id="article-nav-newer" class="article-nav-link-wrap">
+    <a href="/2021/05/14/golang-sync-cond/" id="article-nav-newer" class="article-nav-link-wrap">
       <strong class="article-nav-caption">Newer</strong>
       <div class="article-nav-title">
         
-          hystrix-circuit-breaker
+          golang-sync-cond
         
       </div>
     </a>
@@ -200,11 +200,15 @@
       <ul>
         
           <li>
-            <a href="/2021/05/14/hystrix-circuit-breaker/">hystrix-circuit-breaker</a>
+            <a href="/2021/05/21/hystric-circuit-breaker-part1/">Circuit breaker and Hystrix: part one - introduction</a>
           </li>
         
           <li>
-            <a href="/2021/05/11/golang-sync-cond/"> Golang synchronization primitives source code analysis: part one - sync.Once</a>
+            <a href="/2021/05/14/golang-sync-cond/">golang-sync-cond</a>
+          </li>
+        
+          <li>
+            <a href="/2021/05/11/golang-sync-once/"> Golang synchronization primitives source code analysis: part one - sync.Once</a>
           </li>
         
           <li>
@@ -213,10 +217,6 @@
         
           <li>
             <a href="/2021/04/26/golang-context-source-code/">Golang Context package source code analysis: part 1</a>
-          </li>
-        
-          <li>
-            <a href="/2021/04/04/golang-bytes-buffer/">Golang bytes.Buffer and bufio</a>
           </li>
         
       </ul>
