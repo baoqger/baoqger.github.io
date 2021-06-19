@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/05/30/hystrix-circuit-breaker-part2/</loc>
+    
+    <lastmod>2021-06-19</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/06/18/hystrix-circuit-breaker-part3/</loc>
+    
+    <lastmod>2021-06-19</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/</loc>
+    
+    <lastmod>2021-05-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/05/11/golang-sync-once/</loc>
+    
+    <lastmod>2021-05-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/05/14/golang-sync-cond/</loc>
+    
+    <lastmod>2021-05-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/04/26/golang-context-source-code/</loc>
+    
+    <lastmod>2021-05-11</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/04/28/golang-context-source-code-part2/</loc>
+    
+    <lastmod>2021-05-11</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/04/04/golang-bytes-buffer/</loc>
+    
+    <lastmod>2021-04-10</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/03/31/go-module/</loc>
+    
+    <lastmod>2021-04-04</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/01/29/fabio-source-code-study/</loc>
+    
+    <lastmod>2021-03-27</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/02/20/fabio-golang-best-practise/</loc>
+    
+    <lastmod>2021-03-27</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/02/06/golang-package-module/</loc>
+    
+    <lastmod>2021-02-08</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/04/10/algo-part1/</loc>
+    
+    <lastmod>2021-02-05</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/12/01/svg-data-vis/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/04/20/memoizedSelector/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/04/12/rxjs-marble-testing/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/08/19/stack-frame/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/09/22/os-xv6-1/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/04/11/algo-part2/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/10/26/golang-concurrent-twoways/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/11/16/golang-service-discovery-consul/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/07/28/linux-cpp-docker/</loc>
+    
+    <lastmod>2021-01-29</lastmod>
+    
+  </url>
+  
+
+  <url>
+    <loc>https://baoqger.github.io/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/Best-practice/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/golang-concurrent-shared-memory-message-pass/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/Golang-package-workspace-vendor/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/docker-c-linux/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/operating-system-xv6-Unix/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/Fabio-Golang-Source-code/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/Golang-bufio-bytes-buffer/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/memory-management-stack/</loc>
+    <lastmod>2021-06-19</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+
+  
+</urlset>
