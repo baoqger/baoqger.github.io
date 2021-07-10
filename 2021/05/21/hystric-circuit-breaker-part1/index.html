@@ -5,23 +5,23 @@
   
 
   
-  <title>Circuit breaker and Hystrix: part one - introduction | Hexo</title>
+  <title>Circuit breaker and Hystrix: part one - introduction | Chris Bao&#39;s Blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="In this series of articles, I want to talk about circuit breaker pattern based on an popular open source project hystrix (in fact, I will take a look at the golang version hystrix-go, instead of the o">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Circuit breaker and Hystrix: part one - introduction">
 <meta property="og:url" content="https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/index.html">
-<meta property="og:site_name" content="Hexo">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
 <meta property="og:description" content="In this series of articles, I want to talk about circuit breaker pattern based on an popular open source project hystrix (in fact, I will take a look at the golang version hystrix-go, instead of the o">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://baoqger.github.io/images/circuit-breaker.png">
 <meta property="article:published_time" content="2021-05-21T07:25:19.000Z">
-<meta property="article:modified_time" content="2021-05-29T02:32:24.376Z">
-<meta property="article:author" content="John Doe">
+<meta property="article:modified_time" content="2021-07-04T02:04:17.718Z">
+<meta property="article:author" content="Chris Bao">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://baoqger.github.io/images/circuit-breaker.png">
   
-    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
   
   
     <link rel="icon" href="/favicon.png">
@@ -42,7 +42,7 @@
   <div id="header-outer" class="outer">
     <div id="header-title" class="inner">
       <h1 id="logo-wrap">
-        <a href="/" id="logo">Hexo</a>
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
       </h1>
       
     </div>
@@ -53,6 +53,8 @@
           <a class="main-nav-link" href="/">Home</a>
         
           <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
         
       </nav>
       <nav id="sub-nav">
@@ -107,7 +109,7 @@
 <p>That’s basic background about circuit breaker, you can find much more <a href="https://martinfowler.com/bliki/CircuitBreaker.html" target="_blank" rel="noopener">information</a> about it on line. </p>
 <p>Next, let’s investigate the project <code>hystrix</code>. </p>
 <h3 id="hystrix"><a href="#hystrix" class="headerlink" title="hystrix"></a>hystrix</h3><p><code>hystrix</code> is a very popular open source project. You can find everything about it in this <a href="https://github.com/Netflix/Hystrix/wiki" target="_blank" rel="noopener">link</a>. </p>
-<p>I want to quote several importants points from the above link. Hystrix is designed to do the following:</p>
+<p>I want to quote several important points from the above link. Hystrix is designed to do the following:</p>
 <ul>
 <li>Give protection from and control over latency and failure from dependencies accessed (typically over the network) via third-party client libraries.</li>
 <li>Stop cascading failures in a complex distributed system.</li>
@@ -124,7 +126,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/" data-id="ckq3h9r7b000beus886mc5pck" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/" data-id="ckqx41yvv0009n9s8coj5gol3" class="article-share-link">Share</a>
       
       
     </footer>
@@ -183,7 +185,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li></ul>
     </div>
   </div>
 
@@ -196,6 +198,14 @@
       <ul>
         
           <li>
+            <a href="/2021/07/04/how-to-deisgn-a-load-test-tool/">How to design a load performance test CLI tool</a>
+          </li>
+        
+          <li>
+            <a href="/2021/06/29/hystrix-circuit-breaker-part4/">Circuit breaker and Hystrix: part four - error rate</a>
+          </li>
+        
+          <li>
             <a href="/2021/06/18/hystrix-circuit-breaker-part3/">Circuit breaker and Hystrix: part three - timeout</a>
           </li>
         
@@ -205,14 +215,6 @@
         
           <li>
             <a href="/2021/05/21/hystric-circuit-breaker-part1/">Circuit breaker and Hystrix: part one - introduction</a>
-          </li>
-        
-          <li>
-            <a href="/2021/05/14/golang-sync-cond/">golang-sync-cond</a>
-          </li>
-        
-          <li>
-            <a href="/2021/05/11/golang-sync-once/"> Golang synchronization primitives source code analysis: part one - sync.Once</a>
           </li>
         
       </ul>
@@ -227,7 +229,7 @@
   
   <div class="outer">
     <div id="footer-info" class="inner">
-      &copy; 2021 John Doe<br>
+      &copy; 2021 Chris Bao<br>
       Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     </div>
   </div>
@@ -238,6 +240,8 @@
     <a href="/" class="mobile-nav-link">Home</a>
   
     <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
   
 </nav>
     
