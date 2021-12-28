@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>How to use libraries in Linux C program | Chris Bao&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="BackgroundAfter you learn and understand how to write small C programs in Linux (that means you know the syntax of C language and how to compile your programs with gcc), you will want to have some adv">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to use libraries in Linux C program">
+<meta property="og:url" content="https://baoqger.github.io/2019/08/25/how-to-write-linux-c-program-with-external-library/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundAfter you learn and understand how to write small C programs in Linux (that means you know the syntax of C language and how to compile your programs with gcc), you will want to have some adv">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://baoqger.github.io/images/compile_process.png">
+<meta property="og:image" content="https://baoqger.github.io/images/ldd-result.png">
+<meta property="og:image" content="https://baoqger.github.io/images/ldso.png">
+<meta property="og:image" content="https://baoqger.github.io/images/ld.so.conf.png">
+<meta property="og:image" content="https://baoqger.github.io/images/libc.conf.png">
+<meta property="og:image" content="https://baoqger.github.io/images/ldconfig.png">
+<meta property="og:image" content="https://baoqger.github.io/images/ldd-result-after.png">
+<meta property="article:published_time" content="2019-08-25T08:08:36.000Z">
+<meta property="article:modified_time" content="2021-12-23T12:34:34.795Z">
+<meta property="article:author" content="Chris Bao">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://baoqger.github.io/images/compile_process.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://baoqger.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-how-to-write-linux-c-program-with-external-library" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/08/25/how-to-write-linux-c-program-with-external-library/" class="article-date">
+  <time datetime="2019-08-25T08:08:36.000Z" itemprop="datePublished">2019-08-25</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      How to use libraries in Linux C program
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>After you learn and understand how to write small C programs in Linux (that means you know the syntax of C language and how to compile your programs with <code>gcc</code>), you will want to have some adventures to write more powerful and larger programs. To be a great software engineer, you need this passion to explore, right?</p>
+<p>To write a larger program, you can’t build everything from scratch. This means you need to import and use libraries developed by others in your program.  </p>
+<p>For new developers of Linux C programming, the whole handling of libraries can be a mystery, which requires knowledge about <code>gcc compiler</code>, <code>Linux system</code>, <code>GNU conventions</code> and so on. In this article, I will focus on this topic and piece all these together. After reading this post, I hope you can feel free and confident to add the shared libraries from the open source world to your program. </p>
+<p><strong>Note</strong>: To illustrate the discussion more clearly, this article is based on this demo github <a href="https://github.com/baoqger/handle-c-library-demo-linux" target="_blank" rel="noopener">app</a>. And my demo app is forked from Stephan Avenwedde’s original <a href="https://opensource.com/article/20/6/linux-libraries" target="_blank" rel="noopener">repo</a>. Thanks for that.  </p>
+<p>The code logic of this demo app is very straightforward, so I will not review the code line by line in this article, which is not the target of this post. </p>
+<h3 id="Static-library-vs-Shared-library"><a href="#Static-library-vs-Shared-library" class="headerlink" title="Static library vs Shared library"></a>Static library vs Shared library</h3><p>Generally speaking, there are two types of libraries: <code>Static</code> and <code>Shared</code>. </p>
+<ul>
+<li><strong>static library</strong>: is simply a collection of ordinary object files; conventionally, static libraries end with the <code>.a</code> suffix. This collection is created using <code>ar</code> command. For example, in the demo app, we build the static library like this:</li>
+</ul>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CFLAGS =-Wall -Werror</span><br><span class="line"></span><br><span class="line"><span class="section">libmy_static.a: libmy_static_a.o libmy_static_b.o</span></span><br><span class="line">	ar -rsv ./lib/static/libmy_static.a libmy_static_a.o libmy_static_b.o</span><br><span class="line"></span><br><span class="line"><span class="section">libmy_static_a.o: libmy_static_a.c</span></span><br><span class="line">	cc -c libmy_static_a.c -o libmy_static_a.o <span class="variable">$(CFLAGS)</span></span><br><span class="line"></span><br><span class="line"><span class="section">libmy_static_b.o: libmy_static_b.c</span></span><br><span class="line">	cc -c libmy_static_b.c -o libmy_static_b.o <span class="variable">$(CFLAGS)</span></span><br></pre></td></tr></table></figure>
+<p>In our case, the static library will be installed in the subdirectory <code>./lib/static</code> and named as <code>libmy_static.a</code>.   </p>
+<p>When the application links against a static library, the library’s code becomes part of the resulting executable. So you can run the application without any further setting or configuration. That’s the biggest advantage of the static library, and you’ll see how it works in the next section. </p>
+<p>Static libraries aren’t used as often as they once were, since <code>shared library</code> has more advantages. </p>
+<ul>
+<li><strong>shared library</strong>: end with <code>.so</code> which means <strong>shared object</strong>. The shared library is loaded into memory when the application starts. If multiple applications use the same shared library, the shared library will be loaded only once. In our demo app, the shared library is built as follows: </li>
+</ul>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">libmy_shared.so: libmy_shared.o</span></span><br><span class="line">	cc -shared -o ./lib/shared/libmy_shared.so libmy_shared.o</span><br><span class="line"></span><br><span class="line"><span class="section">libmy_shared.o: libmy_shared.c</span></span><br><span class="line">	cc -c -fPIC libmy_shared.c -o libmy_shared.o</span><br></pre></td></tr></table></figure>
+
+<p>The shared library <code>libmy_shared.so</code> is installed inside <code>./lib/shared</code> subdirectory. Note that the shared library is built with some special options for <code>gcc</code>, like <code>-fPIC</code> and <code>-shared</code>. In detail, you can check the document of gcc. </p>
+<h3 id="Naming-convention"><a href="#Naming-convention" class="headerlink" title="Naming convention"></a>Naming convention</h3><p>Generally speaking, the name of shared library follows the pattern: <code>lib</code> + name of library + <code>.so</code>. Of course, version information is very important, but in this article, let’s ignore the version issue.</p>
+<h3 id="Link-library"><a href="#Link-library" class="headerlink" title="Link library"></a>Link library</h3><p>After building the libraries, next step you need to import the libraries in your app. For our app, the source code is the file of <code>demo/main.c</code> as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;libmy_shared.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;libmy_static_a.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;libmy_static_b.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Press Enter to repeat\n\n"</span>);</span><br><span class="line">    <span class="keyword">do</span>&#123;</span><br><span class="line">        <span class="keyword">int</span> n = getRandInt();</span><br><span class="line">        n = negateIfOdd(n);</span><br><span class="line">        printInteger(&amp;n);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (getchar() == <span class="string">'\n'</span>);</span><br><span class="line">   </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Note that we import three <code>header file</code> of our libraries. The next question is how to build the demo app. </p>
+<p>Let’s recall the building process of a C program as follows:</p>
+<img src="/images/compile_process.png" title="compile process" width="800px" height="600px">
+
+<p>This is a two-step process: <code>compile</code> and <code>link</code>. Firstly, the source code file of <code>main.c</code> will be compiled to an object file, let’s say <code>main.o</code> file. In this step, the critical thing is telling <code>gcc</code> where to find the <code>header file</code> of the libraries. Next, link the <code>main.o</code> object file with our libraries: <code>libmy_static.a</code> and <code>libmy_shared.so</code>. <code>gcc</code> needs to know the name of library it should link and where to find these libraries, right? </p>
+<p>These information can be defined by the following three options:</p>
+<ul>
+<li><code>I</code>: add the include directory for header files,</li>
+<li><code>l</code>: name of the library </li>
+<li><code>L</code>: the directory for the library</li>
+</ul>
+<p>In our case, the <code>make</code> command to build the demo app is as follows:</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">LIBS = -L../lib/shared -L../lib/static -lmy_shared -lmy_static -I../</span><br><span class="line"></span><br><span class="line">CFLAGS =-Wall -Werror</span><br><span class="line"></span><br><span class="line"><span class="section">demo: </span></span><br><span class="line">	cc -o my_app main.c <span class="variable">$(CFLAGS)</span> <span class="variable">$(LIBS)</span></span><br></pre></td></tr></table></figure>
+
+<p>Since we have two libraries: <code>libmy_static.a</code> and <code>libmy_shared.so</code>, based on the naming convention we mentioned above, the <code>-l</code> option for library name should be <strong>my_static</strong> and <strong>my_shared</strong>. We can use two <code>-l</code> options for each library.  </p>
+<p>For the <code>-L</code> option, we need to provide the directory path where to find the libraries. We can use the path <code>../lib/shared</code> and <code>../lib/static</code> relative to the demo’s source code file. Right? And the same rule applies to the <code>-I</code> option for the include header file as well. </p>
+<p>Run <code>make demo</code> command, and you can build the demo app with the libraries linked together successfully. </p>
+<h3 id="Filesystem-placement-convention"><a href="#Filesystem-placement-convention" class="headerlink" title="Filesystem placement convention"></a>Filesystem placement convention</h3><p>As I show above, the libraries are placed inside the subdirectory of this project.  This is inconvenient for others to import your library. Most open source software tends to follow the <code>GNU</code> standards. The <code>GNU</code> standards recommend installing by default all libraries in <code>/usr/local/lib</code> and all the header files in <code>/usr/local/include</code> when distributing source code. So let’s add one more <code>make</code> command to install the library file and header file to the directory based on the GNU convention: </p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">INSTALL ?= install</span><br><span class="line">PREFIX ?= /usr/local</span><br><span class="line">LIBDIR = <span class="variable">$(PREFIX)</span>/lib</span><br><span class="line">INCLUDEDIR = <span class="variable">$(PREFIX)</span>/<span class="keyword">include</span></span><br><span class="line"></span><br><span class="line"><span class="section">install: library</span></span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D libmy_shared.h <span class="variable">$(INCLUDEDIR)</span>/libmy_shared.h</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D libmy_static_a.h <span class="variable">$(INCLUDEDIR)</span>/libmy_static_a.h</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D libmy_static_b.h <span class="variable">$(INCLUDEDIR)</span>/libmy_static_b.h</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D ./lib/static/libmy_static.a <span class="variable">$(LIBDIR)</span>/libmy_static.a</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D ./lib/shared/libmy_shared.so <span class="variable">$(LIBDIR)</span>/libmy_shared.so</span><br><span class="line"></span><br><span class="line"><span class="section">uninstall:</span></span><br><span class="line">	rm <span class="variable">$(INCLUDEDIR)</span>/libmy_shared.h</span><br><span class="line">	rm <span class="variable">$(INCLUDEDIR)</span>/libmy_static_a.h</span><br><span class="line">	rm <span class="variable">$(INCLUDEDIR)</span>/libmy_static_b.h</span><br><span class="line">	rm <span class="variable">$(LIBDIR)</span>/libmy_static.a</span><br><span class="line">	rm <span class="variable">$(LIBDIR)</span>/libmy_shared.so</span><br></pre></td></tr></table></figure>
+
+<p>You can find the similar make command in my open source projects for this purpose. </p>
+<p>The benefit is <code>gcc</code> compiler (which is also from GNU and follows the same convention) will look for the libraries by default in these two directories: <code>/usr/local/lib</code> and <code>/usr/local/include</code>. So you don’t need to set <code>-L</code> and <code>-I</code> options. For example, after we run <code>make install</code> command above and install the library into the system directory, you can build the demo app as follows: </p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">GNULIBS = -lmy_shared -lmy_static</span><br><span class="line"></span><br><span class="line">CFLAGS =-Wall -Werror</span><br><span class="line"></span><br><span class="line"><span class="comment"># you can run this make command after you install </span></span><br><span class="line"><span class="comment"># the libraries into the default system directory: /usr/local/bin</span></span><br><span class="line"><span class="section">gnudemo: </span></span><br><span class="line">	cc -o my_app main.c <span class="variable">$(CFLAGS)</span> <span class="variable">$(GNULIBS)</span></span><br></pre></td></tr></table></figure>
+
+<p>Understand the <code>GNU</code> convention can make your development more easier, right? </p>
+<p>Then next step let’s run the demo app by simply calling <code>./my_app</code>, but you’ll get the following error message:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;my_app: error while loading shared libraries: libmy_shared.so: cannot open shared object file: No such file or directroy</span><br></pre></td></tr></table></figure>
+
+<p>What’s happening? </p>
+<h3 id="Dynamic-linker"><a href="#Dynamic-linker" class="headerlink" title="Dynamic linker"></a>Dynamic linker</h3><p>When we start up an executable, the Linux kernel automatically runs the <code>dynamic linker</code> (or dynamic loader). This dynamic linker, in turn, finds and loads all other shared libraries used by the program.</p>
+<p>In fact, the executable file in Linux system is usually in the format of <a href="https://linux-audit.com/elf-binaries-on-linux-understanding-and-analysis/" target="_blank" rel="noopener"><code>ELF</code></a> which abbreviates <code>Executable and Linkable Format</code>. The ELF executable contains linking information, and the dynamic linker just reads that information to load shared libraries. </p>
+<p>In Linux system, the dynamic linker is name <code>ld.so</code></p>
+<p>Based on the above error message, we can say that the dynamic linker cannot find the shared library. We can verify this point by running <code>ldd</code> command, which is used to print the shared objects (shared libraries) required by each program or shared object specified on the command line.</p>
+<img src="/images/ldd-result.png" title="ldd" width="800px" height="600px">
+
+<p>Clearly, our shared library <code>libmy_shared.so</code> is not found. We need to take a look how at <code>ld.so</code> works. The best way to find such information is running <code>man</code> command. We can get the following information in the <code>ld.so</code> man document:</p>
+<img src="/images/ldso.png" title="ld.so" width="800px" height="600px">
+
+<p>Based on this screenshot, we can solve this issue in three ways:</p>
+<ul>
+<li>install the shared library in the directory: <code>/lib</code> or <code>/usr/lib</code></li>
+<li>edit the environment variable <code>LD_LIBRARY_PATH</code> by appending the path of directories containing our library </li>
+<li>update the cache file <code>/etc/ld.so.cache</code></li>
+</ul>
+<p>The first two methods can work well based on my test, but personally I recommend to use the third method, which is a more systematic way to register a library. </p>
+<h3 id="Register-library"><a href="#Register-library" class="headerlink" title="Register library"></a>Register library</h3><p>To register a new library, we need to use command <code>ldconfig</code> which configures dynamic linker run-time bindings. </p>
+<p>How does <code>ldconfig</code> work? It will search <code>.so</code> library files in some specific directories, and the search result will be updated to dynamic linker’s cache file <code>/etc/ld.so.cache</code>. </p>
+<p>And one of the directory <code>ldconfig</code> will look at is <code>/etc/ld.so.conf</code>. In our Ubuntu system, it’s in fact a file as follows:</p>
+<img src="/images/ld.so.conf.png" title="ld.so.conf" width="800px" height="600px">
+
+<p>it is expanded to all the <code>.conf</code> files inside <code>ld.so.conf.d</code>, in my case, there is one default file <code>libc.conf</code> as follows: </p>
+<img src="/images/libc.conf.png" title="libc.conf" width="800px" height="600px">
+
+<p>Note that <code>/usr/local/lib</code> is defined inside the file, then <code>ldconfig</code> will search .so libraries in this directory. </p>
+<p>As we mentioned in above section, <code>/usr/local/lib</code> is just the place to install shared library based on GNU convention. Right? </p>
+<p>So we can simply run <code>ldconfig</code> command without any option to <strong>register a new library</strong> (make sure the library is install in that directory): </p>
+<img src="/images/ldconfig.png" title="ldconfig" width="800px" height="600px">
+
+<p>In the above screenshot, you can see the change before and after running command <code>sudo ldconfig</code>. (<code>ldconfig -p</code> will list the current libraries reading from cache file <code>/etc/ld.so.cache</code>). After registering the library, it is added into the cache file of dynamic linker, right? Let’s verify this again with <code>ldd</code>:   </p>
+<img src="/images/ldd-result-after.png" title="ldd-result" width="800px" height="600px">
+
+<p>Our new shared library can be found! Then we can run the app successfully as well. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article we discussed several important tools like <code>ld.so</code>, <code>ldd</code>, <code>ldconfig</code> and <code>gcc</code>, which help you build and import shared libraries. Another thing is <code>GNU</code> convention or standard which defines the behavior of these tools.  </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2019/08/25/how-to-write-linux-c-program-with-external-library/" data-id="ckxpuq37j000wwsmmecwaco2q" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/09/09/what-happen-dpkg-install/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          What happens when you run apt commands
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/02/25/https-certificate/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">https-certificate</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
+          </li>
+        
+          <li>
+            <a href="/2021/12/15/understand-http-1-1-client-golang-part2/">How  HTTP1.1 protocol is implemented in Golang net/http package: part two -  write HTTP message to socket</a>
+          </li>
+        
+          <li>
+            <a href="/2021/12/01/understand-http-1-1-client-golang/">How  HTTP1.1 protocol is implemented in Golang net/http package: part one - request workflow</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/27/understand-http1-1-persitent-connection-golang-part2/">Understand how HTTP/1.1 persistent connection works based on Golang: part two - concurrent requests</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/25/understand-http1-1-persistent-connection-golang/">Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 Chris Bao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

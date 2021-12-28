@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Circuit breaker and Hystrix: part two - max concurrent requests | Chris Bao&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="BackgroundIn the second article of this series, I will review the source code of hystrix-go project to understand how to design a circuit breaker and how to implement it with Golang.  If you’re not fa">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Circuit breaker and Hystrix: part two - max concurrent requests">
+<meta property="og:url" content="https://baoqger.github.io/2021/05/30/hystrix-circuit-breaker-part2/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn the second article of this series, I will review the source code of hystrix-go project to understand how to design a circuit breaker and how to implement it with Golang.  If you’re not fa">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://baoqger.github.io/images/GoC-hystrix.png">
+<meta property="og:image" content="https://baoqger.github.io/images/circuitbreakstruct.png">
+<meta property="og:image" content="https://baoqger.github.io/images/hystrix-concurrent-architecture.png">
+<meta property="article:published_time" content="2021-05-30T08:41:20.000Z">
+<meta property="article:modified_time" content="2021-12-23T12:34:34.796Z">
+<meta property="article:author" content="Chris Bao">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://baoqger.github.io/images/GoC-hystrix.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://baoqger.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-hystrix-circuit-breaker-part2" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/05/30/hystrix-circuit-breaker-part2/" class="article-date">
+  <time datetime="2021-05-30T08:41:20.000Z" itemprop="datePublished">2021-05-30</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Circuit breaker and Hystrix: part two - max concurrent requests
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the second article of this series, I will review the source code of <code>hystrix-go</code> project to understand how to design a <code>circuit breaker</code> and how to implement it with Golang. </p>
+<p>If you’re not familiar with <code>circuit breaker</code> pattern or <code>hystrix-go</code> project, please check my previous <a href="https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/">article</a> about it.  </p>
+<h3 id="Three-service-degradation-strategies"><a href="#Three-service-degradation-strategies" class="headerlink" title="Three service degradation strategies"></a>Three service degradation strategies</h3><p><code>Hystrix</code> provides three different service degradation strategies to avoid the <code>cascading failure</code> happening in the entire system: <code>timeout</code>, <code>maximum concurrent request numbers</code> and <code>request error rate</code>. </p>
+<ul>
+<li><strong>timeout</strong>: if the service call doesn’t return response successfully within a predefined time duration, then the fallback logic will run. This strategy is the simplest one. </li>
+<li><strong>maximum concurrent request numbers</strong>: when the number of concurrent requests is beyond the threshold, then the fallback logic will handle the following request. </li>
+<li><strong>request error rate</strong>: <code>hystrix</code> will record the response status of each service call, after the error rate reaches the threshold, the breaker will be open, and the fallback logic will execute before the breaker status changes back to closed. <code>error rate</code> strategy is the most complex one. </li>
+</ul>
+<p>This can be seen from the basic usage of <code>hystrix</code> as follows:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">"github.com/afex/hystrix-go/hystrix"</span></span><br><span class="line">    <span class="string">"time"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">hystrix.ConfigureCommand(<span class="string">"my_command"</span>, hystrix.CommandConfig&#123;</span><br><span class="line">	Timeout:               <span class="keyword">int</span>(<span class="number">10</span> * time.Second),</span><br><span class="line">	MaxConcurrentRequests: <span class="number">100</span>,</span><br><span class="line">	ErrorPercentThreshold: <span class="number">25</span>,</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">hystrix.Go(<span class="string">"my_command"</span>, <span class="function"><span class="keyword">func</span><span class="params">()</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// talk to dependency services</span></span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;, <span class="function"><span class="keyword">func</span><span class="params">(err error)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// fallback logic when services are down</span></span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p>In the above usage case, you can see that <code>timeout</code> is set to 10 seconds, the maximum request number is 100, and the error rate threshold is 25 percentages.</p>
+<p>In the consumer application level, that’s nearly all of the configuration you need to setup. <code>hystrix</code> will make the magin happen internally. </p>
+<p>In this series of articles, I plan to show you the internals of <code>hystrix</code> by reviewing the source code. </p>
+<p>Let’s start from the easy ones: <code>max concurrent requests</code> and <code>timeout</code>. Then move on to explore the complex strategy <code>request error rate</code>. </p>
+<h3 id="GoC"><a href="#GoC" class="headerlink" title="GoC"></a>GoC</h3><p>Based on the above example, you can see <code>Go</code> function is the door to the source code of <code>hystrix</code>, so let’s start from it as follows: </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">Go</span><span class="params">(name <span class="keyword">string</span>, run runFunc, fallback fallbackFunc)</span> <span class="title">chan</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	runC := <span class="function"><span class="keyword">func</span><span class="params">(ctx context.Context)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">		<span class="keyword">return</span> run()</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">var</span> fallbackC fallbackFuncC</span><br><span class="line">	<span class="keyword">if</span> fallback != <span class="literal">nil</span> &#123;</span><br><span class="line">		fallbackC = <span class="function"><span class="keyword">func</span><span class="params">(ctx context.Context, err error)</span> <span class="title">error</span></span> &#123;</span><br><span class="line">			<span class="keyword">return</span> fallback(err)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> GoC(context.Background(), name, runC, fallbackC)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>Go</code> function accept three parameters: </p>
+<ul>
+<li><strong>name</strong>: the command name, which is bound to the <code>circuit</code> created inside hystrix. </li>
+<li><strong>run</strong>: a function contains the normal logic which send request to the dependency service.</li>
+<li><strong>fallback</strong>: a function contains the fallback logic.</li>
+</ul>
+<p><code>Go</code> function just wraps <code>run</code> and <code>fallback</code> with <code>Context</code>, which is used to control and cancel goroutine, if you’re not familiar with it then refer to my previous <a href="https://baoqger.github.io/2021/04/26/golang-context-source-code/">article</a>. Finally it will call <code>GoC</code> function.</p>
+<p><code>GoC</code> function goes as follows: </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GoC</span><span class="params">(ctx context.Context, name <span class="keyword">string</span>, run runFuncC, fallback fallbackFuncC)</span> <span class="title">chan</span> <span class="title">error</span></span> &#123;</span><br><span class="line">	<span class="comment">// construct a new command instance</span></span><br><span class="line">	cmd := &amp;command&#123;</span><br><span class="line">		run:      run,</span><br><span class="line">		fallback: fallback,</span><br><span class="line">		start:    time.Now(),</span><br><span class="line">		errChan:  <span class="built_in">make</span>(<span class="keyword">chan</span> error, <span class="number">1</span>),</span><br><span class="line">		finished: <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">bool</span>, <span class="number">1</span>),</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// get circuit by command name</span></span><br><span class="line">	circuit, _, err := GetCircuit(name)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		cmd.errChan &lt;- err</span><br><span class="line">		<span class="keyword">return</span> cmd.errChan</span><br><span class="line">	&#125;</span><br><span class="line">	cmd.circuit = circuit</span><br><span class="line">	<span class="comment">//declare a condition variable sync.Cond: ticketCond, to synchronize among goroutines</span></span><br><span class="line">	<span class="comment">//declare a flag variable: ticketChecked, work together with ticketCond</span></span><br><span class="line">	ticketCond := sync.NewCond(cmd)</span><br><span class="line">	ticketChecked := <span class="literal">false</span></span><br><span class="line">	<span class="comment">// declare a function: returnTicket, will execute when a concurrent request is done to return `ticket`</span></span><br><span class="line">	returnTicket := <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		cmd.Lock()</span><br><span class="line">		<span class="keyword">for</span> !ticketChecked &#123;</span><br><span class="line">			ticketCond.Wait()</span><br><span class="line">		&#125;</span><br><span class="line">		cmd.circuit.executorPool.Return(cmd.ticket)</span><br><span class="line">		cmd.Unlock()</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// declare a sync.Once instance: returnOnce, make sure the returnTicket function execute only once</span></span><br><span class="line">	returnOnce := &amp;sync.Once&#123;&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// declare another function: reportAllEvent, used to collect the metrics</span></span><br><span class="line">	reportAllEvent := <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		err := cmd.circuit.ReportEvent(cmd.events, cmd.start, cmd.runDuration)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Printf(err.Error())</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// launch a goroutine which executes the `run` logic</span></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		<span class="keyword">defer</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; cmd.finished &lt;- <span class="literal">true</span> &#125;()</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> !cmd.circuit.AllowRequest() &#123;</span><br><span class="line">			cmd.Lock()</span><br><span class="line">			ticketChecked = <span class="literal">true</span></span><br><span class="line">			ticketCond.Signal()</span><br><span class="line">			cmd.Unlock()</span><br><span class="line">			returnOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">				returnTicket()</span><br><span class="line">				cmd.errorWithFallback(ctx, ErrCircuitOpen)</span><br><span class="line">				reportAllEvent()</span><br><span class="line">			&#125;)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		cmd.Lock()</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> cmd.ticket = &lt;-circuit.executorPool.Tickets:</span><br><span class="line">			ticketChecked = <span class="literal">true</span></span><br><span class="line">			ticketCond.Signal()</span><br><span class="line">			cmd.Unlock()</span><br><span class="line">		<span class="keyword">default</span>:</span><br><span class="line">			ticketChecked = <span class="literal">true</span></span><br><span class="line">			ticketCond.Signal()</span><br><span class="line">			cmd.Unlock()</span><br><span class="line">			returnOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">				returnTicket()</span><br><span class="line">				cmd.errorWithFallback(ctx, ErrMaxConcurrency)</span><br><span class="line">				reportAllEvent()</span><br><span class="line">			&#125;)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		runStart := time.Now()</span><br><span class="line">		runErr := run(ctx)</span><br><span class="line">		returnOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			<span class="keyword">defer</span> reportAllEvent()</span><br><span class="line">			cmd.runDuration = time.Since(runStart)</span><br><span class="line">			returnTicket()</span><br><span class="line">			<span class="keyword">if</span> runErr != <span class="literal">nil</span> &#123;</span><br><span class="line">				cmd.errorWithFallback(ctx, runErr)</span><br><span class="line">				<span class="keyword">return</span></span><br><span class="line">			&#125;</span><br><span class="line">			cmd.reportEvent(<span class="string">"success"</span>)</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;()</span><br><span class="line">	<span class="comment">// launch the second goroutine for timeout strategy</span></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		timer := time.NewTimer(getSettings(name).Timeout)</span><br><span class="line">		<span class="keyword">defer</span> timer.Stop()</span><br><span class="line"></span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> &lt;-cmd.finished:</span><br><span class="line">		<span class="keyword">case</span> &lt;-ctx.Done():</span><br><span class="line">			returnOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">				returnTicket()</span><br><span class="line">				cmd.errorWithFallback(ctx, ctx.Err())</span><br><span class="line">				reportAllEvent()</span><br><span class="line">			&#125;)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		<span class="keyword">case</span> &lt;-timer.C:</span><br><span class="line">			returnOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">				returnTicket()</span><br><span class="line">				cmd.errorWithFallback(ctx, ErrTimeout)</span><br><span class="line">				reportAllEvent()</span><br><span class="line">			&#125;)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> cmd.errChan</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>I admit it’s complex, but it’s also the core of the entire <code>hystrix</code> project. Be patient, let’s review it bit by bit carefully. </p>
+<p>First of all, the code structure of <code>GoC</code> function is as follows:</p>
+<p><img src="/images/GoC-hystrix.png" alt="GoC"></p>
+<ol>
+<li>Construct a new <code>Command</code> object, which contains all the information for each call to <code>GoC</code> function.</li>
+<li>Get the <code>circuit breaker</code> by name (create it if it doesn’t exist) by calling <code>GetCircuit(name)</code> function.</li>
+<li>Declare condition variable <strong>ticketCond</strong> and <strong>ticketChecked</strong> with <code>sync.Cond</code> which is used to communicate between goroutines. </li>
+<li>Declare function <strong>returnTicket</strong>. What is a <strong>ticket</strong>? What does it mean by <strong>returnTicket</strong>? Let’s discuss it in detail later.</li>
+<li>Declare another function <strong>reportAllEvent</strong>. This function is critical to <code>error rate</code> strategy, and we can leave it for detailed review in the following articles. </li>
+<li>Declare an instance of <code>sync.Once</code>, which is another interesting <code>synchronization primitives</code> provided by golang.</li>
+<li>Launch two goroutines, each of which contains many logics too. Simply speaking, the first one contains the logic of sending requests to the target service and the strategy of <code>max concurrent request number</code>, and the second one contains the <code>timeout</code> strategy. </li>
+<li>Return a <code>channel</code> type value</li>
+</ol>
+<p>Let’s review each of them one by one. </p>
+<h3 id="command"><a href="#command" class="headerlink" title="command"></a>command</h3><p><code>command</code> struct goes as follows, which embeds <strong>sync.Mutex</strong> and defines several fields: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> command <span class="keyword">struct</span> &#123;</span><br><span class="line">	sync.Mutex</span><br><span class="line"></span><br><span class="line">	ticket      *<span class="keyword">struct</span>&#123;&#125;</span><br><span class="line">	start       time.Time</span><br><span class="line">	errChan     <span class="keyword">chan</span> error</span><br><span class="line">	finished    <span class="keyword">chan</span> <span class="keyword">bool</span></span><br><span class="line">	circuit     *CircuitBreaker</span><br><span class="line">	run         runFuncC</span><br><span class="line">	fallback    fallbackFuncC</span><br><span class="line">	runDuration time.Duration</span><br><span class="line">	events      []<span class="keyword">string</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Note that <code>command</code> object iteself doesn’t contain command name information, and its lifecycle is just inside the scope of one <code>GoC</code> call. It means that the statistic metrics about the service request like <code>error rate</code> and <code>concurrent request number</code> are not stored inside command object. Instead, such metrics are stored inside <strong>circuit</strong> field which is <code>CircuitBreaker</code> type. </p>
+<h3 id="CircuitBreaker"><a href="#CircuitBreaker" class="headerlink" title="CircuitBreaker"></a>CircuitBreaker</h3><p>As we mentioned in the workflow of <code>GoC</code> function, <code>GetCircuit(name)</code> is called to get or create the <code>circuit breaker</code>. It is implemented inside <code>circuit.go</code> file as follows:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line">	circuitBreakersMutex = &amp;sync.RWMutex&#123;&#125;</span><br><span class="line">	circuitBreakers = <span class="built_in">make</span>(<span class="keyword">map</span>[<span class="keyword">string</span>]*CircuitBreaker)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">GetCircuit</span><span class="params">(name <span class="keyword">string</span>)</span> <span class="params">(*CircuitBreaker, <span class="keyword">bool</span>, error)</span></span> &#123;</span><br><span class="line">	circuitBreakersMutex.RLock()</span><br><span class="line">	_, ok := circuitBreakers[name]</span><br><span class="line">	<span class="keyword">if</span> !ok &#123;</span><br><span class="line">		circuitBreakersMutex.RUnlock()</span><br><span class="line">		circuitBreakersMutex.Lock()</span><br><span class="line">		<span class="keyword">defer</span> circuitBreakersMutex.Unlock()</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> cb, ok := circuitBreakers[name]; ok &#123;</span><br><span class="line">			<span class="keyword">return</span> cb, <span class="literal">false</span>, <span class="literal">nil</span></span><br><span class="line">		&#125;</span><br><span class="line">		circuitBreakers[name] = newCircuitBreaker(name)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="keyword">defer</span> circuitBreakersMutex.RUnlock()</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> circuitBreakers[name], !ok, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The logic is very straightforward. All the circuit breakers are stored in a map object <strong>circuitBreakers</strong> with the <strong>command name</strong> as the key. </p>
+<p>The <code>newCircuitBreaker</code> constructor function and <code>CircuitBreaker</code> struct are as follows: </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> CircuitBreaker <span class="keyword">struct</span> &#123;</span><br><span class="line">	Name                   <span class="keyword">string</span></span><br><span class="line">	open                   <span class="keyword">bool</span></span><br><span class="line">	forceOpen              <span class="keyword">bool</span></span><br><span class="line">	mutex                  *sync.RWMutex</span><br><span class="line">	openedOrLastTestedTime <span class="keyword">int64</span></span><br><span class="line"></span><br><span class="line">	executorPool *executorPool   <span class="comment">// used in the strategy of max concurrent request number </span></span><br><span class="line">	metrics      *metricExchange <span class="comment">// used in the strategy of request error rate</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newCircuitBreaker</span><span class="params">(name <span class="keyword">string</span>)</span> *<span class="title">CircuitBreaker</span></span> &#123;</span><br><span class="line">	c := &amp;CircuitBreaker&#123;&#125;</span><br><span class="line">	c.Name = name</span><br><span class="line">	c.metrics = newMetricExchange(name)</span><br><span class="line">	c.executorPool = newExecutorPool(name)</span><br><span class="line">	c.mutex = &amp;sync.RWMutex&#123;&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> c</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>All the fields of <code>CircuitBreaker</code> are important to understand how the breaker works.</p>
+<img src="/images/circuitbreakstruct.png" title="circuitbreak" width="300px" height="400px">
+
+<p>There are two fields that are not simple type need more analysis, include <code>executorPool</code> and <code>metrics</code>. </p>
+<ul>
+<li><strong>executorPool</strong>: used for <code>max concurrent request number</code> strategy, which is just this article’s topic.</li>
+<li><strong>metrics</strong>: used for <code>request error rate</code> strategy, which will be discussed in the next article, all right? </li>
+</ul>
+<h3 id="executorPool"><a href="#executorPool" class="headerlink" title="executorPool"></a>executorPool</h3><p>We can find <code>executorPool</code> logics inside the <code>pool.go</code> file:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> executorPool <span class="keyword">struct</span> &#123;</span><br><span class="line">	Name    <span class="keyword">string</span></span><br><span class="line">	Metrics *poolMetrics</span><br><span class="line">	Max     <span class="keyword">int</span></span><br><span class="line">	Tickets <span class="keyword">chan</span> *<span class="keyword">struct</span>&#123;&#125; <span class="comment">// Tickets channel </span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">newExecutorPool</span><span class="params">(name <span class="keyword">string</span>)</span> *<span class="title">executorPool</span></span> &#123;</span><br><span class="line">	p := &amp;executorPool&#123;&#125;</span><br><span class="line">	p.Name = name</span><br><span class="line">	p.Metrics = newPoolMetrics(name)</span><br><span class="line">	p.Max = getSettings(name).MaxConcurrentRequests</span><br><span class="line"></span><br><span class="line">	p.Tickets = <span class="built_in">make</span>(<span class="keyword">chan</span> *<span class="keyword">struct</span>&#123;&#125;, p.Max)</span><br><span class="line">	<span class="comment">// send Max numbers of value into the Tickets channel</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; p.Max; i++ &#123;</span><br><span class="line">		p.Tickets &lt;- &amp;<span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> p</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>It makes use of golang <code>channel</code> to realize <code>max concurrent request number</code> strategy. Note that <code>Tickets</code> field, which is a buffered channel with capicity of <strong>MaxConcurrentRequests</strong> is created. And in the following <strong>for</strong> loop, make the buffered channel full by sending value into the channel until reaching the capacity. </p>
+<p>As we have shown above, in the first goroutine of <code>GoC</code> function, the <code>Tickets</code> channel is used as follows:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	...</span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> cmd.ticket = &lt;-circuit.executorPool.Tickets: <span class="comment">// receive ticket from Tickets channel</span></span><br><span class="line">		ticketChecked = <span class="literal">true</span></span><br><span class="line">		ticketCond.Signal()</span><br><span class="line">		cmd.Unlock()</span><br><span class="line">	<span class="keyword">default</span>:</span><br><span class="line">		ticketChecked = <span class="literal">true</span></span><br><span class="line">		ticketCond.Signal()</span><br><span class="line">		cmd.Unlock()</span><br><span class="line">		returnOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			returnTicket()</span><br><span class="line">			cmd.errorWithFallback(ctx, ErrMaxConcurrency) <span class="comment">// run fallback logic when concurrent requests reach threshold</span></span><br><span class="line">			reportAllEvent()</span><br><span class="line">		&#125;)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	...</span><br><span class="line">&#125;()</span><br></pre></td></tr></table></figure>
+<p>Each call to <code>GoC</code> function will get a <strong>ticket</strong> from <strong>circuit.executorPool.Tickets</strong> channel until no <strong>ticket</strong> is left, which means the number of concurrent requests reaches the threshold. In that case, the <code>default</code> case will execute , and the service will be gracefully degraded with fallback logic.</p>
+<p>On the other side, after each call to <code>GoC</code> is done, the <strong>ticket</strong> need to be sent back to the <strong>circuit.executorPool.Tickets</strong>, right? Do you remember the <code>returnTicket</code> function mentioned in above section. Yes, it is just used for this purpose. The <code>returnTicket</code> function defined in <code>GoC</code> function goes as follows:</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">returnTicket := <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cmd.Lock()</span><br><span class="line">	<span class="keyword">for</span> !ticketChecked &#123;</span><br><span class="line">		ticketCond.Wait()</span><br><span class="line">	&#125;</span><br><span class="line">	cmd.circuit.executorPool.Return(cmd.ticket) <span class="comment">// return ticket to the executorPool</span></span><br><span class="line">	cmd.Unlock()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>It calls <code>executorPool.Return</code> function: </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Return function in pool.go file</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *executorPool)</span> <span class="title">Return</span><span class="params">(ticket *<span class="keyword">struct</span>&#123;&#125;)</span></span> &#123;</span><br><span class="line">	<span class="keyword">if</span> ticket == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	p.Metrics.Updates &lt;- poolMetricsUpdate&#123;</span><br><span class="line">		activeCount: p.ActiveCount(),</span><br><span class="line">	&#125;</span><br><span class="line">	p.Tickets &lt;- ticket <span class="comment">// send ticket back to Tickets channel</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The design and implementation of <strong>Tickets</strong> is a great example of <code>golang channel</code> in the real-world application.  </p>
+<p>In summary, the <code>max concurrent request number</code> strategy can be illustrated as follows:</p>
+<img src="/images/hystrix-concurrent-architecture.png" title="circuitbreak" width="800px" height="400px">
+
+
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, <code>max concurrent requests</code> strategy in <code>hystrix</code> is reviewed carefully, and I hope you can learn something interesting from it.</p>
+<p>But I didn’t cover the detailed logics inside <code>GoC</code> function, including <code>sync.Cond</code>, <code>sync.Once</code> and fallback logics. Let’s review them and <code>timeout</code> strategy together in the next article. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2021/05/30/hystrix-circuit-breaker-part2/" data-id="ckxpuq37o0014wsmm833adqoy" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2021/06/18/hystrix-circuit-breaker-part3/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Circuit breaker and Hystrix: part three - timeout
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2021/05/21/hystric-circuit-breaker-part1/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Circuit breaker and Hystrix: part one - introduction</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
+          </li>
+        
+          <li>
+            <a href="/2021/12/15/understand-http-1-1-client-golang-part2/">How  HTTP1.1 protocol is implemented in Golang net/http package: part two -  write HTTP message to socket</a>
+          </li>
+        
+          <li>
+            <a href="/2021/12/01/understand-http-1-1-client-golang/">How  HTTP1.1 protocol is implemented in Golang net/http package: part one - request workflow</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/27/understand-http1-1-persitent-connection-golang-part2/">Understand how HTTP/1.1 persistent connection works based on Golang: part two - concurrent requests</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/25/understand-http1-1-persistent-connection-golang/">Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 Chris Bao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

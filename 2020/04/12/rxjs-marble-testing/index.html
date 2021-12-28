@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Typical usage case of Marble Testing for RxJS | Chris Bao&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="What’s Marble TestingRxJS is a powerful tool to handle various asynchronous tasks. Sometime RxJS observables are hard to test. In the community, there is one particular unit testing solution for RxJS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Typical usage case of Marble Testing for RxJS">
+<meta property="og:url" content="https://baoqger.github.io/2020/04/12/rxjs-marble-testing/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="What’s Marble TestingRxJS is a powerful tool to handle various asynchronous tasks. Sometime RxJS observables are hard to test. In the community, there is one particular unit testing solution for RxJS">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-04-12T12:08:45.000Z">
+<meta property="article:modified_time" content="2021-12-23T12:34:34.798Z">
+<meta property="article:author" content="Chris Bao">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://baoqger.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-rxjs-marble-testing" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/04/12/rxjs-marble-testing/" class="article-date">
+  <time datetime="2020-04-12T12:08:45.000Z" itemprop="datePublished">2020-04-12</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Typical usage case of Marble Testing for RxJS
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="What’s-Marble-Testing"><a href="#What’s-Marble-Testing" class="headerlink" title="What’s Marble Testing"></a>What’s Marble Testing</h3><p>RxJS is a powerful tool to handle various asynchronous tasks. Sometime RxJS observables are hard to test. In the community, there is one particular unit testing solution for RxJS observables called marble testing.</p>
+<p>For marble testing, you can refer to <a href="https://medium.com/@bencabanes/marble-testing-observable-introduction-1f5ad39231c" target="_blank" rel="noopener">these articles</a>. They all do an excellent job of introducing what it is. </p>
+<h3 id="A-real-case-to-show-Marble-Testing’s-power"><a href="#A-real-case-to-show-Marble-Testing’s-power" class="headerlink" title="A real case to show Marble Testing’s power"></a>A real case to show Marble Testing’s power</h3><p>Recently in my development work, I came across a case where I used marble testing properly to solve the issue. </p>
+<p>The background is for my application in the root <code>index.html</code> file, there is one third-party javascript library/SDK. For some business reasons, after the third-party library is loaded, we bind some value to the global <code>window</code> object. </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.onSecretLibraryLoad = <span class="function">(<span class="params">res</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">window</span>.SecretLibrary = res; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Before the loaded event is triggered, the <code>window.SecretLibary</code> was <code>undefiend</code>. After the event is triggered, it will be assigned some value. </p>
+<p>This global value is vital for my application since one of the UI components depends on it to determine to show or hide. </p>
+<p>Since the script was loaded with <code>async</code> flag for performance consideration, this component needs to check the <code>window.SecretLibrary</code> value repeatedly. </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="class"><span class="keyword">class</span> <span class="title">UIComponent</span> <span class="title">implements</span> <span class="title">OnInit</span> </span>&#123;</span><br><span class="line">    public isSecretLibraryReady$: Observable&lt;boolean&gt;;</span><br><span class="line">    public ngOnInit(): <span class="keyword">void</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>.isSecretLibraryReady$ = <span class="keyword">this</span>.getSecretLibraryLoadStatus();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public getSecretLibraryLoadStatus(): Observable&lt;boolean&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> timer(<span class="number">0</span>, <span class="number">500</span>).pipe(</span><br><span class="line">            map(<span class="function">(<span class="params">t</span>) =&gt;</span> (&#123;</span><br><span class="line">                currentTimeTick: t,</span><br><span class="line">                isReady: <span class="built_in">Boolean</span>((<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary)</span><br><span class="line">            &#125;)),</span><br><span class="line">            takeWhile(</span><br><span class="line">                (val) =&gt; !val.isReady &amp;&amp; val.currentTimeTick &lt;= <span class="number">30000</span>/<span class="number">500</span>,</span><br><span class="line">                <span class="literal">true</span></span><br><span class="line">            ),</span><br><span class="line">            pluck(<span class="string">"isReady"</span>)</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The interesting part comes from the <code>getSecretLibraryLoadStatus</code> function. It utilizes the <code>timer</code>, <code>map</code>, <code>takeWhile</code>, and <code>pluck</code> operators of RxJS library to realize the repeatedly status checking and updating purpose. </p>
+<p>RxJS operator is not this article’s topic, so I will not dig deep into it. Just add one comment for the <code>takeWhile</code> part, which seems a little hard to understand at the first look. It defines two conditions to stop the observable: first case is the <code>window.SecretLibrary</code> value is not undefined, which means the script is loaded; the second case is it reaches the maximum time limit (30 seconds). </p>
+<h3 id="How-to-test-it-marble-testing"><a href="#How-to-test-it-marble-testing" class="headerlink" title="How to test it: marble testing"></a>How to test it: marble testing</h3><p>Traditionally we use <code>subscribe and assert</code> pattern to test RxJS observables. But for the case, as mentioned above: time-based observables, the traditional solution can’t handle it well. We can’t wait 30 seconds when we run the unit tests during local development or in CI pipeline. That’s unacceptable.</p>
+<p>Marble testing can fix this issue correctly by the concept of virtual time. For what is virtual time, you can refer to <a href="https://medium.com/angular-in-depth/how-to-test-observables-a00038c7faad" target="_blank" rel="noopener">these great articles</a>. I will not discuss it at a detailed level in this post. Simply speaking, virtual time empowers us to test asynchronous RxJS observable synchronously. In virtual time asynchronous functions like <code>setTimeout</code> and <code>setInterval</code> will use fake time instead of actual time. And the magic comes from the <code>TestScheduler</code> of RxJS. </p>
+<p>The marble testing solution as following: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">describe(<span class="string">"UIComponent"</span>, () =&gt; &#123;</span><br><span class="line">  <span class="keyword">let</span> component: UIComponent;</span><br><span class="line">  <span class="keyword">let</span> fixture: ComponentFixture&lt;UIComponent&gt;;</span><br><span class="line">  <span class="keyword">let</span> scheduler: TestScheduler;</span><br><span class="line"></span><br><span class="line">  beforeEach(<span class="keyword">async</span>(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    TestBed.configureTestingModule(&#123;</span><br><span class="line">      declarations: [UIComponent],</span><br><span class="line">    &#125;).compileComponents();</span><br><span class="line">  &#125;));</span><br><span class="line"></span><br><span class="line">  beforeEach(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    fixture = TestBed.createComponent(UIComponent);</span><br><span class="line">    component = fixture.componentInstance;</span><br><span class="line">    scheduler = <span class="keyword">new</span> TestScheduler(<span class="function">(<span class="params">actual, expected</span>) =&gt;</span> expect(actual).toEqual(expected));</span><br><span class="line">    (<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary = <span class="literal">undefined</span>;</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">  it(<span class="string">"getSecretLibraryLoadStatus method should return a boolean observable stream, for script load success case"</span>, () =&gt; &#123;</span><br><span class="line">    scheduler.run(<span class="function">(<span class="params">&#123; expectObservable &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">      timer(<span class="number">2</span> * <span class="number">1000</span>).subscribe(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">        (<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary = <span class="string">"SecretLibrary"</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">      <span class="comment">// tricky point about marble test: a, b, c these placeholders account 1 frame of virtual time</span></span><br><span class="line">      expectObservable(component.getSecretLibraryLoadStatus()).toBe(</span><br><span class="line">        <span class="string">"a 499ms b 499ms c 499ms d 499ms (e|)"</span>,</span><br><span class="line">        &#123;</span><br><span class="line">          a: <span class="literal">false</span>,</span><br><span class="line">          b: <span class="literal">false</span>,</span><br><span class="line">          c: <span class="literal">false</span>,</span><br><span class="line">          d: <span class="literal">false</span>,</span><br><span class="line">          e: <span class="literal">true</span></span><br><span class="line">        &#125;</span><br><span class="line">      );</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>Let me emphasize several key points to understand the above testing case. <code>getSecretLibraryLoadStatus</code> will repeatedly check the status of <code>window.SecretLibrary</code> every 500 milliseconds and return a boolean value stream. </p>
+<p>I manually set the <code>window.SecretLibrary</code> value after 2 seconds by calling this: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">timer(<span class="number">2</span> * <span class="number">1000</span>).subscribe(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  (<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary = <span class="string">"SecretLibrary"</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>So Let’s imagine what the result should be: the first four emit value will be <code>false</code>,  and the last value is <code>true</code>. That’s the expected observable. </p>
+<p>But please notice that <code>scheduler.run</code>, everything run inside the callback will use virtual time. So we didn’t wait 2 seconds for the <code>timer</code> operator. Instead, it runs synchronously. </p>
+<p>The second point needs to notice is the syntax of the marble string <code>a 499ms b 499ms c 499ms d 499ms (e|)</code>. Yes, it looks a little wired, but be careful that’s the correct way to represent marble. <strong>The alphanumeric values represent an actual emitted value, which advances time one virtual frame</strong>.</p>
+<p>Here I only show the case where the third-party script load successfully. Of course, to have full testing coverage, we need to consider the negative case where the script failed to load. You can figure it out. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this post, I didn’t go into the detailed syntax of marble testing. I think the reader can find the related document easily. I record a real usage case in the development where marble testing can show its power to handle async observables. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2020/04/12/rxjs-marble-testing/" data-id="ckxpuq37s001jwsmm1v921pi0" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/04/20/memoizedSelector/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Understand NgRx memoizedSelector in source code level
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/04/11/algo-part2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">algo-part2</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
+          </li>
+        
+          <li>
+            <a href="/2021/12/15/understand-http-1-1-client-golang-part2/">How  HTTP1.1 protocol is implemented in Golang net/http package: part two -  write HTTP message to socket</a>
+          </li>
+        
+          <li>
+            <a href="/2021/12/01/understand-http-1-1-client-golang/">How  HTTP1.1 protocol is implemented in Golang net/http package: part one - request workflow</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/27/understand-http1-1-persitent-connection-golang-part2/">Understand how HTTP/1.1 persistent connection works based on Golang: part two - concurrent requests</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/25/understand-http1-1-persistent-connection-golang/">Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 Chris Bao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

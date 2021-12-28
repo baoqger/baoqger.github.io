@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Understand stack memory management | Chris Bao&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Table of ContentsFirst I have to admit that memory management is a big( and important) topic in operating system. This post can’t cover everything related to it.  In this post, I want to share somethi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Understand stack memory management">
+<meta property="og:url" content="https://baoqger.github.io/2020/08/19/stack-frame/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="Table of ContentsFirst I have to admit that memory management is a big( and important) topic in operating system. This post can’t cover everything related to it.  In this post, I want to share somethi">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://baoqger.github.io/images/stack_frames.png">
+<meta property="og:image" content="https://baoqger.github.io/images/stack_contents.png">
+<meta property="article:published_time" content="2020-08-18T20:54:00.000Z">
+<meta property="article:modified_time" content="2021-12-23T12:34:34.798Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="memory management, stack">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://baoqger.github.io/images/stack_frames.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://baoqger.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-stack-frame" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/08/19/stack-frame/" class="article-date">
+  <time datetime="2020-08-18T20:54:00.000Z" itemprop="datePublished">2020-08-19</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Understand stack memory management
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Table-of-Contents"><a href="#Table-of-Contents" class="headerlink" title="Table of Contents"></a>Table of Contents</h3><p>First I have to admit that memory management is a big( and important) topic in operating system. This post can’t cover everything related to it. </p>
+<p>In this post, I want to share something interesting I learned about stack memory management. Especially understand how the stack frame of function call works, which’s the most important part of stack memory. I will explain the mechanism in detail with examples and diagrams.</p>
+<p>Briefly speaking, the contents of this post is:</p>
+<ul>
+<li>Memory layout of a process</li>
+<li>Stack memory contents</li>
+<li>CPU register related to stack memory management</li>
+<li>Stack frame of function call and return mechanism</li>
+</ul>
+<p>To understand the concepts and machanisms deeply, a few assembly code will be shown in this post, you don’t have to know assembly lauguage as an expert for reading this post, I will add comments for these assembly codes to make explain what’s their functionalities.</p>
+<h3 id="Stack-Memory-Management-Basic"><a href="#Stack-Memory-Management-Basic" class="headerlink" title="Stack Memory Management Basic"></a>Stack Memory Management Basic</h3><h4 id="Memory-Layout-of-Process"><a href="#Memory-Layout-of-Process" class="headerlink" title="Memory Layout of Process"></a>Memory Layout of Process</h4><p>Before we talk about Stack memory management, it’s necessary to understand <code>memory layout</code> of a process.</p>
+<p>When you create a program, it is just some Bytes of data which is stored in the disk. When a program executes then it starts loading into memory and become a live entity. In a more specify way, some memory (virtual memory) is allocated to each process in execution for its usage by operating system. The memory assigned to a process is called process’s <code>virtual address space</code>( short for VAS). And memory layout use diagrams to help you understand the concept of process virtual address space easily.</p>
+<p>There are some awesome posts on the internet about <a href="https://www.includehelp.com/operating-systems/memory-layout-of-a-process.aspx" target="_blank" rel="noopener">memory layout</a>. And the most two critical sections are: Stack and Heap. Simply speaking, <code>Stack</code> is the memory area which is used by each process to store the local variables, passed arguments and other information when a function is called. This is the topic of this post, you’ll know more detailed in the following sections. While <code>Heap</code> segment is the one which is used for dynamic memory allocation, this is another more complex topic out of this post’s scope. </p>
+<h4 id="Stack-Memory-Basics"><a href="#Stack-Memory-Basics" class="headerlink" title="Stack Memory Basics"></a>Stack Memory Basics</h4><p>Stack Memory is just memory region in each process’s virtual address space where <code>stack</code> data structure (Last in, first out) is used to store the data. As we mentioned above, when a new function call is invoked, then a frame of data is pushed to stack memory and when the function call returns then the frame is removed from the stack memory. This is <strong>Stack Frame</strong> which represent a function call and its argument data. And every function has its own stack frame.</p>
+<p>Let’s say in your program there are multiple functions call each other in order. For example, <code>main() -&gt; f1() -&gt; f2() -&gt; f3()</code>, <code>main</code> function calls function one <code>f1()</code>, then function one calls function two <code>f2()</code>, finally function two calls function three <code>f3()</code>. So based on the Last in first out rule, the stack memory will be like as below: </p>
+<p><img src="/images/stack_frames.png" alt="stack-frame"></p>
+<p><strong>Note</strong>: the top of the stack is the bottom part of the image. Don’t feel confused for that. </p>
+<h4 id="Stack-memory-contents"><a href="#Stack-memory-contents" class="headerlink" title="Stack memory contents"></a>Stack memory contents</h4><p>After understand stack frames, now let’s dive deep into each stack frame to discover its contents.</p>
+<p>Each stack frame contains 4 parts:</p>
+<ul>
+<li>Parameter passed to the callee function</li>
+<li>Return address of the caller function</li>
+<li>Base pointer</li>
+<li>Local variables of the callee function</li>
+</ul>
+<p><img src="/images/stack_contents.png" alt="stack-contents"></p>
+<p>Caller and callee is very easy to understand. Let’s say <code>main() -&gt; f1()</code>, then caller function is <code>main()</code> while callee function is <code>f1()</code>. Right? </p>
+<p>For the above 4 four parts, there are something need to emphasis. Firstly the size of <code>return address of the caller function</code> is fixed, for example, in 32 bits system the size is 4B. And <code>Base pointer</code> size is fixed as well, it’s also 4B in a 32 bits system. This fixed size is important, you’ll see the reason in following sections. </p>
+<p>Next, in the above diagram you see two kinds of pointers: <strong>base pointer</strong> and <strong>stack pointer</strong>. Let’s check them one by one.</p>
+<p><strong><em>Stack pointer</em></strong>: pointer to the top of the stack. When stack adds or removes data then stack pointer will change correspondingly. Stack pointer is straight forward and not difficult to understand, right?<br><strong><em>Base pointer</em></strong>: is also called <code>frame pointer</code> which points to the current active  frame. And the current active frame is the topmost frame of the stack. </p>
+<p>The base pointer is conventionlly used to mark the start of a function’s stack frame, and the area of the stack managed by that function. As we mentioned above, since the size of return address and base pointer is fixed, so based on the address of base pointer you can get all the data in that stack frame. Local variables can be accessed with positive offset and passed parameters can be got with negative offset. That’s the reason why it is called <strong>base</strong> pointer. Great design, right? </p>
+<p>The other thing need to discuss is what’t the content of base pointer part in each stack frame? In the above diagram you see that a 4 bytes data is pushed into the stack, we call it base pointer. But what’s the data? In fact, base pointer is designed to <code>store the caller&#39;s base pointer address</code>. This is also a smart design to make function return works well. We’ll discuss more about it later.</p>
+<h4 id="CPU-register"><a href="#CPU-register" class="headerlink" title="CPU register"></a>CPU register</h4><p>To understand stack memory management, you’ll need to know 3 interesting CPU register:</p>
+<ul>
+<li><strong>eip</strong>: Instruction pointer register which stores the address of the next instruction to be run. </li>
+<li><strong>esp</strong>: Stack pointer register which stores the address of the top of the stack at any time.</li>
+<li><strong>ebp</strong>: Base pointer register which stores base pointer address of callee’s stack frame.  And the content at this address is the caller’s base pointer value (we already mentioned this point above).</li>
+</ul>
+<p>Until now, you see all the necessary stuff: stack frame, stack frame content and CPU registers. Let’s see how they play together to make stack frames of function call and return works. You’ll see how this simple but beautiful design realizes such a complex task.  </p>
+<h3 id="Mechanism-of-function-call-and-return"><a href="#Mechanism-of-function-call-and-return" class="headerlink" title="Mechanism of function call and return"></a>Mechanism of function call and return</h3><p>In this section, you’ll understand how function call and return works by reading a few assembly codes (which are not difficult to understand).</p>
+<h4 id="function-call"><a href="#function-call" class="headerlink" title="function call"></a>function call</h4><p><strong>Step one</strong>: as you already see in the above diagram the first part of each stack frame is the passed parameters to the callee. So all the arguments are pushed on the stack as the following codes shows:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">push arg2;</span><br><span class="line">push arg1;</span><br></pre></td></tr></table></figure>
+
+<p><code>push</code> is the assembly instruction to push data onto the stack. And usually the arguments are pushed to the stack in the reverse order that they’re declared in function.</p>
+<p><strong>Step two</strong>: the second part is the <code>Return address of the caller fn</code>, so we need to push the address of next instruction in caller function as <code>Return address</code> in callee’s stack frame. As we introduced in the last section, the address of next instruction will be stored in <code>EIP</code> register, right? The assembly code goes as following: </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">push eip;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Step three</strong>: upon entrying to the callee function, the old <code>EBP</code> value (the caller function’s base pointer address) is pushed onto the stack and then <code>EBP</code> is set to the value of <code>ESP</code>. Then the <code>ESP</code> is decremented (since the stack grows downward in stack memory) to allocate space for the local variables. And the codes goes as following:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">push ebp;</span><br><span class="line">mov ebp esp;</span><br></pre></td></tr></table></figure>
+<p><code>mov</code> - the mov instruction copies the data item referred to by its second operand into the location referred to by its first operand. </p>
+<p>So <code>mov %ebp %esp</code> just means set <code>EBP</code> a new value of <code>ESP</code>. Please note that, <code>ESP</code> value changes when data is pushed or popped onto/from the stack. But it’s always points to the top of the stack. Before this <code>mov %ebp %esp</code> instruction, <code>ESP</code> is pointing to the address just after the <code>return address of the caller</code>, and it should be the address of callee’s base pointer and just what <code>EBP</code> should store, this instruction makes sense, right?</p>
+<p>From that on, during the execution of the callee function, the passed arguments to the function are located at the positive offsets from <code>EBP</code>, and the local variables are located at the negative offsets from <code>EBP</code>, you already see this conclusion above.</p>
+<p>Inside a function, the stack would look like this: </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">| &lt;argument 2&gt;       |</span><br><span class="line">| &lt;argument 1&gt;       |</span><br><span class="line">| &lt;return address&gt;   |</span><br><span class="line">| &lt;old ebp&gt;          | &lt;&#x3D; %ebp</span><br><span class="line">| &lt;local var 1&gt;      |</span><br><span class="line">| &lt;local var 2&gt;      | &lt;&#x3D; %esp</span><br></pre></td></tr></table></figure>
+
+<h4 id="function-return"><a href="#function-return" class="headerlink" title="function return"></a>function return</h4><p><strong>Step one</strong>: upon exit from the callee function, all the function has to do is set <code>ESP</code> to the value of <code>EBP</code>. In this way can simply deallocates/releases the local variables from the stack. And then it can also expose callee’s base pointer on the top of the stack for next step operation.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mov esp, ebp;</span><br></pre></td></tr></table></figure>
+
+<p>This instruction is restoring the saved value of <code>ESP</code> upon entering the function, at that point what we did is <code>mov ebp esp</code>. Smart design, right?</p>
+<p><strong>Step two</strong>: since <code>ESP</code> already reset to the address of base pointer, next step we can simply pop the old <code>EBP</code> value from the top of stack as following: </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pop ebp;</span><br></pre></td></tr></table></figure>
+
+<p><code>pop</code> instruction retrieves the topmost value from the stack and puts the value into the second operand, in this case is <code>EBP</code>. Remember the <code>callee</code> function’s base pointer stores the <code>caller</code> function’s base pointer, so this simple <code>pop ebp</code> instruction realize EBP register restore perfactly. Great design, right?</p>
+<p><strong>Step three</strong>: next is straight forward, we need to pop the caller function return address to <code>EIP</code>.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pop eip;</span><br></pre></td></tr></table></figure>
+
+<p>Similar to step two, right? Now the system knows the next instruction (pointing to the return address in the caller function) need to run. The execution context is giving back to the caller function. </p>
+<p>Upon returning back to the caller function, it can then increase <code>ESP</code> register again to remove the passed function arguments it pushed onto the stack. At this point, the stack frames becomes the same as it was in prior to invoking the callee function. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2020/08/19/stack-frame/" data-id="ckxpuq37t001kwsmm0rweg03o" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/09/22/os-xv6-1/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          Hack operating system by xv6 project
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/07/28/linux-cpp-docker/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Use Docker container for local C++ development</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
+          </li>
+        
+          <li>
+            <a href="/2021/12/15/understand-http-1-1-client-golang-part2/">How  HTTP1.1 protocol is implemented in Golang net/http package: part two -  write HTTP message to socket</a>
+          </li>
+        
+          <li>
+            <a href="/2021/12/01/understand-http-1-1-client-golang/">How  HTTP1.1 protocol is implemented in Golang net/http package: part one - request workflow</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/27/understand-http1-1-persitent-connection-golang-part2/">Understand how HTTP/1.1 persistent connection works based on Golang: part two - concurrent requests</a>
+          </li>
+        
+          <li>
+            <a href="/2021/10/25/understand-http1-1-persistent-connection-golang/">Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2021 Chris Bao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
