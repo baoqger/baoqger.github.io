@@ -66,6 +66,63 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-https-certificate-trust" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2022/01/04/https-certificate-trust/" class="article-date">
+  <time datetime="2022-01-04T08:35:35.000Z" itemprop="datePublished">2022-01-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/01/04/https-certificate-trust/">https-certificate-trust</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>4 certificate的内容<br>PEM format<br>用openssl convert to plain text<br>大致分析它的内容</p>
+<p>５　数值签名（值得单独一篇文章）<br>How are digital signatures used and why are they important? Digital signatures are how certificates are authenticated and how you can determine whether or not to trust a certificate. </p>
+<p>ｃｈａｉｎ图<br>搞几个ｃｅｒｔｉｆｉｃａｔｅ放到ｇｉｓｔ上<br>解释ｃｈａｉｎ的逻辑</p>
+<p>压住下面几个关键点会显得更专业：<br>PKI,<br>X.509<br>Trusted chain<br>PEM format<br>digital signature</p>
+<p>一些不易察觉的知识点：<br>certificate chain 和root certificate分别在哪里？<br>为什么需要chain</p>
+<p>金句：<br>A certificate is a standard way to wrap the server’s public key, along with its identity and a signature by a trusted authority.</p>
+<p>Understanding the X.509 certificate, which is fully defined in RFC 5280, is key to making sense of those errors. Unfortunately, these certificates have a well deserved reputation of being opaque and difficult to manage. With the multitude of formats used to encode them, this reputation is rightly deserved.</p>
+<p>The certificate encodes two very important pieces of information: the server’s public key and a digital signature that can be used to confirm the certificate’s authenticity.  </p>
+<p>A hash, often using the SHA256 algorithm, is a digital fingerprint(🤔有数字指纹的说法吗？) of the data. If you change a single bit in the data, the hash will change. By computing a hash over the DER-encoded public key section of the certificate and then signing the hash with its own private key(思考🤔sign the hash? 就是加密的意思吧), the CA is giving its stamp of approval on the certifcate. This signed hash value is the signature appended to the certificate. </p>
+<p>TLS handshake （只能先general 介绍，细节的坑太多）</p>
+<p>从上面引出一些问题：</p>
+<ol>
+<li>tls同时用了对称和非对称加密(handshake用了非对称，session的过程用了对称加密)</li>
+<li>为什么对message加密要采用对称加密算法？是因为性能吗？</li>
+<li>不能直接传递public key =&gt; 所以下一个问题就是certificate的理解</li>
+<li>解析certificate的内容结构</li>
+<li>什么是digital signature? 什么是sign the hash</li>
+<li>certifcate能解决secure的哪些问题？</li>
+<li>下面就是certificate chain的问题？为什么需要trust chain?</li>
+<li>手动(用openssl)verify一个certificate</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2022/01/04/https-certificate-trust/" data-id="ckxzvkiml000xi8mm9e70305z" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-how-traceroute-works" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2021/12/24/how-traceroute-works/" class="article-date">
@@ -92,7 +149,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/12/24/how-traceroute-works/" data-id="ckxpuq37q0018wsmm2dxc3v04" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/12/24/how-traceroute-works/" data-id="ckxzvkiml000yi8mm94lj9ue0" class="article-share-link">Share</a>
       
       
     </footer>
@@ -173,7 +230,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/12/15/understand-http-1-1-client-golang-part2/" data-id="ckxpuq37u001pwsmm68eo99t0" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/12/15/understand-http-1-1-client-golang-part2/" data-id="ckxzvkimv001vi8mmbypvbf1i" class="article-share-link">Share</a>
       
       
     </footer>
@@ -279,7 +336,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/" data-id="ckxpuq37t001owsmma8u8bfl1" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/" data-id="ckxzvkimu001ri8mm4yxo7a6r" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li></ul>
@@ -353,7 +410,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/" data-id="ckxpuq37u001qwsmm6roodd6z" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/" data-id="ckxzvkimu001si8mmhce8e0ts" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li></ul>
@@ -451,7 +508,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/25/understand-http1-1-persistent-connection-golang/" data-id="ckxpuq37t001lwsmma6ob4y7r" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/25/understand-http1-1-persistent-connection-golang/" data-id="ckxzvkimu001pi8mmfiylb2tl" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li></ul>
@@ -489,7 +546,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/12/why-only-13-dns-root-server/" data-id="ckxpuq37v001uwsmmbkl3ec3w" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/12/why-only-13-dns-root-server/" data-id="ckxzvkimv001wi8mmdg7r3n2h" class="article-share-link">Share</a>
       
       
     </footer>
@@ -525,7 +582,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/08/packet-sniffer-golang/" data-id="ckxpuq37s001fwsmmd3hrcif5" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/08/packet-sniffer-golang/" data-id="ckxzvkimq001ei8mmddu5cm6x" class="article-share-link">Share</a>
       
       
     </footer>
@@ -561,7 +618,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/08/how-to-build-packet-sniffer/" data-id="ckxpuq379000hwsmm89mlh0jg" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/08/how-to-build-packet-sniffer/" data-id="ckxzvkimg000ri8mmcqivguhb" class="article-share-link">Share</a>
       
       
     </footer>
@@ -597,71 +654,9 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/08/25/cgo-golang/" data-id="ckxpuq36x0000wsmm78pweu1r" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/08/25/cgo-golang/" data-id="ckxzvkilj0000i8mmbnpkdf8y" class="article-share-link">Share</a>
       
       
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-win-wsl" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2021/08/06/win-wsl/" class="article-date">
-  <time datetime="2021-08-06T01:19:41.000Z" itemprop="datePublished">2021-08-06</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/08/06/win-wsl/">New way to set up Linux development environment in Windows with WSL</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>I like system programming which can allow you to touch more software development skills in the bottom level.  </p>
-<p>Linux is the perfect platform when you want to do system programming. But if you’re using a computer running Windows on it, then you have to spend some time to set up the Linux development environment. Generally speaking there are two traditional ways to do that: <code>virtual machine</code> and <code>dualboot</code>, both need some effort. Or you can try to do that with <code>container</code> technology, for example, I once shared one <a href="https://baoqger.github.io/2020/07/28/linux-cpp-docker/">article</a> about how to do it with <code>Docker</code>. </p>
-<p>In this article, I will introduce a new and easier way to do this without too much overhead. </p>
-<h3 id="Windows-Subsystem-for-Linux"><a href="#Windows-Subsystem-for-Linux" class="headerlink" title="Windows Subsystem for Linux"></a>Windows Subsystem for Linux</h3><p>The new way is <code>Windows Subsystem for Linux (WSL)</code>. I have to admit that the operating system is complex and difficult so for now I don’t know how Microsoft make <code>WSL</code> works. In details, you can refer to this <a href="https://devblogs.microsoft.com/commandline/a-deep-dive-into-how-wsl-allows-windows-to-access-linux-files/" target="_blank" rel="noopener">article</a> to learn how <code>WSL</code> allows Windows to access Linux files. In this article let’s focus on how to set it up and what kind of benefits it can provide to developers.</p>
-<p>Based on the <a href="https://docs.microsoft.com/en-us/windows/wsl/about" target="_blank" rel="noopener">official document</a>, with <code>WSL</code> you can</p>
-<ul>
-<li>Run common command-line tools such as <code>grep</code>, <code>sed</code>, <code>awk</code>.</li>
-<li>Run Bash shell scripts and GNU/Linux command-line applications including:<ul>
-<li>Tools: vim, emacs, tmux.</li>
-<li>Languages: NodeJS, Javascript, Python, Ruby, C/C++, C# &amp; F#, Rust, Go, etc.</li>
-<li>Services: SSHD, MySQL, Apache, lighttpd, MongoDB, PostgreSQL.</li>
-</ul>
-</li>
-<li>Install additional software using your own GNU/Linux distribution package manager.</li>
-</ul>
-<p>With these conditions, you can set up a completed Linux development environment. </p>
-<h3 id="Install-WSL"><a href="#Install-WSL" class="headerlink" title="Install WSL"></a>Install WSL</h3><p>For detail steps to install <code>WSL</code>, you can find it on the official document. Based on my experience, I follow the document to download and install Linux Ubuntu distribution smoothly, which is much easier than settig the virtual machine.</p>
-<h3 id="File-mount"><a href="#File-mount" class="headerlink" title="File mount"></a>File mount</h3><p>By default, you can also access your local machine’s file system from within the Linux Bash shell. Since your local drives are mounted under the <strong>/mnt</strong> folder of the subsystem. </p>
-<p>In this way, you can develop the code with the productivity tools in Windows and build it in Linux environment.</p>
-<h3 id="Network"><a href="#Network" class="headerlink" title="Network"></a>Network</h3><p>This is another convenient point. <code>WSL</code> shares the IP address of Windows, as it is running on Windows.<br>As such you can access any ports on localhost e.g. if you had a web server running on port 8080, you could access it just by visiting <strong><a href="http://localhost:8080" target="_blank" rel="noopener">http://localhost:8080</a></strong> into your Windows browser.</p>
-<h3 id="Set-up-the-development-environment"><a href="#Set-up-the-development-environment" class="headerlink" title="Set up the development environment"></a>Set up the development environment</h3><p>After install the Ubuntu system, I also install tools to prepare the development environment. For example, <code>GCC</code> to develop C language program as below. </p>
-<img src="/images/linux-gcc.png" title="gcc in Linux" width="800px" height="600px">
-
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>Based on my testing and experience, <code>WSL</code> can save developers’ time to set up Linux environment.  </p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/08/06/win-wsl/" data-id="ckxpuq37w001ywsmm6sok4ym5" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li></ul>
-
     </footer>
   </div>
   
@@ -687,7 +682,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
     </div>
   </div>
 
@@ -697,7 +692,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a>
+      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -706,7 +701,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li></ul>
     </div>
   </div>
 
@@ -717,6 +712,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2022/01/04/https-certificate-trust/">https-certificate-trust</a>
+          </li>
         
           <li>
             <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
@@ -734,10 +733,6 @@
             <a href="/2021/10/27/understand-http1-1-persitent-connection-golang-part2/">Understand how HTTP/1.1 persistent connection works based on Golang: part two - concurrent requests</a>
           </li>
         
-          <li>
-            <a href="/2021/10/25/understand-http1-1-persistent-connection-golang/">Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests</a>
-          </li>
-        
       </ul>
     </div>
   </div>
@@ -750,7 +745,7 @@
   
   <div class="outer">
     <div id="footer-info" class="inner">
-      &copy; 2021 Chris Bao<br>
+      &copy; 2022 Chris Bao<br>
       Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
     </div>
   </div>
