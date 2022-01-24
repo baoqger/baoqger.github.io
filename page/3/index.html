@@ -66,6 +66,114 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-golang-sync-cond" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/05/14/golang-sync-cond/" class="article-date">
+  <time datetime="2021-05-14T02:14:18.000Z" itemprop="datePublished">2021-05-14</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/05/14/golang-sync-cond/">golang-sync-cond</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2021/05/14/golang-sync-cond/" data-id="ckys3m11c000mq8mmcm662iqq" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-golang-sync-once" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/05/11/golang-sync-once/" class="article-date">
+  <time datetime="2021-05-11T12:07:55.000Z" itemprop="datePublished">2021-05-11</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/05/11/golang-sync-once/"> Golang synchronization primitives source code analysis: part one - sync.Once</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the following series of posts, I will take an in-depth look at the <code>synchronization primitives</code> provided by Golang. </p>
+<p>Although the recommended synchronization mechanism in Golang is <code>channel</code>, there are several powerful <code>synchronization primitives</code> provided in Golang <code>sync</code> package. Based on the official document, <strong>Other than the Once and WaitGroup types, most are intended for use by low-level library routines</strong>. If you read the code of low-level open source projects or the standard packages, you will see synchronization primitives in <code>sync</code> package frequently. </p>
+<p>As the first post in this series, let’s check the source code of <code>sync.Once</code>, which is also the simplest one.</p>
+<h3 id="sync-Once"><a href="#sync-Once" class="headerlink" title="sync.Once"></a>sync.Once</h3><p>If you have several logics running in various go-routines, and you want only one of the logics will execute finally. For this kind of scenario, <code>sync.Once</code> is a perfect option for you. </p>
+<p>Let’s review the source code of <code>sync.Once</code> defined inside the <code>once.go</code> file: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> sync</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"sync/atomic"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Once <span class="keyword">struct</span> &#123;</span><br><span class="line">	done <span class="keyword">uint32</span></span><br><span class="line">	m    Mutex</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(o *Once)</span> <span class="title">Do</span><span class="params">(f <span class="keyword">func</span>()</span>)</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> atomic.LoadUint32(&amp;o.done) == <span class="number">0</span> &#123;</span><br><span class="line">		o.doSlow(f)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(o *Once)</span> <span class="title">doSlow</span><span class="params">(f <span class="keyword">func</span>()</span>)</span> &#123;</span><br><span class="line">	o.m.Lock()</span><br><span class="line">	<span class="keyword">defer</span> o.m.Unlock()</span><br><span class="line">	<span class="keyword">if</span> o.done == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">defer</span> atomic.StoreUint32(&amp;o.done, <span class="number">1</span>)</span><br><span class="line">		f()</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Struct <code>Once</code> has a status flag <code>done</code> whose value is <code>0</code> when initialized. Wrap the logic you want to execute in a function <code>f</code>, and pass this function <code>f</code> to the <code>Do()</code> method. When <code>Do</code> is called for the first time, the logic in <code>f</code> executes after that <code>done</code> flag is set to <code>1</code>, other calls to <code>Do</code> don’t execute <code>f</code>. </p>
+<p>One misleading point is  <strong>If <code>once.Do(f)</code> is called multiple times, only the first call will invoke <code>f</code>, even if <code>f</code> has a different value in each invocation</strong>. Check the following example:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"sync"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> doOnce sync.Once</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">go</span> TaskOne()</span><br><span class="line">	<span class="keyword">go</span> TaskTwo()</span><br><span class="line">	time.Sleep(time.Second)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">PrintTask</span><span class="params">(id <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">	fmt.Printf(<span class="string">"Task %d, Run once\n"</span>, id)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TaskOne</span><span class="params">()</span></span> &#123;</span><br><span class="line">	doOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		PrintTask(<span class="number">1</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	fmt.Println(<span class="string">"Run this every time"</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TaskTwo</span><span class="params">()</span></span> &#123;</span><br><span class="line">	doOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		PrintTask(<span class="number">2</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	fmt.Println(<span class="string">"Run this every time"</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Even <code>Do</code> is called twice with different <code>f</code> logic, but only the first call is invoked since they are bound to the same instance of <code>Once</code>. </p>
+<h3 id="fast-path-and-slow-path"><a href="#fast-path-and-slow-path" class="headerlink" title="fast path and slow path"></a>fast path and slow path</h3><p>As you saw above, the implementation of <code>sync.Once</code> is not complex. But one question comes to my mind when I double check the code. Why do we need split the logics into two functions <code>Do</code> and <code>doSlow</code>? Why the second function name is <code>doSlow</code>, and what does <code>slow</code> mean here?</p>
+<p>Do you have similar questions? </p>
+<p>I found the answer in the comments of <code>once.go</code> file. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> atomic.LoadUint32(&amp;o.done) == <span class="number">0</span> &#123;</span><br><span class="line">	<span class="comment">// Outlined slow-path to allow inlining of the fast-path.</span></span><br><span class="line">	o.doSlow(f)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Note that it mentioned two words: <code>fast path</code> and <code>slow path</code>. </p>
+<ul>
+<li>Fast path is a term used in computer science to describe a path with shorter instruction path length through a program compared to the ‘normal’ path. For a fast path to be effective it must handle the most commonly occurring tasks more efficiently than the ‘normal’ path, leaving the latter to handle uncommon cases, corner cases, error handling, and other anomalies. <strong>Fast paths are a form of optimization</strong>. </li>
+</ul>
+<p>In the <code>Once</code> case, since the first call to <code>Do</code> function will set <code>done</code> to 1, so the most common case or status for <code>Once</code> is the <code>done</code> flag equals to 1. The <code>fast path</code> in <code>Do</code> function is just for this common case. While the <code>done</code> flag equals to initial status 0 can be regarded as uncommon case, which is specially handled in the <code>doSlow</code> function. The performance can be optimized in this way.</p>
+<h3 id="hot-path"><a href="#hot-path" class="headerlink" title="hot path"></a>hot path</h3><p>Another very interesting concept worth mentioning is <code>hot path</code>, and it occurs in the <code>Once</code> struct design.</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Once <span class="keyword">struct</span> &#123;</span><br><span class="line">	<span class="comment">// done indicates whether the action has been performed.</span></span><br><span class="line">	<span class="comment">// It is first in the struct because it is used in the hot path.</span></span><br><span class="line">	<span class="comment">// The hot path is inlined at every call site.</span></span><br><span class="line">	<span class="comment">// Placing done first allows more compact instructions on some architectures (amd64/x86),</span></span><br><span class="line">	<span class="comment">// and fewer instructions (to calculate offset) on other architectures.</span></span><br><span class="line">	done <span class="keyword">uint32</span></span><br><span class="line">	m    Mutex</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>At first glance, it’s just plain and ordinary struct, but the comments emphasize that <code>done</code> <strong>is first in the struct because it is used in the hot path</strong>. It means that <code>done</code> is defined as the first field in <code>Once</code> struct on purpose. And the purpose is also described in the comment <strong>Placing done first allows more compact instructions on some architectures (amd64/x86), and fewer instructions (to calculate offset) on other architectures.</strong></p>
+<p>What does that mean? I found a great answer in this <a href="https://stackoverflow.com/questions/59174176/what-does-hot-path-mean-in-the-context-of-sync-once" target="_blank" rel="noopener">post</a>. The conclusion is:</p>
+<ul>
+<li><p>A <code>hot path</code> is a sequence of instructions executed very frequently.</p>
+</li>
+<li><p>When accessing the first field of a structure, we can directly dereference the pointer to the structure to access the first field. To access other fields, we need to provide an <code>offset</code> from the first value in addition to the struct pointer.</p>
+</li>
+<li><p>In machine code, this offset is an additional value to pass with the instruction which makes it longer. The performance impact is that the CPU must perform an addition of the offset to the struct pointer to get the address of the value to access.</p>
+</li>
+<li><p>Thus machine code to <code>access the first field of a struct is more compact and faster</code>.</p>
+</li>
+</ul>
+<p>Simply speaking, accessing the first field of a struct is faster since the CPU doesn’t need to compute the memory offset!</p>
+<p>This is really a good lesson to show the high-level code you programmed can have such a big difference in the bottom level.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2021/05/11/golang-sync-once/" data-id="ckys3m11g000wq8mm67ly33ro" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-golang-context-source-code-part2" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2021/04/28/golang-context-source-code-part2/" class="article-date">
@@ -126,7 +234,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/04/28/golang-context-source-code-part2/" data-id="cky82h20n0007domm1qzi6h9p" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/04/28/golang-context-source-code-part2/" data-id="ckys3m11b000kq8mm1tl20c3t" class="article-share-link">Share</a>
       
       
     </footer>
@@ -234,7 +342,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/04/26/golang-context-source-code/" data-id="cky82h20p000cdommh8pi8urr" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/04/26/golang-context-source-code/" data-id="ckys3m11a000gq8mm5n7e8nvt" class="article-share-link">Share</a>
       
       
     </footer>
@@ -321,7 +429,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/04/04/golang-bytes-buffer/" data-id="cky82h20n0008dommg1p7hyx3" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/04/04/golang-bytes-buffer/" data-id="ckys3m11a000fq8mmhir4f2hc" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li></ul>
@@ -359,7 +467,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/03/31/go-module/" data-id="cky82h20j0002domm8vky5jkw" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/03/31/go-module/" data-id="ckys3m118000bq8mmdvghcvo0" class="article-share-link">Share</a>
       
       
     </footer>
@@ -407,7 +515,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/02/20/fabio-golang-best-practise/" data-id="cky82h20k0004dommefxbdof9" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/02/20/fabio-golang-best-practise/" data-id="ckys3m1150005q8mm4txaf9xh" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li></ul>
@@ -502,7 +610,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/02/06/golang-package-module/" data-id="cky82h20p000ddomm35eo2qdv" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/02/06/golang-package-module/" data-id="ckys3m11b000jq8mm4x0f0vqr" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li></ul>
@@ -603,7 +711,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/01/29/fabio-source-code-study/" data-id="cky82h20l0005domm7841fhvs" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/01/29/fabio-source-code-study/" data-id="ckys3m118000aq8mm0j9894r9" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li></ul>
@@ -682,128 +790,10 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/" data-id="cky82h20q000fdommc0u8hib4" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/" data-id="ckys3m11d000sq8mmdml17qr5" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-svg-data-vis" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2020/12/01/svg-data-vis/" class="article-date">
-  <time datetime="2020-12-01T00:44:04.000Z" itemprop="datePublished">2020-12-01</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/12/01/svg-data-vis/">svg-data-vis</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/12/01/svg-data-vis/" data-id="cky82h217001qdomm464jfpgc" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-golang-service-discovery-consul" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2020/11/16/golang-service-discovery-consul/" class="article-date">
-  <time datetime="2020-11-16T01:22:23.000Z" itemprop="datePublished">2020-11-16</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/11/16/golang-service-discovery-consul/">Service registry and discovery in Golang Cloud-Native microservice with Consul and Docker</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In this post, I will give a real demo application to show how to do service registration and discovery in <code>Cloud-Native</code> microservice architecture based on <code>Consul</code> and <code>Docker</code>. And the service is developed in <code>Golang</code> language.</p>
-<p>It will cover the following technical points:</p>
-<ul>
-<li>Integrate Consul with Golang application for service registration</li>
-<li>Integrate Consul with Golang application for service discovery</li>
-<li>Configure and Run the microservices with Docker(docker-compose)</li>
-</ul>
-<p>As you can see, this post will cover several critical concepts and interesting tools. I will do a quick and brief introduction of them. </p>
-<ul>
-<li><p><strong>Cloud-Native</strong>: this is another buzzword in the software industry. One of the key attributes of Cloud-Native application is <code>containerized</code>. To be considered cloud native, an application must be <code>infrastructure agnostic</code> and use containers. Containers provide applications the ability to run as a stand-alone environment able to move in and out of the cloud and have no dependencies on any certain cloud provider. </p>
-</li>
-<li><p><strong>Service Registration and Service Discovery</strong>: in the microservices application, each service needs to call other services. In order to make a request, your service needs to know the network address of a service instance. In a cloud-based microservices application, the network location is dynamically assigned. So your application needs a service discovery mechanism. On the other hand, the service registry acts as a database storing the available service instances.</p>
-</li>
-<li><p><strong>Consul</strong>: Consul is the tool we used in this demo application for service registry and discovery. Consul is a member in <code>CNCF(Cloud Native Computing Foundation)</code>. I will try to write a post to analyze its source code in the future.</p>
-</li>
-<li><p><strong>Docker-compose</strong>: is a tool to run multi-container applications on Docker. It allows different containers can communicate with each other. In this post, I will show you how to use it as well. </p>
-</li>
-</ul>
-<p>All the code and config file can be found in this <a href="https://github.com/baoqger/service-discovery-demo" target="_blank" rel="noopener">github repo</a>, please checkout the <code>service-discovery</code> branch for this post’s demo. </p>
-<h3 id="Service-registry-and-discovery-demo"><a href="#Service-registry-and-discovery-demo" class="headerlink" title="Service registry and discovery demo"></a>Service registry and discovery demo</h3><p>To explain service registry and discovery, I will run a simple <code>helloworld</code> server and a client which keeps sending requests to the server every 10 seconds. The demo <code>helloworld</code> server will register itself in <code>Consul</code>, and this process is just service registry. On the other side, before the client sends a request to the server, it will first send a request to <code>Consul</code> and find the address of the server. This process is just service discovery.  OK, let’s show some code. </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"log"</span></span><br><span class="line">	<span class="string">"net/http"</span></span><br><span class="line">	<span class="string">"os"</span></span><br><span class="line">	<span class="string">"strconv"</span></span><br><span class="line"></span><br><span class="line">	consulapi <span class="string">"github.com/hashicorp/consul/api"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	serviceRegistryWithConsul()</span><br><span class="line">	log.Println(<span class="string">"Starting Hello World Server..."</span>)</span><br><span class="line">	http.HandleFunc(<span class="string">"/helloworld"</span>, helloworld)</span><br><span class="line">	http.HandleFunc(<span class="string">"/check"</span>, check)</span><br><span class="line">	http.ListenAndServe(getPort(), <span class="literal">nil</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">serviceRegistryWithConsul</span><span class="params">()</span></span> &#123;</span><br><span class="line">	config := consulapi.DefaultConfig()</span><br><span class="line">	consul, err := consulapi.NewClient(config)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Println(err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	serviceID := <span class="string">"helloworld-server"</span></span><br><span class="line">	port, _ := strconv.Atoi(getPort()[<span class="number">1</span>:<span class="built_in">len</span>(getPort())])</span><br><span class="line">	address := getHostname()</span><br><span class="line"></span><br><span class="line">	registration := &amp;consulapi.AgentServiceRegistration&#123;</span><br><span class="line">		ID:      serviceID,</span><br><span class="line">		Name:    <span class="string">"helloworld-server"</span>,</span><br><span class="line">		Port:    port,</span><br><span class="line">		Address: address,</span><br><span class="line">		Check: &amp;consulapi.AgentServiceCheck&#123;</span><br><span class="line">			HTTP:     fmt.Sprintf(<span class="string">"http://%s:%v/check"</span>, address, port),</span><br><span class="line">			Interval: <span class="string">"10s"</span>,</span><br><span class="line">			Timeout:  <span class="string">"30s"</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	regiErr := consul.Agent().ServiceRegister(registration)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> regiErr != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Printf(<span class="string">"Failed to register service: %s:%v "</span>, address, port)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		log.Printf(<span class="string">"successfully register service: %s:%v"</span>, address, port)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">helloworld</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">	log.Println(<span class="string">"helloworld service is called."</span>)</span><br><span class="line">	w.WriteHeader(http.StatusOK)</span><br><span class="line">	fmt.Fprintf(w, <span class="string">"Hello world."</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">check</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">	w.WriteHeader(http.StatusOK)</span><br><span class="line">	fmt.Fprintf(w, <span class="string">"Consul check"</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getPort</span><span class="params">()</span> <span class="params">(port <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	port = os.Getenv(<span class="string">"PORT"</span>)</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(port) == <span class="number">0</span> &#123;</span><br><span class="line">		port = <span class="string">"8080"</span></span><br><span class="line">	&#125;</span><br><span class="line">	port = <span class="string">":"</span> + port</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getHostname</span><span class="params">()</span> <span class="params">(hostname <span class="keyword">string</span>)</span></span> &#123;</span><br><span class="line">	hostname, _ = os.Hostname()</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h5 id="server-go"><a href="#server-go" class="headerlink" title="server.go"></a><strong><code>server.go</code></strong></h5><p>The above <code>server.go</code> file contains many codes, but most of them are easy, and just for setting up the server and handling the request. </p>
-<p>The interesting part is inside function <code>serviceRegistryWithConsul</code>. Consul provides APIs to register service by configuring the necessary information. For now, we can focus on two fields, the first one is <code>ID</code> which is unique for each service and we also use it for search the target service in the discovery process. The second one is <code>Check</code>, which means <code>health check</code>. Consul provides this helpful functionality. In the real microservices application, each service may have multiple instances to handle the increased requests when the concurrency is high, this is called <code>scalability</code>. But some instances may go down or throw exceptions, in service discovery we want to filter these instances out. Health check in Consul is just for this purpose. I will show you how to do that in the <a href="https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/">next post</a>.  </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"io/ioutil"</span></span><br><span class="line">	<span class="string">"net/http"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line"></span><br><span class="line">	consulapi <span class="string">"github.com/hashicorp/consul/api"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> url <span class="keyword">string</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	serviceDiscoveryWithConsul()</span><br><span class="line">	fmt.Println(<span class="string">"Starting Client."</span>)</span><br><span class="line">	<span class="keyword">var</span> client = &amp;http.Client&#123;</span><br><span class="line">		Timeout: time.Second * <span class="number">30</span>,</span><br><span class="line">	&#125;</span><br><span class="line">	callServerEvery(<span class="number">10</span>*time.Second, client)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">serviceDiscoveryWithConsul</span><span class="params">()</span></span> &#123;</span><br><span class="line">	config := consulapi.DefaultConfig()</span><br><span class="line">	consul, error := consulapi.NewClient(config)</span><br><span class="line">	<span class="keyword">if</span> error != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(error)</span><br><span class="line">	&#125;</span><br><span class="line">	services, error := consul.Agent().Services()</span><br><span class="line">	<span class="keyword">if</span> error != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(error)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	service := services[<span class="string">"helloworld-server"</span>]</span><br><span class="line">	address := service.Address</span><br><span class="line">	port := service.Port</span><br><span class="line">	url = fmt.Sprintf(<span class="string">"http://%s:%v/helloworld"</span>, address, port)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">hello</span><span class="params">(t time.Time, client *http.Client)</span></span> &#123;</span><br><span class="line">	response, err := client.Get(url)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	body, _ := ioutil.ReadAll(response.Body)</span><br><span class="line">	fmt.Printf(<span class="string">"%s. Time is %v\n"</span>, body, t)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">callServerEvery</span><span class="params">(d time.Duration, client *http.Client)</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> x := <span class="keyword">range</span> time.Tick(d) &#123;</span><br><span class="line">		hello(x, client)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h5 id="client-go"><a href="#client-go" class="headerlink" title="client.go"></a><strong><code>client.go</code></strong></h5><p>Similarly, in the <code>client.go</code> file, the only key part is <code>serviceDiscoveryWithConsul</code> function. Based on the Consul APIs, we can find out all the services. With the target service id (in this demo is <code>helloworld-server</code>) which is set in the registration part, we can easily find out the address. </p>
-<p>The above parts show how to do the service registry and discovery in a completed demo. It makes use of Consul APIs a lot, I didn’t give too many explanations on that, since you can find out more detailed information in the document. </p>
-<p>In the next section, I will show you how to run this demo application in a Cloud-Native way based on Docker and Docker-compose. </p>
-<h3 id="Containerization"><a href="#Containerization" class="headerlink" title="Containerization"></a>Containerization</h3><p>First let’s create Dockerfile for the server as following:</p>
-<figure class="highlight docker"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">FROM</span> golang:<span class="number">1.14</span>.<span class="number">1</span>-alpine</span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> apk update &amp;&amp; apk upgrade &amp;&amp; apk add --no-cache bash git</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> go get github.com/hashicorp/consul/api</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ENV</span> SOURCES /go/src/github.com/baoqger/service-discovery-demo/</span><br><span class="line"><span class="keyword">COPY</span><span class="bash"> . <span class="variable">$&#123;SOURCES&#125;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> <span class="built_in">cd</span> <span class="variable">$&#123;SOURCES&#125;</span>server/ &amp;&amp; CGO_ENABLED=0 go build</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ENV</span> CONSUL_HTTP_ADDR localhost:<span class="number">8500</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="bash"> <span class="variable">$&#123;SOURCES&#125;</span>server/</span></span><br><span class="line"><span class="keyword">CMD</span><span class="bash"> <span class="variable">$&#123;SOURCES&#125;</span>server/server</span></span><br></pre></td></tr></table></figure>
-<h5 id="Dockerfile-for-server-go"><a href="#Dockerfile-for-server-go" class="headerlink" title="Dockerfile for server.go"></a><strong><code>Dockerfile</code> for server.go</strong></h5><p>This part is straightforward, if you don’t understand some of the commands used here please check the Docker’s manual. </p>
-<p>I will not show the Dockerfile for the client any more, since it’s nearly the same as the above one. But you can find it in this <a href="https://github.com/baoqger/service-discovery-demo" target="_blank" rel="noopener">github repo</a>.</p>
-<p>Now we have both server and client running in containers. We need add the Consul into this application as well, and connect these 3 containers together. We do this with Docker-compose. </p>
-<p>Docker-compose is driven by the <code>yml</code> file. In our case, it goes as following:</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">'2'</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span> </span><br><span class="line">  <span class="attr">consul:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">consul:0.8.3</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">"8500:8500"</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-net</span></span><br><span class="line">      </span><br><span class="line">  <span class="attr">helloworld-server:</span></span><br><span class="line">    <span class="attr">build:</span></span><br><span class="line">      <span class="attr">context:</span> <span class="string">.</span></span><br><span class="line">      <span class="attr">dockerfile:</span> <span class="string">server/Dockerfile</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">helloworld-server:1.0.1</span></span><br><span class="line">    <span class="attr">environment:</span> </span><br><span class="line">      <span class="bullet">-</span> <span class="string">CONSUL_HTTP_ADDR=consul:8500</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">consul</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-net</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">helloworld-client:</span></span><br><span class="line">    <span class="attr">build:</span></span><br><span class="line">      <span class="attr">context:</span> <span class="string">.</span></span><br><span class="line">      <span class="attr">dockerfile:</span> <span class="string">client/Dockerfile</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">helloworld-client:1.0.1</span></span><br><span class="line">    <span class="attr">environment:</span> </span><br><span class="line">      <span class="bullet">-</span> <span class="string">CONSUL_HTTP_ADDR=consul:8500</span> </span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">consul</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">helloworld-server</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-net</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">my-net:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br></pre></td></tr></table></figure>
-
-<p>There are several points need to mention about docker-compose usages:</p>
-<ul>
-<li><strong>networks</strong>: we define a network called <code>my-net</code>, and use it in all of the 3 services to make them can talk with each other. </li>
-<li><strong>environment</strong>: we can set up the environment variable in this part. In our case, both server and client need to send requests to Consul for registry and discovery, right? You can check the server and client file, we didn’t set the Consul address explicitly. Since Consul do it in an implicit way, it will get the value from the environment variable named <code>CONSUL_HTTP_ADDR</code>. We set it up with <code>CONSUL_HTTP_ADDR=consul:8500</code>. </li>
-<li><strong>docker-compose up</strong>: this is the command all you need to launch the application. Another helpful command is <code>docker-compose build</code> which is used to build the image defined in the yml file. Of course, <code>docker-compose down</code> can stop the containers when you want to leave the application. </li>
-</ul>
-<p>Everything is setted up, you can verify the result both in the terminal and Consul UI as following:</p>
-<p><img src="/images/service-discovery.png" alt="service-discovery"></p>
-<p><img src="/images/consul-ui.png" alt="consul-ui"></p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/11/16/golang-service-discovery-consul/" data-id="cky82h20u000pdommfjzzemdd" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li></ul>
 
     </footer>
   </div>
@@ -830,7 +820,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
     </div>
   </div>
 
@@ -840,7 +830,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 10px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 10px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -849,7 +839,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
     </div>
   </div>
 
@@ -862,6 +852,14 @@
       <ul>
         
           <li>
+            <a href="/2022/01/20/extern-in-c/">extern-in-c</a>
+          </li>
+        
+          <li>
+            <a href="/2022/01/12/md5-implementation/">md5-implementation</a>
+          </li>
+        
+          <li>
             <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
           </li>
         
@@ -871,14 +869,6 @@
         
           <li>
             <a href="/2021/12/01/understand-http-1-1-client-golang/">How  HTTP1.1 protocol is implemented in Golang net/http package: part one - request workflow</a>
-          </li>
-        
-          <li>
-            <a href="/2021/10/27/understand-http1-1-persitent-connection-golang-part2/">Understand how HTTP/1.1 persistent connection works based on Golang: part two - concurrent requests</a>
-          </li>
-        
-          <li>
-            <a href="/2021/10/25/understand-http1-1-persistent-connection-golang/">Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests</a>
           </li>
         
       </ul>
