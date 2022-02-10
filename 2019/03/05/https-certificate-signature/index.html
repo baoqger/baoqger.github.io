@@ -18,7 +18,7 @@
 <meta property="og:image" content="https://baoqger.github.io/images/https-signature-hash.png">
 <meta property="og:image" content="https://baoqger.github.io/images/https-signature-key-identity.png">
 <meta property="article:published_time" content="2019-03-05T08:00:47.000Z">
-<meta property="article:modified_time" content="2022-01-24T02:55:31.992Z">
+<meta property="article:modified_time" content="2022-02-10T01:52:07.488Z">
 <meta property="article:author" content="Chris Bao">
 <meta property="article:tag" content="digital signature, hash function">
 <meta name="twitter:card" content="summary">
@@ -99,18 +99,18 @@
 <h3 id="Digital-Signature"><a href="#Digital-Signature" class="headerlink" title="Digital Signature"></a>Digital Signature</h3><p>The concept of <code>digital signature</code> can be illustrated as follows: </p>
 <img src="/images/https-signature-process.png" title="digital signature process" width="600px" height="400px">
 
-<p>When the server sends a message to the client, how can we prevent the attackers from eavesdropping on the message? The server can attach its signature to it, and the client can accept the message only if the verification of the certificate passes. So this process can be divided into two parts: <code>sign the message to get the digital signature</code> and <code>verify the digital signature</code>.</p>
+<p>When the server sends a message to the client, how can we prevent the attackers from eavesdropping on the message? The solution is that the server attaches its signature to the message, and the client accepts the message only if the verification of the certificate passes. So this process can be divided into two parts: <code>sign the message to get the digital signature</code> and <code>verify the digital signature</code>.</p>
 <ul>
 <li><p><strong>Sign the message</strong>: means <code>hash</code> the message and <code>encrypt</code> the hash with the server’s private key. The encrypted hash is called <code>digital signature</code>. </p>
 </li>
-<li><p><strong>Verify the signature</strong>: means <code>decrypt</code> the signature with the server’s public key to get the hash, <code>re-compute</code> the other hash of the message, and compare the identity of two hashes.</p>
+<li><p><strong>Verify the signature</strong>: means <code>decrypt</code> the signature with the server’s public key to get the hash, <code>re-compute</code> the hash of the message again, and compare the identity of two hashes.</p>
 </li>
 </ul>
 <p>What can we benefit from signing and verifying the digital signature? To verify the digital signature is to confirm two things: </p>
 <ul>
 <li><p><strong>Message Integrity</strong>: the message has not changed since the signature was attached because it is based on a  <code>cryptographic hash</code> of the message. </p>
 </li>
-<li><p><strong>Proof of Origin</strong>: the signature belongs to the person who alone has access to the private key. The recipient of the message must be sure of the origin of the message.</p>
+<li><p><strong>Proof of Origin</strong>: the signature belongs to the person who alone has access to the private key. In this way, the recipient of the message can be sure of the origin of the message.</p>
 </li>
 </ul>
 <p>Information security has other attributes, but integrity and authentication are the two traits you must know.</p>
@@ -131,7 +131,7 @@
 <img src="/images/https-signature-key-identity.png" title="Hash is irreversible" width="800px" height="600px">
 
 <p>The short answer is No. </p>
-<p>When the client gets the digital signature, the first is to <code>decrypt</code> it. The decryption breaks for this new attack because the forged signature is signed with the attacker’s private key instead of the server’s private key. </p>
+<p>When the client gets the digital signature, the first step is to <code>decrypt</code> it. The decryption breaks for this new attack because the forged signature is signed with the attacker’s private key instead of the server’s private key. </p>
 <p><strong>It’s impossible for anybody except the owner of the private key to generate something that can be decrypted using the public key.</strong> This is the nature of public-key cryptography. I will write other articles to explain it mathematically in the future.  </p>
 <p>In a word, the private key can prove identity.</p>
 <h3 id="How-does-signature-make-certificate-secure"><a href="#How-does-signature-make-certificate-secure" class="headerlink" title="How does signature make certificate secure?"></a>How does signature make certificate secure?</h3><p>The digital signature is not designed only for TLS certificates, and it has other applications, which is not the focus of my article. The important thing is to understand how to apply digital signature in the PKI framework and how it makes certificates more secure. </p>
@@ -151,7 +151,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="ckys3m11j0015q8mm1m9zhhmj" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="ckzgc2bw9001c6gmm9lqq42w3" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li></ul>
@@ -212,7 +212,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
     </div>
   </div>
 
@@ -225,6 +225,14 @@
       <ul>
         
           <li>
+            <a href="/2022/02/07/stack-smashing-detect-in-c/">stack-smashing-detect-in-c</a>
+          </li>
+        
+          <li>
+            <a href="/2022/01/28/how-to-implement-arp-spoof/">how-to-implement-arp-spoof</a>
+          </li>
+        
+          <li>
             <a href="/2022/01/20/extern-in-c/">extern-in-c</a>
           </li>
         
@@ -234,14 +242,6 @@
         
           <li>
             <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
-          </li>
-        
-          <li>
-            <a href="/2021/12/15/understand-http-1-1-client-golang-part2/">How  HTTP1.1 protocol is implemented in Golang net/http package: part two -  write HTTP message to socket</a>
-          </li>
-        
-          <li>
-            <a href="/2021/12/01/understand-http-1-1-client-golang/">How  HTTP1.1 protocol is implemented in Golang net/http package: part one - request workflow</a>
           </li>
         
       </ul>
