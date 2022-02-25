@@ -66,6 +66,71 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-why-tcp-four-way-handshake" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/12/14/why-tcp-four-way-handshake/" class="article-date">
+  <time datetime="2018-12-14T08:34:58.000Z" itemprop="datePublished">2018-12-14</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/12/14/why-tcp-four-way-handshake/">Why TCP connection termination needs four-way handshake</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In <code>TCP/IP</code> protocol stack, the <code>three way handshake</code> for connection establishment and <code>four way handshake</code> for connection termination are some concepts you must understand.</p>
+<p>But after I learned <code>TCP/IP</code> stack, one question coming to my mind is why the connection termination needs four-way handshake. In this article, I will focus on this topic. To understand the answer to this question, we need to first explain the details of these two processes and compare them to find the difference. </p>
+<h3 id="TCP-connection-establishment"><a href="#TCP-connection-establishment" class="headerlink" title="TCP connection establishment"></a>TCP connection establishment</h3><p>In contrast to <code>UDP</code>, TCP is a <code>connection-oriented</code> and <code>reliable full duplex</code> protocol, which requires a logical connection to be established between the two processes before data is exchanged. The connection must be maintained during the entire process that communication is taking place. And in TCP both sides can send data to its peer. </p>
+<p>So four things need to happen for fully establishing a TCP connection:</p>
+<ul>
+<li>Each node has send a <code>SYN</code> flag to its peer (that’s two things, one <code>SYN</code> in each direction)</li>
+<li>Each node has received a <code>ACK</code> flag of its own <code>SYN</code> flag from its peer  (that’s two things) </li>
+</ul>
+<p>Both <code>SYN</code> and <code>ACK</code> are properties in <code>TCP</code> header, where <code>SYN</code> means <code>synchronization</code> and <code>ACK</code> means <code>acknowledgement</code>. In detail the process goes as follows:</p>
+<p>Firstly, the client sends the <code>SYN: 1</code> packet to server to start the connection. When the server receives the packet, it will send the <code>ACK: 1</code> packet to client to confirm that. Since in the TCP protocol, the server can also send data to the client. So the server needs to send the <code>SYN: 1</code> packet to the client as well. Finally, when the client sends the <code>ACK: 1</code> packet to the server. The establishment process is done, which goes as follows: </p>
+<img src="/images/tcp-establishment-4-packets.png" title="tcp establishment with four packets" width="600px" height="400px">
+
+<p>Note that the server sends two packets: <code>ACK: 1</code> and <code>SYN: 1</code> in sequence. Why not combine these two packets into one to have a better network performance? So the common implementation of TCP protocol  goes as follows:</p>
+<img src="/images/tcp-establishment-3-packets.png" title="tcp establishment with three packets" width="600px" height="400px">
+
+<p><strong>Note</strong>: besides <code>SYN</code> and <code>ACK</code> flag, in the establishment stage there are other fields need to be set in TCP header such as: <code>sequence number</code> and <code>window</code>. I will discuss these important TCP header fields in other articles.</p>
+<h3 id="TCP-connection-termination"><a href="#TCP-connection-termination" class="headerlink" title="TCP connection termination"></a>TCP connection termination</h3><p>When the data stream transportation (I will not cover this part in this article) is over, we need to terminate the TCP connection. </p>
+<p>Same as above, four things need to happen for fully terminating a TCP connection:</p>
+<ul>
+<li>Each node has send a <code>FIN</code> flag to its peer (that’s two things, one <code>FIN</code> in each direction)</li>
+<li>Each node has received a <code>ACK</code> flag of its own <code>FIN</code> flag from its peer  (that’s two things) </li>
+</ul>
+<img src="/images/tcp_termination.png" title="tcp termination" width="600px" height="400px">
+
+<p>But the difference is that in most TCP implementation, four packets are used to terminate the connection. We didn’t combine the <code>ACK: 1</code> packet (marked as ②) and the <code>FIN: 1</code> packet (marked as ③) into one packet. </p>
+<p>The reason is <code>ACK: 1</code> packet (marked as ②) is send by TCP stack automatically. And the next <code>FIN: 1</code> packet (marked as ③) is controlled in application level by calling <code>close</code> socket API. Application has the control to terminate the connection. So in common case, we didn’t merge this two packets into one. </p>
+<p>It’s flexible for the application to control this process, for example, in this way the application can reuse existing TCP connection to reduce the overhead and improve the performance. In next article, I will talk about this topic.  </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2018/12/14/why-tcp-four-way-handshake/" data-id="cl01tctiz002djcmm028s6afx" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-array-pointer-similarities-c" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2018/11/12/array-pointer-similarities-c/" class="article-date">
@@ -92,7 +157,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2018/11/12/array-pointer-similarities-c/" data-id="ckzkmc7jq00027kmm1f4ia6c6" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2018/11/12/array-pointer-similarities-c/" data-id="cl01tctht0002jcmmdcvec052" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li></ul>
@@ -154,6 +219,10 @@
       <ul>
         
           <li>
+            <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/">how-to-implement-libpcap-on-linux-with-raw-socket</a>
+          </li>
+        
+          <li>
             <a href="/2022/02/07/stack-smashing-detect-in-c/">stack-smashing-detect-in-c</a>
           </li>
         
@@ -167,10 +236,6 @@
         
           <li>
             <a href="/2022/01/12/md5-implementation/">md5-implementation</a>
-          </li>
-        
-          <li>
-            <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
           </li>
         
       </ul>

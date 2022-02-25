@@ -66,6 +66,101 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-golang-package-module" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/02/06/golang-package-module/" class="article-date">
+  <time datetime="2021-02-05T22:55:52.000Z" itemprop="datePublished">2021-02-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/02/06/golang-package-module/">Golang package</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In this post, I’ll talk about Golang package based on my learning and use experience. </p>
+<p>You’ll learn the following topics in this post:</p>
+<ul>
+<li>Basics about Go package</li>
+<li>How to use and import a Go package</li>
+<li>Demo with real-world Go package</li>
+</ul>
+<h2 id="Basics-about-Go-package"><a href="#Basics-about-Go-package" class="headerlink" title="Basics about Go package"></a>Basics about Go package</h2><h4 id="What’s-Go-package"><a href="#What’s-Go-package" class="headerlink" title="What’s Go package"></a>What’s Go package</h4><p>Simply speaking, <code>Go package</code> provides a solution to the requirement of <code>code reuse</code>, which is an important part of software engineering. </p>
+<p>In Golang’s official document, the definition of packages goes as following: </p>
+<blockquote>
+<p>Go programs are organized into packages. A package is a collection of source files in the same directory that are compiled together. Functions, types, variables, and constants defined in one source file are visible to all other source files within the same package.</p>
+</blockquote>
+<p>There are several critical points in the definition let’s review them one by one. </p>
+<ul>
+<li><p>First, one package can contain <code>more than one</code> source files. This is different from other languages, for example in <code>Javascript</code> , each source file is an independent module that exports variables to other files to import.</p>
+</li>
+<li><p>Second, all the source files for a package are organized inside a directory. The package name must be the same as the directory name. </p>
+</li>
+<li><p>Third, the files inside the subdirectories should be excluded. Each subdirectory is another package. </p>
+</li>
+</ul>
+<p>To have a better understanding about these three points, let’s check the structure of the <code>net</code> package in the Go standard library. </p>
+<p><img src="/images/go-package-std.png" alt="net-package"></p>
+<p>All the <code>.go</code> source files directly under the <code>net</code> directory contain the following pacakge declaration on the top of the file: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> net</span><br></pre></td></tr></table></figure>
+
+<p>This means that it is part of the net package. </p>
+<p>There are several subdirectories under <code>net</code> directoy, and each of these subdirectory is an independant package. For example, the <code>net/http</code> package consists of all the files inside the <code>http</code> subdirectory. If you open the files inside <code>http</code> directory, the package declaration is:  </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> http</span><br></pre></td></tr></table></figure>
+<h4 id="Types-of-Go-package"><a href="#Types-of-Go-package" class="headerlink" title="Types of Go package"></a>Types of Go package</h4><p>Generally speaking, there are two types of packages: <code>library package</code> and <code>main package</code>. After build, the main package will be compiled into an executable file. While a library package is not self-executable, instead, it provides the utility functions.</p>
+<h4 id="Member-visibility-of-Go-package"><a href="#Member-visibility-of-Go-package" class="headerlink" title="Member visibility of Go package"></a>Member visibility of Go package</h4><p>Different from other language like Javascript, Golang package doesn’t provide keyword such as <code>export</code>, <code>public</code>, <code>private</code> and so on to explicitly export members to the outside world. </p>
+<p>Instead, the visibility of member inside one package is determined by the casing of the first letter. If the first letter is upper case then it can be impoted by other packages. </p>
+<h4 id="Lifecycle-of-package"><a href="#Lifecycle-of-package" class="headerlink" title="Lifecycle of package"></a>Lifecycle of package</h4><p>For the library package we mentioned above, when it’s imported the <code>init</code> method will be called automatically. You can do some package initialization work inside it. </p>
+<p>For the main pacakge, it must provide the <code>main</code> method as the entry point when it’s running. </p>
+<h2 id="Use-and-Import-Go-package"><a href="#Use-and-Import-Go-package" class="headerlink" title="Use and Import Go package"></a>Use and Import Go package</h2><p>Before <code>Go Module</code> was introduced, the development of Golang application is based on the <code>Go workspace</code>. In this post, I’ll focus on the solutions based on <code>Go workspace</code>. Go module is another topic I will talk about in a future post. </p>
+<h4 id="Go-workspace"><a href="#Go-workspace" class="headerlink" title="Go workspace"></a>Go workspace</h4><p>By convention, all your Go code and the code(or the packages) you import, must reside in a single workspace. A workspace is nothing but a directory in your file system whose path is stored in the environment variable <code>GOPATH</code>.</p>
+<p>As a new comer into the Golang world, at the beginning the <code>GOPATH</code> workspace configuration confused me a lot. </p>
+<p>For example, you want to use third-party library Consol in your application. After you run </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get github.com&#x2F;hashicorp&#x2F;consul</span><br></pre></td></tr></table></figure>
+
+<p>The library is installed on your local machine. The code would be cloned on disk at <code>$GOPATH/src/github.com/hashicorp/consul</code></p>
+<p>In your application, you will import this library in the following way:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">"github.com/hashicorp/consul"</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>Thanks to the GOPATH mechanics, this import can be resolved on disk and Go tool can locate, build and test the code. Simply speaking, the package name maps to the real location of the package on your local machine. </p>
+<p>But of course, this mechanics has many limitation such as package version control, workspace constrains an so on. That’s the motivation why we need Go module. </p>
+<h4 id="Ways-to-import-Golang-package"><a href="#Ways-to-import-Golang-package" class="headerlink" title="Ways to import Golang package"></a>Ways to import Golang package</h4><p>Beside the default way, there are several ways to import a package based on your usage. </p>
+<p><strong>Import as alias</strong>: this is useful when two packages have the same name. You can give any alias for an imported package as below:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	consulapi <span class="string">"github.com/hashicorp/consul/api"</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Import for side effect</strong>: when reading source code of popular open source projects, you can see many package import in the following way:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"database/sql"</span></span><br><span class="line"></span><br><span class="line">	_ <span class="string">"github.com/lib/pq"</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>It’s widely used when all you need from the imported package is running the <code>init</code> method.</p>
+<p>For example in the above case, library <code>pq</code> is imported in this way. You can check the source code for <code>pq</code> library and its <code>init</code> method call <code>sql.Register</code> method for registration as below:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line">	sql.Register(<span class="string">"postgres"</span>, &amp;Driver&#123;&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>Internal package</strong>: this is an interesting feature to learn. <code>Internal</code> is a special directory name recognized by the Go tool which will prevent the package from being imported by any other packages unless both share the same ancestor directory. The packages in an <code>internal</code> directory are said to be internal packages. In detail you can refer to <a href="https://dave.cheney.net/2019/10/06/use-internal-packages-to-reduce-your-public-api-surface" target="_blank" rel="noopener">this artical</a>.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2021/02/06/golang-package-module/" data-id="cl01tcti1000jjcmm6eaz48lj" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-fabio-source-code-study" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2021/01/29/fabio-source-code-study/" class="article-date">
@@ -155,7 +250,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/01/29/fabio-source-code-study/" data-id="ckzkmc7jt00077kmm9dk89cdz" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/01/29/fabio-source-code-study/" data-id="cl01tcthx000bjcmmhc4y17cn" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li></ul>
@@ -234,7 +329,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/" data-id="ckzkmc7jy000k7kmm4f4oc4x7" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/" data-id="cl01tcti4000qjcmm11927jr7" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li></ul>
@@ -272,7 +367,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/12/01/svg-data-vis/" data-id="ckzkmc7kf00237kmmg475br5q" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/12/01/svg-data-vis/" data-id="cl01tctiv0020jcmmavw41nxp" class="article-share-link">Share</a>
       
       
     </footer>
@@ -352,7 +447,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/11/16/golang-service-discovery-consul/" data-id="ckzkmc7k0000q7kmm60s2ev8a" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/11/16/golang-service-discovery-consul/" data-id="cl01tcti5000ujcmm9mbxggj7" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li></ul>
@@ -421,7 +516,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/10/26/golang-concurrent-twoways/" data-id="ckzkmc7jw000f7kmme8gr8f91" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/10/26/golang-concurrent-twoways/" data-id="cl01tcthy000djcmmeu3d1f9n" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li></ul>
@@ -471,7 +566,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/09/22/os-xv6-1/" data-id="ckzkmc7kd001s7kmm0cbxf6x5" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/09/22/os-xv6-1/" data-id="cl01tctiu001xjcmm733kaw79" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li></ul>
@@ -577,7 +672,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/08/19/stack-frame/" data-id="ckzkmc7ke001x7kmm2rmsbaqn" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/08/19/stack-frame/" data-id="cl01tctiv0021jcmm2zb04jcr" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li></ul>
@@ -652,7 +747,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/07/28/linux-cpp-docker/" data-id="ckzkmc7kb001k7kmm2ybi2p32" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/07/28/linux-cpp-docker/" data-id="cl01tctid001jjcmmeoyz79wp" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li></ul>
@@ -715,70 +810,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/20/memoizedSelector/" data-id="ckzkmc7kc001q7kmm8w6hbzwu" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-rxjs-marble-testing" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2020/04/12/rxjs-marble-testing/" class="article-date">
-  <time datetime="2020-04-12T12:08:45.000Z" itemprop="datePublished">2020-04-12</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/04/12/rxjs-marble-testing/">Typical usage case of Marble Testing for RxJS</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="What’s-Marble-Testing"><a href="#What’s-Marble-Testing" class="headerlink" title="What’s Marble Testing"></a>What’s Marble Testing</h3><p>RxJS is a powerful tool to handle various asynchronous tasks. Sometime RxJS observables are hard to test. In the community, there is one particular unit testing solution for RxJS observables called marble testing.</p>
-<p>For marble testing, you can refer to <a href="https://medium.com/@bencabanes/marble-testing-observable-introduction-1f5ad39231c" target="_blank" rel="noopener">these articles</a>. They all do an excellent job of introducing what it is. </p>
-<h3 id="A-real-case-to-show-Marble-Testing’s-power"><a href="#A-real-case-to-show-Marble-Testing’s-power" class="headerlink" title="A real case to show Marble Testing’s power"></a>A real case to show Marble Testing’s power</h3><p>Recently in my development work, I came across a case where I used marble testing properly to solve the issue. </p>
-<p>The background is for my application in the root <code>index.html</code> file, there is one third-party javascript library/SDK. For some business reasons, after the third-party library is loaded, we bind some value to the global <code>window</code> object. </p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.onSecretLibraryLoad = <span class="function">(<span class="params">res</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">window</span>.SecretLibrary = res; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>Before the loaded event is triggered, the <code>window.SecretLibary</code> was <code>undefiend</code>. After the event is triggered, it will be assigned some value. </p>
-<p>This global value is vital for my application since one of the UI components depends on it to determine to show or hide. </p>
-<p>Since the script was loaded with <code>async</code> flag for performance consideration, this component needs to check the <code>window.SecretLibrary</code> value repeatedly. </p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="class"><span class="keyword">class</span> <span class="title">UIComponent</span> <span class="title">implements</span> <span class="title">OnInit</span> </span>&#123;</span><br><span class="line">    public isSecretLibraryReady$: Observable&lt;boolean&gt;;</span><br><span class="line">    public ngOnInit(): <span class="keyword">void</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>.isSecretLibraryReady$ = <span class="keyword">this</span>.getSecretLibraryLoadStatus();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public getSecretLibraryLoadStatus(): Observable&lt;boolean&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> timer(<span class="number">0</span>, <span class="number">500</span>).pipe(</span><br><span class="line">            map(<span class="function">(<span class="params">t</span>) =&gt;</span> (&#123;</span><br><span class="line">                currentTimeTick: t,</span><br><span class="line">                isReady: <span class="built_in">Boolean</span>((<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary)</span><br><span class="line">            &#125;)),</span><br><span class="line">            takeWhile(</span><br><span class="line">                (val) =&gt; !val.isReady &amp;&amp; val.currentTimeTick &lt;= <span class="number">30000</span>/<span class="number">500</span>,</span><br><span class="line">                <span class="literal">true</span></span><br><span class="line">            ),</span><br><span class="line">            pluck(<span class="string">"isReady"</span>)</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>The interesting part comes from the <code>getSecretLibraryLoadStatus</code> function. It utilizes the <code>timer</code>, <code>map</code>, <code>takeWhile</code>, and <code>pluck</code> operators of RxJS library to realize the repeatedly status checking and updating purpose. </p>
-<p>RxJS operator is not this article’s topic, so I will not dig deep into it. Just add one comment for the <code>takeWhile</code> part, which seems a little hard to understand at the first look. It defines two conditions to stop the observable: first case is the <code>window.SecretLibrary</code> value is not undefined, which means the script is loaded; the second case is it reaches the maximum time limit (30 seconds). </p>
-<h3 id="How-to-test-it-marble-testing"><a href="#How-to-test-it-marble-testing" class="headerlink" title="How to test it: marble testing"></a>How to test it: marble testing</h3><p>Traditionally we use <code>subscribe and assert</code> pattern to test RxJS observables. But for the case, as mentioned above: time-based observables, the traditional solution can’t handle it well. We can’t wait 30 seconds when we run the unit tests during local development or in CI pipeline. That’s unacceptable.</p>
-<p>Marble testing can fix this issue correctly by the concept of virtual time. For what is virtual time, you can refer to <a href="https://medium.com/angular-in-depth/how-to-test-observables-a00038c7faad" target="_blank" rel="noopener">these great articles</a>. I will not discuss it at a detailed level in this post. Simply speaking, virtual time empowers us to test asynchronous RxJS observable synchronously. In virtual time asynchronous functions like <code>setTimeout</code> and <code>setInterval</code> will use fake time instead of actual time. And the magic comes from the <code>TestScheduler</code> of RxJS. </p>
-<p>The marble testing solution as following: </p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">describe(<span class="string">"UIComponent"</span>, () =&gt; &#123;</span><br><span class="line">  <span class="keyword">let</span> component: UIComponent;</span><br><span class="line">  <span class="keyword">let</span> fixture: ComponentFixture&lt;UIComponent&gt;;</span><br><span class="line">  <span class="keyword">let</span> scheduler: TestScheduler;</span><br><span class="line"></span><br><span class="line">  beforeEach(<span class="keyword">async</span>(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    TestBed.configureTestingModule(&#123;</span><br><span class="line">      declarations: [UIComponent],</span><br><span class="line">    &#125;).compileComponents();</span><br><span class="line">  &#125;));</span><br><span class="line"></span><br><span class="line">  beforeEach(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    fixture = TestBed.createComponent(UIComponent);</span><br><span class="line">    component = fixture.componentInstance;</span><br><span class="line">    scheduler = <span class="keyword">new</span> TestScheduler(<span class="function">(<span class="params">actual, expected</span>) =&gt;</span> expect(actual).toEqual(expected));</span><br><span class="line">    (<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary = <span class="literal">undefined</span>;</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">  it(<span class="string">"getSecretLibraryLoadStatus method should return a boolean observable stream, for script load success case"</span>, () =&gt; &#123;</span><br><span class="line">    scheduler.run(<span class="function">(<span class="params">&#123; expectObservable &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">      timer(<span class="number">2</span> * <span class="number">1000</span>).subscribe(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">        (<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary = <span class="string">"SecretLibrary"</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">      <span class="comment">// tricky point about marble test: a, b, c these placeholders account 1 frame of virtual time</span></span><br><span class="line">      expectObservable(component.getSecretLibraryLoadStatus()).toBe(</span><br><span class="line">        <span class="string">"a 499ms b 499ms c 499ms d 499ms (e|)"</span>,</span><br><span class="line">        &#123;</span><br><span class="line">          a: <span class="literal">false</span>,</span><br><span class="line">          b: <span class="literal">false</span>,</span><br><span class="line">          c: <span class="literal">false</span>,</span><br><span class="line">          d: <span class="literal">false</span>,</span><br><span class="line">          e: <span class="literal">true</span></span><br><span class="line">        &#125;</span><br><span class="line">      );</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<p>Let me emphasize several key points to understand the above testing case. <code>getSecretLibraryLoadStatus</code> will repeatedly check the status of <code>window.SecretLibrary</code> every 500 milliseconds and return a boolean value stream. </p>
-<p>I manually set the <code>window.SecretLibrary</code> value after 2 seconds by calling this: </p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">timer(<span class="number">2</span> * <span class="number">1000</span>).subscribe(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  (<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary = <span class="string">"SecretLibrary"</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
-
-<p>So Let’s imagine what the result should be: the first four emit value will be <code>false</code>,  and the last value is <code>true</code>. That’s the expected observable. </p>
-<p>But please notice that <code>scheduler.run</code>, everything run inside the callback will use virtual time. So we didn’t wait 2 seconds for the <code>timer</code> operator. Instead, it runs synchronously. </p>
-<p>The second point needs to notice is the syntax of the marble string <code>a 499ms b 499ms c 499ms d 499ms (e|)</code>. Yes, it looks a little wired, but be careful that’s the correct way to represent marble. <strong>The alphanumeric values represent an actual emitted value, which advances time one virtual frame</strong>.</p>
-<p>Here I only show the case where the third-party script load successfully. Of course, to have full testing coverage, we need to consider the negative case where the script failed to load. You can figure it out. </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this post, I didn’t go into the detailed syntax of marble testing. I think the reader can find the related document easily. I record a real usage case in the development where marble testing can show its power to handle async observables. </p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/12/rxjs-marble-testing/" data-id="ckzkmc7kd001u7kmm731716dm" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/04/20/memoizedSelector/" data-id="cl01tctiu001yjcmm4vdsexwc" class="article-share-link">Share</a>
       
       
     </footer>
@@ -838,6 +870,10 @@
       <ul>
         
           <li>
+            <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/">how-to-implement-libpcap-on-linux-with-raw-socket</a>
+          </li>
+        
+          <li>
             <a href="/2022/02/07/stack-smashing-detect-in-c/">stack-smashing-detect-in-c</a>
           </li>
         
@@ -851,10 +887,6 @@
         
           <li>
             <a href="/2022/01/12/md5-implementation/">md5-implementation</a>
-          </li>
-        
-          <li>
-            <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
           </li>
         
       </ul>

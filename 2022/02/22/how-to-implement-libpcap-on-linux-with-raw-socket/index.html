@@ -5,22 +5,19 @@
   
 
   
-  <title>New way to set up Linux development environment in Windows with WSL | Chris Bao&#39;s Blog</title>
+  <title>how-to-implement-libpcap-on-linux-with-raw-socket | Chris Bao&#39;s Blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="BackgroundI like system programming which can allow you to touch more software development skills in the bottom level.   Linux is the perfect platform when you want to do system programming. But if yo">
+  <meta name="description" content="资料：https:&#x2F;&#x2F;www.linuxjournal.com&#x2F;article&#x2F;4659 libpcap这个library实现了跨平台的packet capture, 但是我们只关注linux. 如何在linux 系统下实现跟libpcap一样的（或者类似的）packet capture功能呢？ 第一，libpcap的实现是基于AF_PACKET这个类型的socket的。这也是我们的简单实现的基础">
 <meta property="og:type" content="article">
-<meta property="og:title" content="New way to set up Linux development environment in Windows with WSL">
-<meta property="og:url" content="https://baoqger.github.io/2021/08/06/win-wsl/index.html">
+<meta property="og:title" content="how-to-implement-libpcap-on-linux-with-raw-socket">
+<meta property="og:url" content="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/index.html">
 <meta property="og:site_name" content="Chris Bao&#39;s Blog">
-<meta property="og:description" content="BackgroundI like system programming which can allow you to touch more software development skills in the bottom level.   Linux is the perfect platform when you want to do system programming. But if yo">
+<meta property="og:description" content="资料：https:&#x2F;&#x2F;www.linuxjournal.com&#x2F;article&#x2F;4659 libpcap这个library实现了跨平台的packet capture, 但是我们只关注linux. 如何在linux 系统下实现跟libpcap一样的（或者类似的）packet capture功能呢？ 第一，libpcap的实现是基于AF_PACKET这个类型的socket的。这也是我们的简单实现的基础">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="https://baoqger.github.io/images/linux-gcc.png">
-<meta property="article:published_time" content="2021-08-06T01:19:41.000Z">
-<meta property="article:modified_time" content="2021-12-23T12:34:34.801Z">
+<meta property="article:published_time" content="2022-02-22T02:21:14.000Z">
+<meta property="article:modified_time" content="2022-02-22T03:56:32.008Z">
 <meta property="article:author" content="Chris Bao">
-<meta property="article:tag" content="Linux, system programming, Windows Subsystem for Linux">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://baoqger.github.io/images/linux-gcc.png">
   
     <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
   
@@ -71,10 +68,10 @@
   </div>
 </header>
       <div class="outer">
-        <section id="main"><article id="post-win-wsl" class="article article-type-post" itemscope itemprop="blogPost">
+        <section id="main"><article id="post-how-to-implement-libpcap-on-linux-with-raw-socket" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2021/08/06/win-wsl/" class="article-date">
-  <time datetime="2021-08-06T01:19:41.000Z" itemprop="datePublished">2021-08-06</time>
+    <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/" class="article-date">
+  <time datetime="2022-02-22T02:21:14.000Z" itemprop="datePublished">2022-02-22</time>
 </a>
     
   </div>
@@ -85,7 +82,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      New way to set up Linux development environment in Windows with WSL
+      how-to-implement-libpcap-on-linux-with-raw-socket
     </h1>
   
 
@@ -93,58 +90,40 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>I like system programming which can allow you to touch more software development skills in the bottom level.  </p>
-<p>Linux is the perfect platform when you want to do system programming. But if you’re using a computer running Windows on it, then you have to spend some time to set up the Linux development environment. Generally speaking there are two traditional ways to do that: <code>virtual machine</code> and <code>dualboot</code>, both need some effort. Or you can try to do that with <code>container</code> technology, for example, I once shared one <a href="https://baoqger.github.io/2020/07/28/linux-cpp-docker/">article</a> about how to do it with <code>Docker</code>. </p>
-<p>In this article, I will introduce a new and easier way to do this without too much overhead. </p>
-<h3 id="Windows-Subsystem-for-Linux"><a href="#Windows-Subsystem-for-Linux" class="headerlink" title="Windows Subsystem for Linux"></a>Windows Subsystem for Linux</h3><p>The new way is <code>Windows Subsystem for Linux (WSL)</code>. I have to admit that the operating system is complex and difficult so for now I don’t know how Microsoft make <code>WSL</code> works. In details, you can refer to this <a href="https://devblogs.microsoft.com/commandline/a-deep-dive-into-how-wsl-allows-windows-to-access-linux-files/" target="_blank" rel="noopener">article</a> to learn how <code>WSL</code> allows Windows to access Linux files. In this article let’s focus on how to set it up and what kind of benefits it can provide to developers.</p>
-<p>Based on the <a href="https://docs.microsoft.com/en-us/windows/wsl/about" target="_blank" rel="noopener">official document</a>, with <code>WSL</code> you can</p>
-<ul>
-<li>Run common command-line tools such as <code>grep</code>, <code>sed</code>, <code>awk</code>.</li>
-<li>Run Bash shell scripts and GNU/Linux command-line applications including:<ul>
-<li>Tools: vim, emacs, tmux.</li>
-<li>Languages: NodeJS, Javascript, Python, Ruby, C/C++, C# &amp; F#, Rust, Go, etc.</li>
-<li>Services: SSHD, MySQL, Apache, lighttpd, MongoDB, PostgreSQL.</li>
-</ul>
-</li>
-<li>Install additional software using your own GNU/Linux distribution package manager.</li>
-</ul>
-<p>With these conditions, you can set up a completed Linux development environment. </p>
-<h3 id="Install-WSL"><a href="#Install-WSL" class="headerlink" title="Install WSL"></a>Install WSL</h3><p>For detail steps to install <code>WSL</code>, you can find it on the official document. Based on my experience, I follow the document to download and install Linux Ubuntu distribution smoothly, which is much easier than settig the virtual machine.</p>
-<h3 id="File-mount"><a href="#File-mount" class="headerlink" title="File mount"></a>File mount</h3><p>By default, you can also access your local machine’s file system from within the Linux Bash shell. Since your local drives are mounted under the <strong>/mnt</strong> folder of the subsystem. </p>
-<p>In this way, you can develop the code with the productivity tools in Windows and build it in Linux environment.</p>
-<h3 id="Network"><a href="#Network" class="headerlink" title="Network"></a>Network</h3><p>This is another convenient point. <code>WSL</code> shares the IP address of Windows, as it is running on Windows.<br>As such you can access any ports on localhost e.g. if you had a web server running on port 8080, you could access it just by visiting <strong><a href="http://localhost:8080" target="_blank" rel="noopener">http://localhost:8080</a></strong> into your Windows browser.</p>
-<h3 id="Set-up-the-development-environment"><a href="#Set-up-the-development-environment" class="headerlink" title="Set up the development environment"></a>Set up the development environment</h3><p>After install the Ubuntu system, I also install tools to prepare the development environment. For example, <code>GCC</code> to develop C language program as below. </p>
-<img src="/images/linux-gcc.png" title="gcc in Linux" width="800px" height="600px">
-
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>Based on my testing and experience, <code>WSL</code> can save developers’ time to set up Linux environment.  </p>
+        <p>资料：<br><a href="https://www.linuxjournal.com/article/4659" target="_blank" rel="noopener">https://www.linuxjournal.com/article/4659</a></p>
+<p>libpcap这个library实现了跨平台的packet capture, 但是我们只关注linux. 如何在linux 系统下实现跟libpcap一样的（或者类似的）packet capture功能呢？</p>
+<p>第一，libpcap的实现是基于AF_PACKET这个类型的socket的。这也是我们的简单实现的基础: AF_PACKET socket. </p>
+<p>In recent versions of the Linux kernel(post-2.0 release), a new protocol family has been introduced, named PF_PACKET. This family allows an application to send and receive packets dealing directly with the network card driver, thus avoiding the usual protocol stack-handling. That is, any packet sent through the socket will be directly passed to the Ethernet interface, and any packet received through the interface will be directly passed to the application. </p>
+<p>第二，libpcap有一个功能是：promiscuous mode。这个是如何实现的呢？</p>
+<p>The PF_PACKET family allows an application to retrieve data packets as they are received at the network card level, but still does not allow it to read packets that are not addressed to its host. As we have seen before, this is due to the network card discarding all the packets that do not contain its own MAC address - an operation mode called non-promiscuous, which basically means that each network card is minding tis own business and reading only the frames directed to it. </p>
+<p>We need to enable a network card to be set in promiscuous mode to pick up all the packets it sees. </p>
+<p>To set a network card to promiscuous mode, all we have to do is issue a particular <code>ioctl()</code> system call to an open socket on that card. </p>
+<p>第三, libpcap是支持各种过滤的，按照协议类型，按照ip地址等等调节过滤，这个如何实现呢？实现在哪个level呢？</p>
+<p>The optimal solution to this problem is to put the filter as early as possible in the packet-processing chain(it starts at the network driver level and ends at the application level). The linux kernel allows us to put a filter, called an LPF, directly inside the PF_PACKET protocol processing routines, which are run shortly after the network card reception interrupt has been served. The filter decides which packets shall be relayed to the application and which ones should be discarded. </p>
+<p>In order to be as flexible as possible, and not to limit the programmer to a set of predefined conditions, the packet-filtering engine is actually implemented as a state machine running a user-defined program. The program is written in a specific pseudo-machine code language called BPF (for Berkeley packet filter), inspried by an old paper. BPF actually looks like a real assembly language with a couple of registers and a few instructions to load and store values, perform arithmetic operations and conditionally branch. </p>
+<p>the filter code is run on each packet to be examined, and the memory space into which the BPF processor operates are the bytes containing the packet data. The result of the filter is an integer number that specifies how many bytes of the packet the socket should pass to the application level. </p>
+<p>filter(LPF)可以BPF来描述，BPF本身是一个类似汇编语言一样的东西，是纯kernel层的东西。</p>
+<p>实现的方法是：把filter写入<code>sock_filter</code>结构，然后传给<code>setsockopt</code>.</p>
+<p>libpcap做的事情是支持将用户以string定义的filter转化为符合BPF标准的描述。</p>
+<p>Libpcap library is an OS-independent wrapper for the BPF engine. When used on Linux machines, BPF functions are carried out by the Linux packet filter. </p>
+<p>One of the most useful functions provided by the libpcap is pcap_compile(), which takes a string containing a logic expression as input and output the BPF filter code. </p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/08/06/win-wsl/" data-id="cl01tctiz002fjcmm3djd8c3h" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/" data-id="cl01tcti7000xjcmmfd7o4rd1" class="article-share-link">Share</a>
       
       
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li></ul>
-
     </footer>
   </div>
   
     
 <nav id="article-nav">
   
-    <a href="/2021/08/25/cgo-golang/" id="article-nav-newer" class="article-nav-link-wrap">
-      <strong class="article-nav-caption">Newer</strong>
-      <div class="article-nav-title">
-        
-          cgo-golang
-        
-      </div>
-    </a>
   
-  
-    <a href="/2021/07/31/how-to-implement-simple-http-server-golang/" id="article-nav-older" class="article-nav-link-wrap">
+    <a href="/2022/02/07/stack-smashing-detect-in-c/" id="article-nav-older" class="article-nav-link-wrap">
       <strong class="article-nav-caption">Older</strong>
-      <div class="article-nav-title">How to write a Golang HTTP server with Linux system calls</div>
+      <div class="article-nav-title">stack-smashing-detect-in-c</div>
     </a>
   
 </nav>

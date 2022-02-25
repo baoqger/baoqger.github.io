@@ -66,6 +66,69 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-rxjs-marble-testing" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/04/12/rxjs-marble-testing/" class="article-date">
+  <time datetime="2020-04-12T12:08:45.000Z" itemprop="datePublished">2020-04-12</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/04/12/rxjs-marble-testing/">Typical usage case of Marble Testing for RxJS</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="What’s-Marble-Testing"><a href="#What’s-Marble-Testing" class="headerlink" title="What’s Marble Testing"></a>What’s Marble Testing</h3><p>RxJS is a powerful tool to handle various asynchronous tasks. Sometime RxJS observables are hard to test. In the community, there is one particular unit testing solution for RxJS observables called marble testing.</p>
+<p>For marble testing, you can refer to <a href="https://medium.com/@bencabanes/marble-testing-observable-introduction-1f5ad39231c" target="_blank" rel="noopener">these articles</a>. They all do an excellent job of introducing what it is. </p>
+<h3 id="A-real-case-to-show-Marble-Testing’s-power"><a href="#A-real-case-to-show-Marble-Testing’s-power" class="headerlink" title="A real case to show Marble Testing’s power"></a>A real case to show Marble Testing’s power</h3><p>Recently in my development work, I came across a case where I used marble testing properly to solve the issue. </p>
+<p>The background is for my application in the root <code>index.html</code> file, there is one third-party javascript library/SDK. For some business reasons, after the third-party library is loaded, we bind some value to the global <code>window</code> object. </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">window</span>.onSecretLibraryLoad = <span class="function">(<span class="params">res</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="built_in">window</span>.SecretLibrary = res; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Before the loaded event is triggered, the <code>window.SecretLibary</code> was <code>undefiend</code>. After the event is triggered, it will be assigned some value. </p>
+<p>This global value is vital for my application since one of the UI components depends on it to determine to show or hide. </p>
+<p>Since the script was loaded with <code>async</code> flag for performance consideration, this component needs to check the <code>window.SecretLibrary</code> value repeatedly. </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="class"><span class="keyword">class</span> <span class="title">UIComponent</span> <span class="title">implements</span> <span class="title">OnInit</span> </span>&#123;</span><br><span class="line">    public isSecretLibraryReady$: Observable&lt;boolean&gt;;</span><br><span class="line">    public ngOnInit(): <span class="keyword">void</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>.isSecretLibraryReady$ = <span class="keyword">this</span>.getSecretLibraryLoadStatus();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public getSecretLibraryLoadStatus(): Observable&lt;boolean&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> timer(<span class="number">0</span>, <span class="number">500</span>).pipe(</span><br><span class="line">            map(<span class="function">(<span class="params">t</span>) =&gt;</span> (&#123;</span><br><span class="line">                currentTimeTick: t,</span><br><span class="line">                isReady: <span class="built_in">Boolean</span>((<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary)</span><br><span class="line">            &#125;)),</span><br><span class="line">            takeWhile(</span><br><span class="line">                (val) =&gt; !val.isReady &amp;&amp; val.currentTimeTick &lt;= <span class="number">30000</span>/<span class="number">500</span>,</span><br><span class="line">                <span class="literal">true</span></span><br><span class="line">            ),</span><br><span class="line">            pluck(<span class="string">"isReady"</span>)</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The interesting part comes from the <code>getSecretLibraryLoadStatus</code> function. It utilizes the <code>timer</code>, <code>map</code>, <code>takeWhile</code>, and <code>pluck</code> operators of RxJS library to realize the repeatedly status checking and updating purpose. </p>
+<p>RxJS operator is not this article’s topic, so I will not dig deep into it. Just add one comment for the <code>takeWhile</code> part, which seems a little hard to understand at the first look. It defines two conditions to stop the observable: first case is the <code>window.SecretLibrary</code> value is not undefined, which means the script is loaded; the second case is it reaches the maximum time limit (30 seconds). </p>
+<h3 id="How-to-test-it-marble-testing"><a href="#How-to-test-it-marble-testing" class="headerlink" title="How to test it: marble testing"></a>How to test it: marble testing</h3><p>Traditionally we use <code>subscribe and assert</code> pattern to test RxJS observables. But for the case, as mentioned above: time-based observables, the traditional solution can’t handle it well. We can’t wait 30 seconds when we run the unit tests during local development or in CI pipeline. That’s unacceptable.</p>
+<p>Marble testing can fix this issue correctly by the concept of virtual time. For what is virtual time, you can refer to <a href="https://medium.com/angular-in-depth/how-to-test-observables-a00038c7faad" target="_blank" rel="noopener">these great articles</a>. I will not discuss it at a detailed level in this post. Simply speaking, virtual time empowers us to test asynchronous RxJS observable synchronously. In virtual time asynchronous functions like <code>setTimeout</code> and <code>setInterval</code> will use fake time instead of actual time. And the magic comes from the <code>TestScheduler</code> of RxJS. </p>
+<p>The marble testing solution as following: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">describe(<span class="string">"UIComponent"</span>, () =&gt; &#123;</span><br><span class="line">  <span class="keyword">let</span> component: UIComponent;</span><br><span class="line">  <span class="keyword">let</span> fixture: ComponentFixture&lt;UIComponent&gt;;</span><br><span class="line">  <span class="keyword">let</span> scheduler: TestScheduler;</span><br><span class="line"></span><br><span class="line">  beforeEach(<span class="keyword">async</span>(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    TestBed.configureTestingModule(&#123;</span><br><span class="line">      declarations: [UIComponent],</span><br><span class="line">    &#125;).compileComponents();</span><br><span class="line">  &#125;));</span><br><span class="line"></span><br><span class="line">  beforeEach(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">    fixture = TestBed.createComponent(UIComponent);</span><br><span class="line">    component = fixture.componentInstance;</span><br><span class="line">    scheduler = <span class="keyword">new</span> TestScheduler(<span class="function">(<span class="params">actual, expected</span>) =&gt;</span> expect(actual).toEqual(expected));</span><br><span class="line">    (<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary = <span class="literal">undefined</span>;</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">  it(<span class="string">"getSecretLibraryLoadStatus method should return a boolean observable stream, for script load success case"</span>, () =&gt; &#123;</span><br><span class="line">    scheduler.run(<span class="function">(<span class="params">&#123; expectObservable &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">      timer(<span class="number">2</span> * <span class="number">1000</span>).subscribe(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">        (<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary = <span class="string">"SecretLibrary"</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">      <span class="comment">// tricky point about marble test: a, b, c these placeholders account 1 frame of virtual time</span></span><br><span class="line">      expectObservable(component.getSecretLibraryLoadStatus()).toBe(</span><br><span class="line">        <span class="string">"a 499ms b 499ms c 499ms d 499ms (e|)"</span>,</span><br><span class="line">        &#123;</span><br><span class="line">          a: <span class="literal">false</span>,</span><br><span class="line">          b: <span class="literal">false</span>,</span><br><span class="line">          c: <span class="literal">false</span>,</span><br><span class="line">          d: <span class="literal">false</span>,</span><br><span class="line">          e: <span class="literal">true</span></span><br><span class="line">        &#125;</span><br><span class="line">      );</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>Let me emphasize several key points to understand the above testing case. <code>getSecretLibraryLoadStatus</code> will repeatedly check the status of <code>window.SecretLibrary</code> every 500 milliseconds and return a boolean value stream. </p>
+<p>I manually set the <code>window.SecretLibrary</code> value after 2 seconds by calling this: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">timer(<span class="number">2</span> * <span class="number">1000</span>).subscribe(<span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">  (<span class="built_in">window</span> <span class="keyword">as</span> any).SecretLibrary = <span class="string">"SecretLibrary"</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>So Let’s imagine what the result should be: the first four emit value will be <code>false</code>,  and the last value is <code>true</code>. That’s the expected observable. </p>
+<p>But please notice that <code>scheduler.run</code>, everything run inside the callback will use virtual time. So we didn’t wait 2 seconds for the <code>timer</code> operator. Instead, it runs synchronously. </p>
+<p>The second point needs to notice is the syntax of the marble string <code>a 499ms b 499ms c 499ms d 499ms (e|)</code>. Yes, it looks a little wired, but be careful that’s the correct way to represent marble. <strong>The alphanumeric values represent an actual emitted value, which advances time one virtual frame</strong>.</p>
+<p>Here I only show the case where the third-party script load successfully. Of course, to have full testing coverage, we need to consider the negative case where the script failed to load. You can figure it out. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this post, I didn’t go into the detailed syntax of marble testing. I think the reader can find the related document easily. I record a real usage case in the development where marble testing can show its power to handle async observables. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2020/04/12/rxjs-marble-testing/" data-id="cl01tctiw0022jcmm5qi7gfb1" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-algo-part2" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2020/04/11/algo-part2/" class="article-date">
@@ -117,7 +180,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/11/algo-part2/" data-id="ckzkmc7ju000a7kmmd6hrdmyd" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/04/11/algo-part2/" data-id="cl01tcthw0007jcmmeq9709uz" class="article-share-link">Share</a>
       
       
     </footer>
@@ -196,7 +259,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/10/algo-part1/" data-id="ckzkmc7jm00007kmmfl262osw" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/04/10/algo-part1/" data-id="cl01tcthw0006jcmmgql1ely4" class="article-share-link">Share</a>
       
       
     </footer>
@@ -275,7 +338,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/09/09/what-happen-dpkg-install/" data-id="ckzkmc7ki002f7kmm38cx3pcj" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/09/09/what-happen-dpkg-install/" data-id="cl01tctix0026jcmm2ekj7r7e" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li></ul>
@@ -399,7 +462,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/08/25/how-to-write-linux-c-program-with-external-library/" data-id="ckzkmc7k400107kmmhdhhgxos" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/08/25/how-to-write-linux-c-program-with-external-library/" data-id="cl01tcti90013jcmme2a00h4n" class="article-share-link">Share</a>
       
       
     </footer>
@@ -488,11 +551,12 @@
 
 <p>The re-computed hash is <code>66efbe4cea76272c76cee8fa297c1bf70c41f8e049c7e0e4d23c965cbe8f1b84</code>, which matches with the original hash. So we can get the conclusion that: <strong>the intermediate CA signs the goole.com server certificate</strong>. </p>
 <h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we go through the verification process of SSL/TLS certificates step by step manually. I have to admit that the concepts of digital signatures and certificates are too abstract to understand, especially in the details. I hope the experiment, which carries out with certificates from the real world, can help you do that.  </p>
+<h3 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h3><p><a href="https://linuxctl.com/2017/02/x509-certificate-manual-signature-verification/" target="_blank" rel="noopener">x509 Certificate Manual Signature Verification</a> written by George Bolo.</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/06/https-certificate-manual-verify-openssl/" data-id="ckzkmc7k7001a7kmm2p52467z" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/06/https-certificate-manual-verify-openssl/" data-id="cl01tcti80010jcmm0aw2338f" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li></ul>
@@ -582,7 +646,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="ckzkmc7k8001b7kmm8u8rb0n0" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="cl01tcti90015jcmma2fcemr3" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li></ul>
@@ -644,7 +708,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/02/https-certificate-anatomy/" data-id="ckzkmc7k700167kmm1z2k2e2x" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/02/https-certificate-anatomy/" data-id="cl01tctib001bjcmmaidj3gfj" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li></ul>
@@ -701,7 +765,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/02/25/https-certificate/" data-id="ckzkmc7k8001c7kmmg10kcos7" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/02/25/https-certificate/" data-id="cl01tctia001ajcmmcouy0ew2" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
@@ -769,75 +833,10 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/02/22/https-handshake/" data-id="ckzkmc7k9001f7kmmgl975gl9" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/02/22/https-handshake/" data-id="cl01tctic001fjcmm9mbcag3g" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-why-tcp-four-way-handshake" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/12/14/why-tcp-four-way-handshake/" class="article-date">
-  <time datetime="2018-12-14T08:34:58.000Z" itemprop="datePublished">2018-12-14</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/14/why-tcp-four-way-handshake/">Why TCP connection termination needs four-way handshake</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In <code>TCP/IP</code> protocol stack, the <code>three way handshake</code> for connection establishment and <code>four way handshake</code> for connection termination are some concepts you must understand.</p>
-<p>But after I learned <code>TCP/IP</code> stack, one question coming to my mind is why the connection termination needs four-way handshake. In this article, I will focus on this topic. To understand the answer to this question, we need to first explain the details of these two processes and compare them to find the difference. </p>
-<h3 id="TCP-connection-establishment"><a href="#TCP-connection-establishment" class="headerlink" title="TCP connection establishment"></a>TCP connection establishment</h3><p>In contrast to <code>UDP</code>, TCP is a <code>connection-oriented</code> and <code>reliable full duplex</code> protocol, which requires a logical connection to be established between the two processes before data is exchanged. The connection must be maintained during the entire process that communication is taking place. And in TCP both sides can send data to its peer. </p>
-<p>So four things need to happen for fully establishing a TCP connection:</p>
-<ul>
-<li>Each node has send a <code>SYN</code> flag to its peer (that’s two things, one <code>SYN</code> in each direction)</li>
-<li>Each node has received a <code>ACK</code> flag of its own <code>SYN</code> flag from its peer  (that’s two things) </li>
-</ul>
-<p>Both <code>SYN</code> and <code>ACK</code> are properties in <code>TCP</code> header, where <code>SYN</code> means <code>synchronization</code> and <code>ACK</code> means <code>acknowledgement</code>. In detail the process goes as follows:</p>
-<p>Firstly, the client sends the <code>SYN: 1</code> packet to server to start the connection. When the server receives the packet, it will send the <code>ACK: 1</code> packet to client to confirm that. Since in the TCP protocol, the server can also send data to the client. So the server needs to send the <code>SYN: 1</code> packet to the client as well. Finally, when the client sends the <code>ACK: 1</code> packet to the server. The establishment process is done, which goes as follows: </p>
-<img src="/images/tcp-establishment-4-packets.png" title="tcp establishment with four packets" width="600px" height="400px">
-
-<p>Note that the server sends two packets: <code>ACK: 1</code> and <code>SYN: 1</code> in sequence. Why not combine these two packets into one to have a better network performance? So the common implementation of TCP protocol  goes as follows:</p>
-<img src="/images/tcp-establishment-3-packets.png" title="tcp establishment with three packets" width="600px" height="400px">
-
-<p><strong>Note</strong>: besides <code>SYN</code> and <code>ACK</code> flag, in the establishment stage there are other fields need to be set in TCP header such as: <code>sequence number</code> and <code>window</code>. I will discuss these important TCP header fields in other articles.</p>
-<h3 id="TCP-connection-termination"><a href="#TCP-connection-termination" class="headerlink" title="TCP connection termination"></a>TCP connection termination</h3><p>When the data stream transportation (I will not cover this part in this article) is over, we need to terminate the TCP connection. </p>
-<p>Same as above, four things need to happen for fully terminating a TCP connection:</p>
-<ul>
-<li>Each node has send a <code>FIN</code> flag to its peer (that’s two things, one <code>FIN</code> in each direction)</li>
-<li>Each node has received a <code>ACK</code> flag of its own <code>FIN</code> flag from its peer  (that’s two things) </li>
-</ul>
-<img src="/images/tcp_termination.png" title="tcp termination" width="600px" height="400px">
-
-<p>But the difference is that in most TCP implementation, four packets are used to terminate the connection. We didn’t combine the <code>ACK: 1</code> packet (marked as ②) and the <code>FIN: 1</code> packet (marked as ③) into one packet. </p>
-<p>The reason is <code>ACK: 1</code> packet (marked as ②) is send by TCP stack automatically. And the next <code>FIN: 1</code> packet (marked as ③) is controlled in application level by calling <code>close</code> socket API. Application has the control to terminate the connection. So in common case, we didn’t merge this two packets into one. </p>
-<p>It’s flexible for the application to control this process, for example, in this way the application can reuse existing TCP connection to reduce the overhead and improve the performance. In next article, I will talk about this topic.  </p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2018/12/14/why-tcp-four-way-handshake/" data-id="ckzkmc7ki002c7kmmckv9belu" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li></ul>
 
     </footer>
   </div>
@@ -896,6 +895,10 @@
       <ul>
         
           <li>
+            <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/">how-to-implement-libpcap-on-linux-with-raw-socket</a>
+          </li>
+        
+          <li>
             <a href="/2022/02/07/stack-smashing-detect-in-c/">stack-smashing-detect-in-c</a>
           </li>
         
@@ -909,10 +912,6 @@
         
           <li>
             <a href="/2022/01/12/md5-implementation/">md5-implementation</a>
-          </li>
-        
-          <li>
-            <a href="/2021/12/24/how-traceroute-works/">how-traceroute-works</a>
           </li>
         
       </ul>
