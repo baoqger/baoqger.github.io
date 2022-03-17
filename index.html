@@ -66,9 +66,9 @@
       <div class="outer">
         <section id="main">
   
-    <article id="post-how-to-implement-libpcap-on-linux-with-raw-socket" class="article article-type-post" itemscope itemprop="blogPost">
+    <article id="post-how-to-implement-libpcap-on-linux-with-raw-socket-part1" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
-    <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/" class="article-date">
+    <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/" class="article-date">
   <time datetime="2022-02-22T02:21:14.000Z" itemprop="datePublished">2022-02-22</time>
 </a>
     
@@ -80,7 +80,7 @@
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/">how-to-implement-libpcap-on-linux-with-raw-socket</a>
+      <a class="article-title" href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/">Write a Linux packet sniffer from scratch: part one</a>
     </h1>
   
 
@@ -88,30 +88,60 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p>资料：<br><a href="https://www.linuxjournal.com/article/4659" target="_blank" rel="noopener">https://www.linuxjournal.com/article/4659</a></p>
-<p>libpcap这个library实现了跨平台的packet capture, 但是我们只关注linux. 如何在linux 系统下实现跟libpcap一样的（或者类似的）packet capture功能呢？</p>
-<p>第一，libpcap的实现是基于AF_PACKET这个类型的socket的。这也是我们的简单实现的基础: AF_PACKET socket. </p>
-<p>In recent versions of the Linux kernel(post-2.0 release), a new protocol family has been introduced, named PF_PACKET. This family allows an application to send and receive packets dealing directly with the network card driver, thus avoiding the usual protocol stack-handling. That is, any packet sent through the socket will be directly passed to the Ethernet interface, and any packet received through the interface will be directly passed to the application. </p>
-<p>第二，libpcap有一个功能是：promiscuous mode。这个是如何实现的呢？</p>
-<p>The PF_PACKET family allows an application to retrieve data packets as they are received at the network card level, but still does not allow it to read packets that are not addressed to its host. As we have seen before, this is due to the network card discarding all the packets that do not contain its own MAC address - an operation mode called non-promiscuous, which basically means that each network card is minding tis own business and reading only the frames directed to it. </p>
-<p>We need to enable a network card to be set in promiscuous mode to pick up all the packets it sees. </p>
-<p>To set a network card to promiscuous mode, all we have to do is issue a particular <code>ioctl()</code> system call to an open socket on that card. </p>
-<p>第三, libpcap是支持各种过滤的，按照协议类型，按照ip地址等等调节过滤，这个如何实现呢？实现在哪个level呢？</p>
-<p>The optimal solution to this problem is to put the filter as early as possible in the packet-processing chain(it starts at the network driver level and ends at the application level). The linux kernel allows us to put a filter, called an LPF, directly inside the PF_PACKET protocol processing routines, which are run shortly after the network card reception interrupt has been served. The filter decides which packets shall be relayed to the application and which ones should be discarded. </p>
-<p>In order to be as flexible as possible, and not to limit the programmer to a set of predefined conditions, the packet-filtering engine is actually implemented as a state machine running a user-defined program. The program is written in a specific pseudo-machine code language called BPF (for Berkeley packet filter), inspried by an old paper. BPF actually looks like a real assembly language with a couple of registers and a few instructions to load and store values, perform arithmetic operations and conditionally branch. </p>
-<p>the filter code is run on each packet to be examined, and the memory space into which the BPF processor operates are the bytes containing the packet data. The result of the filter is an integer number that specifies how many bytes of the packet the socket should pass to the application level. </p>
-<p>filter(LPF)可以BPF来描述，BPF本身是一个类似汇编语言一样的东西，是纯kernel层的东西。</p>
-<p>实现的方法是：把filter写入<code>sock_filter</code>结构，然后传给<code>setsockopt</code>.</p>
-<p>libpcap做的事情是支持将用户以string定义的filter转化为符合BPF标准的描述。</p>
-<p>Libpcap library is an OS-independent wrapper for the BPF engine. When used on Linux machines, BPF functions are carried out by the Linux packet filter. </p>
-<p>One of the most useful functions provided by the libpcap is pcap_compile(), which takes a string containing a logic expression as input and output the BPF filter code. </p>
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>When we refer to network packet sniffer, some famous and popular tools come to your mind, like <code>tcpdump</code>. I have shown you how to capture network packets in my previous articles. But have you ever thought about writing a packet sniffer from scratch? In this article, let us do it. After reading this article, you can find that it is not as difficult as you think. </p>
+<h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>Firstly, we need to review how <code>tcpdump</code> is implemented. According to the official <a href="https://www.tcpdump.org/" target="_blank" rel="noopener">document</a>, <code>tcpdump</code> is built on the library <code>libpcap</code>, which is developed based on the remarkable research result from Berkeley, in details you can refer to <a href="https://www.tcpdump.org/papers/bpf-usenix93.pdf" target="_blank" rel="noopener">this paper</a>.</p>
+<p>As you know, different operating systems have different internal implementations of network stacks. <code>libpcap</code> covers all of these differences and provides the system-independent interface for user-level packet capture. I want to focus on the Linux platform, so how does <code>libpcap</code> work on the Linux system? According to some <a href="https://stackoverflow.com/questions/21200009/capturing-performance-with-pcap-vs-raw-socket" target="_blank" rel="noopener">documents</a>, it turns out that libpcap uses the <code>PF_PACKET</code> socket to capture packets on a network interface.</p>
+<p>So the next question is: what the <code>PF_PACKET</code> socket is? </p>
+<h3 id="PF-PACKET-socket"><a href="#PF-PACKET-socket" class="headerlink" title="PF_PACKET socket"></a>PF_PACKET socket</h3><p>In my previous <a href="https://organicprogrammer.com/2021/07/31/how-to-implement-simple-http-server-golang/" target="_blank" rel="noopener">article</a>, we mentioned that the socket interface is TCP/IP’s window on the world. In most modern systems incorporating TCP/IP, the socket interface is the only way applications can use the TCP/IP suite of protocols. </p>
+<p>It is correct. This time, let’s dig deeper about <code>socket</code> by examining the system call executed when we create a new socket: </p>
+<img src="/images/pf-packet-socket.png" title="PF_PACKET socket" width="400px" height="300px">
+
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">socket</span><span class="params">(<span class="keyword">int</span> domain, <span class="keyword">int</span> type, <span class="keyword">int</span> protocol)</span></span>;</span><br></pre></td></tr></table></figure>
+
+<p>When you want to create a socket with the above system call, you have to specify which domain (or protocol family) you want to use with that socket as the first argument. The most commonly used family is <code>PF_INET</code>, which is for communications based on IPv4 protocols (when you create a TCP server, you use this family). Moreover, you have to specify a type for your socket as the second argument. And the possible values depend on the family you specified. For example, when dealing with the <code>PF_INET</code> family, the values for type include <code>SOCK_STREAM</code>(for TCP) and <code>SOCK_DGRAM</code>(for UDP). For other detailed information about the socket system call, you can refer to the socket(3) man page. </p>
+<p>You can find one potential value for the <code>domain</code> argument as follows:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">AF_PACKET    Low-level packet interface</span><br></pre></td></tr></table></figure>
+<p><strong>Note</strong>: <code>AF_PACKET</code> and <code>PF_PACKET</code> are same. It is called <code>PF_PACKET</code> in history and then renamed  <code>AF_PACKET</code> later. <code>PF</code> means protocol families, and <code>AF</code> means address families. In this article, I use <code>PF_PACKET</code>. </p>
+<p>Different from <code>PF_INET</code> socket, which can give you TCP segment. By <code>PF_PACKET</code> socket, you can get the raw <code>Ethernet</code> frame which bypasses the usual upper layer handling of TCP/IP stack. It might sound a little bit crazy. But, that is, any packet received will be directly passed to the application. </p>
+<p>For a better understanding of <code>PF_PACKET</code> socket, let us go deeper and roughly examine the path of a received packet from the network interface to the application level. </p>
+<p>(As shown in the image above) When the network interface card(NIC) receives a packet, it is handled by the driver. The driver maintains a structure called <code>ring buffer</code> internally. And write the packet to kernel memory (the memory is pre-allocated with ring buffer)  with direct memory access(DMA). The packet is placed inside a structure called <strong><code>sk_buff</code></strong>(one of the most important structures related to kernel network subsystem).   </p>
+<p>After entering the kernel space, the packet goes through protocol stack handling layer by layer, such as <code>IP processing</code> and <code>TCP/UDP processing</code>. And the packet goes into applications via the socket interface. You already understand this familiar path very well.</p>
+<p>But for the <code>PF_PACKET</code> socket, the packet in <code>sk_buff</code> is cloned, then it skips the protocol stacks and directly goes to the application. The kernel needs the clone operation, because one copy is consumed by the <code>PF_PACKET</code> socket, and the other one goes through the usual protocol stacks.</p>
+<p>In future articles, I will demonstrate more about Linux kernel network internals.</p>
+<p>Next step, let us see how to implement it at the code level. For brevity, I only show the essential code block. You can refer to this Github <a href="https://github.com/baoqger/raw-socket-packet-capture-/blob/master/raw_socket.c" target="_blank" rel="noopener">repo</a> in detail.  </p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ((sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_IP))) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">    perror(<span class="string">"socket"</span>);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Please ensure to include the system header files: <code>&lt;sys/socket.h&gt; &lt;sys/types.h&gt;</code>. </p>
+<h3 id="Bind-to-one-network-interface"><a href="#Bind-to-one-network-interface" class="headerlink" title="Bind to one network interface"></a>Bind to one network interface</h3><p>Before we add additional settings, the sniffer captures all the packets received on all the network devices. So the next step, let us try to bind the sniffer to a specific network device. </p>
+<p>Firstly, you can use <code>ifconfig</code> command to list all the available <code>network interfaces</code> on your machines. The network interface is a software interface to the networking hardware. </p>
+<p>For example, the following image shows information of network interface <code>eth0</code>: </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">eth0: flags&#x3D;4163&lt;UP,BROADCAST,RUNNING,MULTICAST&gt;  mtu 1500</span><br><span class="line">        inet 192.168.230.49  netmask 255.255.240.0  broadcast 192.168.239.255</span><br><span class="line">        inet6 fe80::215:5dff:fefb:e31f  prefixlen 64  scopeid 0x20&lt;link&gt;</span><br><span class="line">        ether 00:15:5d:fb:e3:1f  txqueuelen 1000  (Ethernet)</span><br><span class="line">        RX packets 260  bytes 87732 (87.7 KB)</span><br><span class="line">        RX errors 0  dropped 0  overruns 0  frame 0</span><br><span class="line">        TX packets 178  bytes 29393 (29.3 KB)</span><br><span class="line">        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0</span><br></pre></td></tr></table></figure>
+
+<p>Let’s bind the sniffer to <code>eth0</code> as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// bind to eth0 interface only</span></span><br><span class="line"><span class="keyword">const</span> <span class="keyword">char</span> *opt;</span><br><span class="line">opt = <span class="string">"eth0"</span>;</span><br><span class="line"><span class="keyword">if</span> (setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, opt, <span class="built_in">strlen</span>(opt) + <span class="number">1</span>) &lt; <span class="number">0</span>) &#123;</span><br><span class="line">    perror(<span class="string">"setsockopt bind device"</span>);</span><br><span class="line">    <span class="built_in">close</span>(sock);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>We do it by calling the <code>setsockopt</code> system call. I leave the detailed usage of it to you. </p>
+<h3 id="Non-promiscuous-and-promiscuous-mode"><a href="#Non-promiscuous-and-promiscuous-mode" class="headerlink" title="Non-promiscuous and promiscuous mode"></a>Non-promiscuous and promiscuous mode</h3><p>By default, each network card minds its own business and reads only the frames directed to it. It means that the network card discards all the packets that do not contain its own MAC address, which is called <code>non-promiscuous</code> mode. </p>
+<p>Next, let us make the sniffer can work in <code>promiscuous</code> mode. In this way, it retrieves all the data packets. Even the ones that are not addressed to its host. </p>
+<p>To set a network interface to promiscuous mode, all we have to do is issue the <code>ioctl()</code> system call to an open socket on that interface.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* set the network card in promiscuos mode*/</span></span><br><span class="line"><span class="comment">// An ioctl() request has encoded in it whether the argument is an in parameter or out parameter</span></span><br><span class="line"><span class="comment">// SIOCGIFFLAGS	0x8913		/* get flags			*/</span></span><br><span class="line"><span class="comment">// SIOCSIFFLAGS	0x8914		/* set flags			*/</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">ifreq</span> <span class="title">ethreq</span>;</span></span><br><span class="line"><span class="built_in">strncpy</span>(ethreq.ifr_name, <span class="string">"eth0"</span>, IF_NAMESIZE);</span><br><span class="line"><span class="keyword">if</span> (ioctl(sock, SIOCGIFFLAGS, &amp;ethreq) == <span class="number">-1</span>) &#123;</span><br><span class="line">    perror(<span class="string">"ioctl"</span>);</span><br><span class="line">    <span class="built_in">close</span>(sock);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line">ethreq.ifr_flags |= IFF_PROMISC;</span><br><span class="line"><span class="keyword">if</span> (ioctl(sock, SIOCSIFFLAGS, &amp;ethreq) == <span class="number">-1</span>) &#123;</span><br><span class="line">    perror(<span class="string">"ioctl"</span>);</span><br><span class="line">    <span class="built_in">close</span>(sock);</span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>ioctl</code> stands for <strong>I/O control</strong>, which manipulates the underlying device parameters of specific files. <code>ioctl</code> takes three arguments: </p>
+<ul>
+<li>The first argument must be an open file descriptor. We use the socket file descriptor bound to the network interface in our case.</li>
+<li>The second argument is a device-dependent request code. You can see we called <code>ioctl</code> twice. The first call uses request code <em>SIOC<strong>G</strong>IFFLAGS</em> to get flags, and the second call uses request code <em>SIOC<strong>S</strong>IFFLAGS</em> to set flags. Do not be fooled by these two constant values, which are spelled alike.</li>
+<li>The third argument is for returning information to the requesting process.  </li>
+</ul>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>This article examined what <code>PF_PACKET</code> socket is, how it works and why the application can get raw Ethernet packets. Furthermore, we discussed how to bind the sniffer to one specific network interface and how can make the sniffer work in the promiscuous mode. The next article will examine how to implement the packet filter functionality, which is very useful to a network sniffer. </p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/" data-id="cl01tcti7000xjcmmfd7o4rd1" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/" data-id="cl0uo5bf0001200mm1w33eit3" class="article-share-link">Share</a>
       
       
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li></ul>
+
     </footer>
   </div>
   
@@ -145,7 +175,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/02/07/stack-smashing-detect-in-c/" data-id="cl01tctit001wjcmma33cagjy" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/02/07/stack-smashing-detect-in-c/" data-id="cl0uo5bfa002500mmatx8h07c" class="article-share-link">Share</a>
       
       
     </footer>
@@ -181,7 +211,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/01/28/how-to-implement-arp-spoof/" data-id="cl01tcti5000sjcmm36yh7hhj" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/01/28/how-to-implement-arp-spoof/" data-id="cl0uo5bez000y00mmgbaph5yb" class="article-share-link">Share</a>
       
       
     </footer>
@@ -217,7 +247,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/01/20/extern-in-c/" data-id="cl01tcths0001jcmmbdhdhf7s" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/01/20/extern-in-c/" data-id="cl0uo5bel000200mmcmm3h8yv" class="article-share-link">Share</a>
       
       
     </footer>
@@ -253,7 +283,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/01/12/md5-implementation/" data-id="cl01tctis001ujcmm7sp5d5vo" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/01/12/md5-implementation/" data-id="cl0uo5bf7001r00mm3e0n11or" class="article-share-link">Share</a>
       
       
     </footer>
@@ -289,7 +319,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/12/24/how-traceroute-works/" data-id="cl01tctia0016jcmm3v1lhqrt" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/12/24/how-traceroute-works/" data-id="cl0uo5bf1001600mmbtbl8woq" class="article-share-link">Share</a>
       
       
     </footer>
@@ -370,7 +400,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/12/15/understand-http-1-1-client-golang-part2/" data-id="cl01tctix0027jcmm3jvf9tb8" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/12/15/understand-http-1-1-client-golang-part2/" data-id="cl0uo5bfa002700mm7lw7dxyj" class="article-share-link">Share</a>
       
       
     </footer>
@@ -476,7 +506,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/" data-id="cl01tctiy002bjcmm78rb70vf" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/" data-id="cl0uo5bfa002900mmfwk3dfdd" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li></ul>
@@ -550,7 +580,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/" data-id="cl01tctj0002hjcmm7nhngask" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/" data-id="cl0uo5bfb002a00mm9amvh8d1" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li></ul>
@@ -648,7 +678,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/25/understand-http1-1-persistent-connection-golang/" data-id="cl01tctiw0025jcmmbeapggjh" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/25/understand-http1-1-persistent-connection-golang/" data-id="cl0uo5bfb002d00mmhpzz1pyq" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li></ul>
@@ -678,7 +708,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
     </div>
   </div>
 
@@ -688,7 +718,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 20px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 20px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -710,7 +740,7 @@
       <ul>
         
           <li>
-            <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket/">how-to-implement-libpcap-on-linux-with-raw-socket</a>
+            <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/">Write a Linux packet sniffer from scratch: part one</a>
           </li>
         
           <li>
