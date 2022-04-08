@@ -66,6 +66,104 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-understand-http1-1-persistent-connection-golang" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/10/25/understand-http1-1-persistent-connection-golang/" class="article-date">
+  <time datetime="2021-10-25T03:11:28.000Z" itemprop="datePublished">2021-10-25</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/10/25/understand-http1-1-persistent-connection-golang/">Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>Initially, <code>HTTP</code> was a single request-and-response model. An <code>HTTP</code> client opens the <code>TCP</code> connection, requests a resource, gets the response, and the connection is closed. And establishing and terminating each <code>TCP</code> connection is a resource-consuming operation (in detail, you can refer to my previous <a href="https://baoqger.github.io/2019/07/14/why-tcp-four-way-handshake/">article</a>). As the web application becomes more and more complex, displaying a single page may require several HTTP requests, too many TCP connection operations will have a bad impact on the performance. </p>
+<img src="/images/short-lived-connection.png" title="tcp termination" width="400px" height="300px">
+
+<p>So <code>persistent-connection</code> (which is also called <code>keep-alive</code>) model is created in <code>HTTP/1.1</code> protocol. In this model, TCP connections keep open between several successive requests, and in this way, the time needed to open new connections will be reduced. </p>
+<img src="/images/persistent-http.png" title="tcp termination" width="400px" height="300px">
+
+<p>In this article, I will show you how <code>persistent connection</code> works based on a Golang application. We will do some experiments based on the demo app, and verify the TCP connection behavior with some popular network packet analysis tools. In short, After reading this article, you will learn:</p>
+<ul>
+<li>Golang <code>http.Client</code> usage (and a little bit source code analysis)</li>
+<li>network analysis with <code>netstat</code> and <code>tcpdump</code></li>
+</ul>
+<p>You can find the demo Golang application in this Github <a href="https://github.com/baoqger/http-persistent-connection-golang" target="_blank" rel="noopener">repo</a>.</p>
+<h3 id="Sequential-requests"><a href="#Sequential-requests" class="headerlink" title="Sequential requests"></a>Sequential requests</h3><p>Let’s start from the simple case where the client keeps sending <code>sequential</code> requests to the server. The <a href="https://github.com/baoqger/http-persistent-connection-golang/blob/master/sequence/non-persistent-connection/non-persistent-connection.go" target="_blank" rel="noopener">code</a> goes as follows: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"log"</span></span><br><span class="line">	<span class="string">"net/http"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startHTTPserver</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	http.HandleFunc(<span class="string">"/"</span>, <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">		time.Sleep(time.Duration(<span class="number">50</span>) * time.Microsecond)</span><br><span class="line">		fmt.Fprintf(w, <span class="string">"Hello world"</span>)</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		http.ListenAndServe(<span class="string">":8080"</span>, <span class="literal">nil</span>)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startHTTPRequest</span><span class="params">()</span></span> &#123;</span><br><span class="line">	counter := <span class="number">0</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		_, err := http.Get(<span class="string">"http://localhost:8080/"</span>)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(fmt.Sprintf(<span class="string">"Error: %v"</span>, err))</span><br><span class="line">		&#125;</span><br><span class="line">		log.Printf(<span class="string">"HTTP request #%v"</span>, counter)</span><br><span class="line">		counter += <span class="number">1</span></span><br><span class="line">		time.Sleep(time.Duration(<span class="number">1</span>) * time.Second)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	startHTTPserver()</span><br><span class="line"></span><br><span class="line">	startHTTPRequest()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>We start an HTTP server in a Goroutine, and keep sending ten sequential requests to it. Right? Let’s run the application and check the numbers and status of TCP connections.</p>
+<p>After running the above code, you can see the following output: </p>
+<img src="/images/sequential-request.png" title="tcp termination" width="800px" height="600px">
+
+<p>When the application stops running, we can run the following <code>netstat</code> command: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -n  | grep 8080</span><br></pre></td></tr></table></figure>
+
+<p>The TCP connections are listed as follows:</p>
+<img src="/images/sequential-request-netstat.png" title="tcp termination" width="800px" height="600px">
+
+<p>Obviously, the 10 HTTP requests are not persistent since 10 TCP connections are opened. </p>
+<p><strong>Note</strong>: the last column of <code>netstat</code> shows the state of TCP connection. The state of TCP connection termination process can be explained with the following image: </p>
+<img src="/images/state-tcp-connection.png" title="state tcp termination" width="600px" height="400px">
+
+<p>I will not cover the details in this article. But we need to understand the meaning of <code>TIME-WAIT</code>. </p>
+<p>In the <code>four-way handshake</code> process, the client will send the <code>ACK</code> packet to terminate the connection, but the state of TCP can’t immediately go to <code>CLOSED</code>. The client has to wait for some time and the state in this waiting process is called <code>TIME-WAIT</code>. The TCP connection needs this <code>TIME-WAIT</code> state for two main reasons. </p>
+<ul>
+<li>The first is to provide enough time that the <code>ACK</code> is received by the other peer. </li>
+<li>The second is to provide a buffer period between the end of current connection and any subsequent ones. If not for this period, it’s possible that packets from different connections could be mixed. In detail, you can refer to this <a href="http://www.tcpipguide.com/free/t_TCPConnectionTermination-3.htm" target="_blank" rel="noopener">book</a>.</li>
+</ul>
+<p>In our demo application case, if you wait for a while after the program stops, and run the <code>netstat</code> command again then no TCP connection will be listed in the output since they’re all closed. </p>
+<p>Another tool to verify the TCP connections is <code>tcpdump</code>, which can capture every network packet send to your machine. In our case, you can run the following <code>tcpdump</code> command: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo tcpdump -i any -n host localhost</span><br></pre></td></tr></table></figure>
+
+<p>It will capture all the network packets send from or to the localhost (we’re running the server in localhost, right?). <code>tcpdump</code> is a great tool to help you understand the network, you can refer to its <a href="https://www.tcpdump.org/" target="_blank" rel="noopener">document</a> for more help.</p>
+<p><strong>Note</strong>: in our demo code above, we send 10 HTTP requests in sequence, which will make the capture result from <code>tcpdump</code> too long. So I modified the for loop to only send 2 sequential requests, which is enough to verify the behavior of <code>persistent connection</code>. The result goes as follows: </p>
+<img src="/images/tcpdump-non-persistent.png" title="tcpdump" width="1200px" height="1000px">
+
+<p>In <code>tcpdump</code> output, the <code>Flag [S]</code> represents <code>SYN</code> flag, which is used to establish the TCP connection. The above snapshot contains two <code>Flag [S]</code> packets. The first <code>Flag [S]</code> is triggered by the first HTTP call, and the following packets are HTTP request and response. Then you can see the second <code>Flag [S]</code> packet to open a new TCP connection, which means the second HTTP request is not <code>persistent connection</code> as we hope. </p>
+<p>Next step, let’s see how to make HTTP work as a persistent connection in Golang. </p>
+<p>In fact,this is a well known issue in Golang ecosystem, you can find the information in the <a href="https://pkg.go.dev/net/http#Client" target="_blank" rel="noopener">official document</a>:</p>
+<ul>
+<li>If the returned error is nil, the Response will contain a non-nil Body which the user is expected to close. If the Body is not both read to EOF and closed, the Client’s underlying RoundTripper (typically Transport) may not be able to re-use a persistent TCP connection to the server for a subsequent “keep-alive” request.</li>
+</ul>
+<p>The fix will be straightforward by just adding two more lines of code as follows: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">"fmt"</span></span><br><span class="line">	<span class="string">"io"</span></span><br><span class="line">	<span class="string">"io/ioutil"</span></span><br><span class="line">	<span class="string">"log"</span></span><br><span class="line">	<span class="string">"net/http"</span></span><br><span class="line">	<span class="string">"time"</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startHTTPServer</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	http.HandleFunc(<span class="string">"/"</span>, <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">		time.Sleep(time.Duration(<span class="number">50</span>) * time.Microsecond)</span><br><span class="line">		fmt.Fprintf(w, <span class="string">"Hello world"</span>)</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		http.ListenAndServe(<span class="string">":8080"</span>, <span class="literal">nil</span>)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startHTTPRequest</span><span class="params">()</span></span> &#123;</span><br><span class="line">	counter := <span class="number">0</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		resp, err := http.Get(<span class="string">"http://localhost:8080/"</span>)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(fmt.Sprintf(<span class="string">"Error: %v"</span>, err))</span><br><span class="line">		&#125;</span><br><span class="line">		io.Copy(ioutil.Discard, resp.Body) <span class="comment">// read the response body</span></span><br><span class="line">		resp.Body.Close() <span class="comment">// close the response body</span></span><br><span class="line">		log.Printf(<span class="string">"HTTP request #%v"</span>, counter)</span><br><span class="line">		counter += <span class="number">1</span></span><br><span class="line">		time.Sleep(time.Duration(<span class="number">1</span>) * time.Second)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	startHTTPServer()</span><br><span class="line"></span><br><span class="line">	startHTTPRequest()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>let’s verify by running <code>netstat</code> command, the result goes as follows: </p>
+<img src="/images/netstat-persistent.png" title="tcpdump" width="800px" height="600px">
+
+<p>This time 10 sequential HTTP requests establish only one TCP connection. This behavior is just what we hope: <code>persistent connection</code>.  </p>
+<p>We can double verify it by doing the same experiment as above: run two HTTP requests in sequence and capture packets with <code>tcpdump</code>: </p>
+<img src="/images/tcpdump-persistent.png" title="tcpdump" width="1200px" height="1000px">
+
+<p>This time, only one <code>Flag [S]</code> packet is there! The two sequential HTTP request re-use the same underlying TCP connection. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we showed how HTTP <code>persistent connection</code> works in the case of sequential requests. In the next article, we can show you the case of concurrent requests. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2021/10/25/understand-http1-1-persistent-connection-golang/" data-id="cl1q2y45g002dbkmmcc3jfpxz" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-why-only-13-dns-root-server" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2021/10/12/why-only-13-dns-root-server/" class="article-date">
@@ -92,7 +190,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/12/why-only-13-dns-root-server/" data-id="cl0uo5bfc002i00mm4ma5beai" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/12/why-only-13-dns-root-server/" data-id="cl1q2y45i002ibkmmgaddem8c" class="article-share-link">Share</a>
       
       
     </footer>
@@ -128,7 +226,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/08/packet-sniffer-golang/" data-id="cl0uo5bf8001y00mm7v2tajdw" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/08/packet-sniffer-golang/" data-id="cl1q2y45c001ybkmmft3aem14" class="article-share-link">Share</a>
       
       
     </footer>
@@ -164,7 +262,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/08/how-to-build-packet-sniffer/" data-id="cl0uo5bew000t00mmh7tnhinv" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/08/how-to-build-packet-sniffer/" data-id="cl1q2y44o000kbkmm01vvbwuc" class="article-share-link">Share</a>
       
       
     </footer>
@@ -200,7 +298,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/08/25/cgo-golang/" data-id="cl0uo5beo000600mme6irenfj" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/08/25/cgo-golang/" data-id="cl1q2y44g0003bkmm5qs8ej1d" class="article-share-link">Share</a>
       
       
     </footer>
@@ -260,7 +358,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/08/06/win-wsl/" data-id="cl0uo5bfd002j00mm3vehbckx" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/08/06/win-wsl/" data-id="cl1q2y45j002mbkmm022a4y2x" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li></ul>
@@ -370,7 +468,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/07/31/how-to-implement-simple-http-server-golang/" data-id="cl0uo5bf0001100mm0jzu7zx0" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/07/31/how-to-implement-simple-http-server-golang/" data-id="cl1q2y454001abkmm6o7a8imw" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li></ul>
@@ -408,7 +506,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/07/14/how-to-collect-metrics-k8s/" data-id="cl0uo5bey000v00mm74vx3ngr" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/07/14/how-to-collect-metrics-k8s/" data-id="cl1q2y44q000sbkmmgqu254wz" class="article-share-link">Share</a>
       
       
     </footer>
@@ -444,7 +542,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/07/14/how-to-implement-graphql-spec/" data-id="cl0uo5bf2001a00mmd7cp80qd" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/07/14/how-to-implement-graphql-spec/" data-id="cl1q2y44t000wbkmm5fk1fvfh" class="article-share-link">Share</a>
       
       
     </footer>
@@ -546,43 +644,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/07/04/how-to-deisgn-a-load-test-tool/" data-id="cl0uo5bez000x00mmdvetdsh4" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-hystrix-circuit-breaker-part4" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2021/06/29/hystrix-circuit-breaker-part4/" class="article-date">
-  <time datetime="2021-06-29T09:19:53.000Z" itemprop="datePublished">2021-06-29</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/06/29/hystrix-circuit-breaker-part4/">Circuit breaker and Hystrix: part four - error rate</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/06/29/hystrix-circuit-breaker-part4/" data-id="cl0uo5bf6001p00mmathi19z6" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/07/04/how-to-deisgn-a-load-test-tool/" data-id="cl1q2y44v0015bkmmhak0cx55" class="article-share-link">Share</a>
       
       
     </footer>
@@ -610,7 +672,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
     </div>
   </div>
 
@@ -620,7 +682,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 20px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 20px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -629,7 +691,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
     </div>
   </div>
 
@@ -642,7 +704,11 @@
       <ul>
         
           <li>
-            <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/">Write a Linux packet sniffer from scratch: part one</a>
+            <a href="/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/">Write a Linux packet sniffer from scratch: part two- BPF</a>
+          </li>
+        
+          <li>
+            <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/">Write a Linux packet sniffer from scratch: part one- PF_PACKET socket and promiscuous mode</a>
           </li>
         
           <li>
@@ -655,10 +721,6 @@
         
           <li>
             <a href="/2022/01/20/extern-in-c/">extern-in-c</a>
-          </li>
-        
-          <li>
-            <a href="/2022/01/12/md5-implementation/">md5-implementation</a>
           </li>
         
       </ul>
