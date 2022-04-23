@@ -170,13 +170,22 @@
 <p>So far, every piece is connected. The puzzle of BPF is solved. The <code>BPF</code> machine allows the user-space applications to inject customized BPF programs straight into a kernel. Once loaded and verified, BPF programs execute in kernel context. These BPF programs operate inside kernel memory space with access to all the internal kernel states available to it. For example, the <code>cBPF</code> machine which uses the network packet data. But this power can be extended as <code>eBPF</code>, which can be used in many other varied applications. As someone <a href="https://www.brendangregg.com/bpf-performance-tools-book.html" target="_blank" rel="noopener">said</a> <strong>In some way, eBPF does to the kernel what Javascript does to the websites: it allows all sorts of new application to be created.</strong>  In the future, I plan to examine eBPF in depth. </p>
 <img src="/images/bpf-run-instructions.png" title="BPF Run Instructions" width="600px" height="400px">
 
+<h3 id="Process-the-packet"><a href="#Process-the-packet" class="headerlink" title="Process the packet"></a>Process the packet</h3><p>We examined the <code>BPF</code> filtering theory on the kernel level a lot in the above section. But for our tiny sniffer, the last step we need to do is process the network packet. </p>
+<ul>
+<li><p>First, the <code>recvfrom</code> system call reads the packet from the socket. And we put the system call in a <code>while</code> loop to keep reading the incoming packets. </p>
+</li>
+<li><p>Then, we print the source and destination <code>MAC</code> address in the packet(the packet we got is a raw Ethernet frame in Layer 2, right?). And if what this Ethernet frame contains is an <code>IP4</code> packet, then we print out the source and destination <code>IP</code> address. To understand more about it, you can study the header format of various network protocols. I will not cover in details here.</p>
+</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span>(<span class="number">1</span>) &#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"-----------\n"</span>);</span><br><span class="line">	n = recvfrom(sock, <span class="built_in">buffer</span>, <span class="number">2048</span>, <span class="number">0</span>, <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"%d bytes read\n"</span>, n);</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Check to see if the packet contains at least</span></span><br><span class="line"><span class="comment">	* complete Ethernet (14), IP (20) and TCP/UDP</span></span><br><span class="line"><span class="comment">	* (8) headers.</span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line">	<span class="keyword">if</span> (n &lt; <span class="number">42</span>) &#123;</span><br><span class="line">		perror(<span class="string">"recvfrom():"</span>);</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"Incomplete packet (errno is %d)\n"</span>, errno);</span><br><span class="line">		<span class="built_in">close</span>(sock);</span><br><span class="line">		<span class="built_in">exit</span>(<span class="number">0</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	ethhead = <span class="built_in">buffer</span>;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"Source MAC address: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n"</span>,</span><br><span class="line">		ethhead[<span class="number">0</span>], ethhead[<span class="number">1</span>], ethhead[<span class="number">2</span>], ethhead[<span class="number">3</span>], ethhead[<span class="number">4</span>], ethhead[<span class="number">5</span>]</span><br><span class="line">	);</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">"Destination MAC address: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n"</span>,</span><br><span class="line">		ethhead[<span class="number">6</span>], ethhead[<span class="number">7</span>], ethhead[<span class="number">8</span>], ethhead[<span class="number">9</span>], ethhead[<span class="number">10</span>], ethhead[<span class="number">11</span>]</span><br><span class="line">	);</span><br><span class="line"></span><br><span class="line">	iphead = <span class="built_in">buffer</span> + <span class="number">14</span>; </span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (*iphead==<span class="number">0x45</span>) &#123; <span class="comment">/* Double check for IPv4</span></span><br><span class="line"><span class="comment">						* and no options present */</span></span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"Source host %d.%d.%d.%d\n"</span>,</span><br><span class="line">				iphead[<span class="number">12</span>],iphead[<span class="number">13</span>],</span><br><span class="line">				iphead[<span class="number">14</span>],iphead[<span class="number">15</span>]);</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"Dest host %d.%d.%d.%d\n"</span>,</span><br><span class="line">				iphead[<span class="number">16</span>],iphead[<span class="number">17</span>],</span><br><span class="line">				iphead[<span class="number">18</span>],iphead[<span class="number">19</span>]);</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"Source,Dest ports %d,%d\n"</span>,</span><br><span class="line">				(iphead[<span class="number">20</span>]&lt;&lt;<span class="number">8</span>)+iphead[<span class="number">21</span>],</span><br><span class="line">				(iphead[<span class="number">22</span>]&lt;&lt;<span class="number">8</span>)+iphead[<span class="number">23</span>]);</span><br><span class="line">		<span class="built_in">printf</span>(<span class="string">"Layer-4 protocol %s\n"</span>, transport_protocol(iphead[<span class="number">9</span>]));</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
+<p>You can find the complete source code of the sniffer in this Github <a href="https://github.com/baoqger/raw-socket-packet-capture-/blob/master/raw_socket.c" target="_blank" rel="noopener">repo</a>.</p>
 <h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examine how to add filters to our sniffer. First, we analyze why the filter should be running inside kernel space instead of the application space. Then, this article examines the <code>BPF</code> machine design and implementation in detail based on the paper. We reviewed the kernel source code to understand how to implement the <code>BPF</code> virtual machine. As I mentioned above, the original <code>BPF</code>(<code>cBPF</code>) was extended to <code>eBPF</code> now. But the understanding of the BPF virtual machine is very helpful to <code>eBPF</code> as well.   </p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/" data-id="cl1q2y44t000xbkmmhtnaewmd" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/" data-id="cl2b4mk0x0010tgmm9zmwcfy6" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li></ul>
@@ -210,7 +219,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>When we refer to network packet sniffer, some famous and popular tools come to your mind, like <code>tcpdump</code>. I have shown you how to capture network packets in my previous articles. But have you ever thought about writing a packet sniffer from scratch without dependencies on any third-party libraries? We need to dig deep into the operating system and find the weapons needed to build this tool. Sounds complex, right? In this article, let us do it. After reading this article, you can find that it is not as difficult as you think. </p>
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>When we refer to network packet sniffer, some famous and popular tools come to your mind, like <code>tcpdump</code>. I have shown you how to capture network packets with such tools in my previous articles. But have you ever thought about writing a packet sniffer from scratch without dependencies on any third-party libraries? We need to dig deep into the operating system and find the weapons needed to build this tool. Sounds complex, right? In this article, let us do it. After reading this article, you can find that it is not as difficult as you think. </p>
 <p>Note that different operating system kernels have different internal network implementations. This article will focus on the <code>Linux</code> platform. </p>
 <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>Firstly, we need to review how <code>tcpdump</code> is implemented. According to the official <a href="https://www.tcpdump.org/" target="_blank" rel="noopener">document</a>, <code>tcpdump</code> is built on the library <code>libpcap</code>, which is developed based on the remarkable research result from Berkeley, in details you can refer to <a href="https://www.tcpdump.org/papers/bpf-usenix93.pdf" target="_blank" rel="noopener">this paper</a>.</p>
 <p>As you know, different operating systems have different internal implementations of network stacks. <code>libpcap</code> covers all of these differences and provides the system-independent interface for user-level packet capture. I want to focus on the Linux platform, so how does <code>libpcap</code> work on the Linux system? According to some <a href="https://stackoverflow.com/questions/21200009/capturing-performance-with-pcap-vs-raw-socket" target="_blank" rel="noopener">documents</a>, it turns out that libpcap uses the <code>PF_PACKET</code> socket to capture packets on a network interface.</p>
@@ -261,7 +270,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/" data-id="cl1q2y44u0011bkmm338jb4gw" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/" data-id="cl2b4mk0w000xtgmmg02cf57a" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li></ul>
@@ -299,7 +308,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/02/07/stack-smashing-detect-in-c/" data-id="cl1q2y45d0020bkmmgopj9udx" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/02/07/stack-smashing-detect-in-c/" data-id="cl2b4mk170020tgmmdsjtcn67" class="article-share-link">Share</a>
       
       
     </footer>
@@ -335,7 +344,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/01/28/how-to-implement-arp-spoof/" data-id="cl1q2y44r000ubkmm8u2ndv50" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/01/28/how-to-implement-arp-spoof/" data-id="cl2b4mk0t000stgmm3pfd8azv" class="article-share-link">Share</a>
       
       
     </footer>
@@ -371,7 +380,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/01/20/extern-in-c/" data-id="cl1q2y44e0001bkmm2ctgedqg" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/01/20/extern-in-c/" data-id="cl2b4mk0o000dtgmm0dfwgny4" class="article-share-link">Share</a>
       
       
     </footer>
@@ -407,7 +416,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/01/12/md5-implementation/" data-id="cl1q2y45b001sbkmmhd5z8dop" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/01/12/md5-implementation/" data-id="cl2b4mk15001qtgmm13ulcenn" class="article-share-link">Share</a>
       
       
     </footer>
@@ -443,7 +452,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/12/24/how-traceroute-works/" data-id="cl1q2y44w0017bkmm0g1n9f2i" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/12/24/how-traceroute-works/" data-id="cl2b4mk0z0016tgmmgtt4ggug" class="article-share-link">Share</a>
       
       
     </footer>
@@ -524,7 +533,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/12/15/understand-http-1-1-client-golang-part2/" data-id="cl1q2y45g002bbkmm311u5zf7" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/12/15/understand-http-1-1-client-golang-part2/" data-id="cl2b4mk1a002btgmm221x32oz" class="article-share-link">Share</a>
       
       
     </footer>
@@ -630,7 +639,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/" data-id="cl1q2y45h002ebkmm3stv5qpd" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/" data-id="cl2b4mk1a002dtgmma7yi0mx1" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li></ul>
@@ -704,7 +713,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/" data-id="cl1q2y45h002hbkmm5gy41s82" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/" data-id="cl2b4mk1b002itgmmgv5x90kv" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li></ul>

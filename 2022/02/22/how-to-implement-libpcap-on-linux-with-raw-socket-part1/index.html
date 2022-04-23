@@ -7,16 +7,16 @@
   
   <title>Write a Linux packet sniffer from scratch: part one- PF_PACKET socket and promiscuous mode | Chris Bao&#39;s Blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="BackgroundWhen we refer to network packet sniffer, some famous and popular tools come to your mind, like tcpdump. I have shown you how to capture network packets in my previous articles. But have you">
+  <meta name="description" content="BackgroundWhen we refer to network packet sniffer, some famous and popular tools come to your mind, like tcpdump. I have shown you how to capture network packets with such tools in my previous article">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Write a Linux packet sniffer from scratch: part one- PF_PACKET socket and promiscuous mode">
 <meta property="og:url" content="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/index.html">
 <meta property="og:site_name" content="Chris Bao&#39;s Blog">
-<meta property="og:description" content="BackgroundWhen we refer to network packet sniffer, some famous and popular tools come to your mind, like tcpdump. I have shown you how to capture network packets in my previous articles. But have you">
+<meta property="og:description" content="BackgroundWhen we refer to network packet sniffer, some famous and popular tools come to your mind, like tcpdump. I have shown you how to capture network packets with such tools in my previous article">
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://baoqger.github.io/images/pf-packet-socket.png">
 <meta property="article:published_time" content="2022-02-22T02:21:14.000Z">
-<meta property="article:modified_time" content="2022-04-01T01:44:16.933Z">
+<meta property="article:modified_time" content="2022-04-23T00:31:15.818Z">
 <meta property="article:author" content="Chris Bao">
 <meta property="article:tag" content="packet sniffer, socket, PF_PACKET">
 <meta name="twitter:card" content="summary">
@@ -93,7 +93,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>When we refer to network packet sniffer, some famous and popular tools come to your mind, like <code>tcpdump</code>. I have shown you how to capture network packets in my previous articles. But have you ever thought about writing a packet sniffer from scratch without dependencies on any third-party libraries? We need to dig deep into the operating system and find the weapons needed to build this tool. Sounds complex, right? In this article, let us do it. After reading this article, you can find that it is not as difficult as you think. </p>
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>When we refer to network packet sniffer, some famous and popular tools come to your mind, like <code>tcpdump</code>. I have shown you how to capture network packets with such tools in my previous articles. But have you ever thought about writing a packet sniffer from scratch without dependencies on any third-party libraries? We need to dig deep into the operating system and find the weapons needed to build this tool. Sounds complex, right? In this article, let us do it. After reading this article, you can find that it is not as difficult as you think. </p>
 <p>Note that different operating system kernels have different internal network implementations. This article will focus on the <code>Linux</code> platform. </p>
 <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>Firstly, we need to review how <code>tcpdump</code> is implemented. According to the official <a href="https://www.tcpdump.org/" target="_blank" rel="noopener">document</a>, <code>tcpdump</code> is built on the library <code>libpcap</code>, which is developed based on the remarkable research result from Berkeley, in details you can refer to <a href="https://www.tcpdump.org/papers/bpf-usenix93.pdf" target="_blank" rel="noopener">this paper</a>.</p>
 <p>As you know, different operating systems have different internal implementations of network stacks. <code>libpcap</code> covers all of these differences and provides the system-independent interface for user-level packet capture. I want to focus on the Linux platform, so how does <code>libpcap</code> work on the Linux system? According to some <a href="https://stackoverflow.com/questions/21200009/capturing-performance-with-pcap-vs-raw-socket" target="_blank" rel="noopener">documents</a>, it turns out that libpcap uses the <code>PF_PACKET</code> socket to capture packets on a network interface.</p>
@@ -144,7 +144,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/" data-id="cl1q2y44u0011bkmm338jb4gw" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/" data-id="cl2b4mk0w000xtgmmg02cf57a" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li></ul>
