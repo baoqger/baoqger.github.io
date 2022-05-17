@@ -66,6 +66,81 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-linux-cpp-docker" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/07/28/linux-cpp-docker/" class="article-date">
+  <time datetime="2020-07-28T12:42:21.000Z" itemprop="datePublished">2020-07-28</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/07/28/linux-cpp-docker/">Use Docker container for local C++ development</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Why-develop-in-Docker-container"><a href="#Why-develop-in-Docker-container" class="headerlink" title="Why develop in Docker container?"></a>Why develop in Docker container?</h3><p><code>Docker</code> is the hottest technology to deploy and run the software. The key benefit of Docker is that it allows users to package an application with all of its dependencies into a standardized unit for software development. Compared with virtual machines, containers do not have high overhead and hence enable more efficient usage of the underlying system and resources. </p>
+<p>Besides deploying and running applications, Docker containers can also make your local development work easier, especially when you need to set up a specific environment with many dependencies. </p>
+<p>In my case, I have a project which is a C++ application running on the Linux platform. But on personal machines I’m running macOS and Windows systems, I didn’t install Linux platform on my computer. Before I start working on this project, I need to fix the platform/environment issue. </p>
+<p>The first idea is, of course, using virtual-machines with VirtualBox and install the Linux system in it. This process will be time-consuming and tedious. So I decided to use Docker container to speed up the environment configuration step. </p>
+<p>I will share the experience step by step. The whole process is lightweight and quick, also can practice your Docker related skills.</p>
+<h3 id="Create-the-Docker-container"><a href="#Create-the-Docker-container" class="headerlink" title="Create the Docker container"></a>Create the Docker container</h3><p>To build a Docker image, we need a <code>Dockerfile</code>, which is a text document(without a file extension) that contains the instructions to set up an environment for a Docker container. The Docker <a href="https://docs.docker.com/get-started/overview/" target="_blank" rel="noopener">official site</a> is the best place to understand those fundamental and important knowledge.</p>
+<p>In my case the basic <code>Dockerfile</code> goes as following:</p>
+<figure class="highlight docker"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Download base image ubuntu 20.04</span></span><br><span class="line"><span class="keyword">FROM</span> ubuntu:<span class="number">20.04</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Disable Prompt During Packages Installation</span></span><br><span class="line"><span class="keyword">ARG</span> DEBIAN_FRONTEND=noninteractive</span><br><span class="line"></span><br><span class="line"><span class="comment"># Update Ubuntu Software repository</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> apt-get update &amp;&amp; apt-get install -y \</span></span><br><span class="line"><span class="bash">    make \</span></span><br><span class="line"><span class="bash">    cmake \</span></span><br><span class="line"><span class="bash">    g++ \</span></span><br><span class="line"><span class="bash">    libncurses5-dev \</span></span><br><span class="line"><span class="bash">    libncursesw5-dev \</span></span><br><span class="line"><span class="bash">&amp;&amp; rm -rf /var/lib/apt/lists/*</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CMD</span><span class="bash"> [<span class="string">"bash"</span>]</span></span><br></pre></td></tr></table></figure>
+
+<p><strong><em>FROM</em></strong> : the first part is the <code>FROM</code> command, which tells us what image to base this off of (as we know, Docker is following a multi-layer structure). In my case,  it’s using the <code>Ubuntu:20.04</code> image, which again references a Dockerfile to automate the process. </p>
+<p><strong><em>ARG</em></strong>: <code>ARG</code> instruction defines a variable that can be passed at build time to pass environment info. In this case, just to disable the console output during the following Linux package installation process. </p>
+<p><strong><em>RUN</em></strong>: the next set of calls are the <code>RUN</code> commands. This <code>RUN</code> instruction allows you to install your application and packages for it. <code>RUN</code> executes commands in a new layer and creates a new layer by committing the results. Usually, you can find several <code>RUN</code> instructions in a Dockerfile. In this case, I want to install the C++ compiler and build tools (and some other specific dependency packages for development) which is not available in the Ubuntu base image.</p>
+<p><strong><em>CMD</em></strong>: the last instruction <code>CMD</code> allows you to set a default command, which will be executed when you run the container without specifying a command. If Docker container runs with a command, this default one will be ignored. </p>
+<p>With this <code>Dockerfile</code>, we can build the image with the next Docker command:</p>
+<figure class="highlight docker"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build -t linux-cpp .</span><br></pre></td></tr></table></figure>
+
+<p>This will build the desired Docker image tagged as <code>linux-cpp</code>. You can list(find) this new image in your system with command <code>docker images</code>: </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE</span><br><span class="line">linux-cpp           latest              5463808c4488        8 days ago          320MB</span><br></pre></td></tr></table></figure>
+
+<p>Now you can run the docker container with the newly build <code>linux-cpp</code> image:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -it --name cpp-dev --rm linux-cpp</span><br></pre></td></tr></table></figure>
+
+<h3 id="Mount-source-code-into-container"><a href="#Mount-source-code-into-container" class="headerlink" title="Mount source code into container"></a>Mount source code into container</h3><p>Follow the above steps, you can have a running Docker container with C++ development dependencies in Linux environment. </p>
+<p>Next, you can directly start your C++ program inside the container, then build and run your code. </p>
+<p>But if you just put your program inside the container, you will have a high risk to lose your code when the container is deleted. </p>
+<p>The better way is placing your program source code on your local machine and sync the codes into the container as you program. This is where <code>mount</code> can help you. Mount and Volume is an important topic for Docker, you can find <a href="https://docs.docker.com/storage/bind-mounts/" target="_blank" rel="noopener">some posts</a> for deeper introduction. </p>
+<p>In my case, I can realize my target with the following command:</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -it --name cpp-dev  --rm  -v <span class="variable">$&#123;PWD&#125;</span>:/develop  linux-cpp</span><br></pre></td></tr></table></figure>
+
+<p>the key and interesting part is: <code>-v ${PWD}:/develop</code>,  this will mount the current directory of the host machine into the <code>develop</code> directory inside the container. If <code>develop</code> directory is not there, Docker will make it for you. </p>
+<p><strong><em>Note</em></strong>: the current directory <code>pwd</code> command’s usage has some variants based on your host machine. The above command works for the <code>Powershell</code> of Windows, if you are using <code>git bash</code> on Windows, please try: </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-v /$(<span class="built_in">pwd</span>):/develop</span><br></pre></td></tr></table></figure>
+
+<p>For Mac users, try the following: </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-v $(<span class="built_in">pwd</span>):/develop</span><br></pre></td></tr></table></figure>
+
+<p>Now you can happily code your program in your familiar host machine, save the code change and sync them into the container. Then build and run your code inside the container with every dependency it needs. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2020/07/28/linux-cpp-docker/" data-id="cl39x23iz001pj0mm6sag5sty" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-memoizedSelector" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2020/04/20/memoizedSelector/" class="article-date">
@@ -117,7 +192,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/20/memoizedSelector/" data-id="cl2b4mk180025tgmm9t1ke7q0" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/04/20/memoizedSelector/" data-id="cl39x23j0001tj0mmeik098nb" class="article-share-link">Share</a>
       
       
     </footer>
@@ -180,7 +255,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/12/rxjs-marble-testing/" data-id="cl2b4mk190027tgmmhtj18qep" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/04/12/rxjs-marble-testing/" data-id="cl39x23j1001zj0mm42drgttm" class="article-share-link">Share</a>
       
       
     </footer>
@@ -241,7 +316,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/11/algo-part2/" data-id="cl2b4mk0i0003tgmm0n0sawrw" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/04/11/algo-part2/" data-id="cl39x23j7002lj0mm56er6sp5" class="article-share-link">Share</a>
       
       
     </footer>
@@ -320,7 +395,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/10/algo-part1/" data-id="cl2b4mk0l0007tgmmcmbt0r7p" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/04/10/algo-part1/" data-id="cl39x23oy002yj0mm5a5ocmpd" class="article-share-link">Share</a>
       
       
     </footer>
@@ -399,7 +474,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/09/09/what-happen-dpkg-install/" data-id="cl2b4mk1a002ftgmm6b87f8cu" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/09/09/what-happen-dpkg-install/" data-id="cl39x23j5002ej0mm26z4001n" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li></ul>
@@ -523,7 +598,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/08/25/how-to-write-linux-c-program-with-external-library/" data-id="cl2b4mk0z0015tgmm9aoa97ni" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/08/25/how-to-write-linux-c-program-with-external-library/" data-id="cl39x23is0012j0mm4cyq77im" class="article-share-link">Share</a>
       
       
     </footer>
@@ -617,7 +692,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/06/https-certificate-manual-verify-openssl/" data-id="cl2b4mk11001etgmmebxy6rs6" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/06/https-certificate-manual-verify-openssl/" data-id="cl39x23iu001aj0mm1fa8hm9p" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li></ul>
@@ -707,7 +782,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="cl2b4mk10001atgmm7xzvaivi" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="cl39x23iv001cj0mm4vavfmli" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li></ul>
@@ -769,67 +844,10 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/02/https-certificate-anatomy/" data-id="cl2b4mk10001btgmm593d2lrb" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/02/https-certificate-anatomy/" data-id="cl39x23it0018j0mmh2yf1sn2" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-https-certificate" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2019/02/25/https-certificate/" class="article-date">
-  <time datetime="2019-02-25T08:00:47.000Z" itemprop="datePublished">2019-02-25</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2019/02/25/https-certificate/">How HTTPS works: part two - why we need public key and certificate</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the first article of this series, I gave a high-level overview of <code>TLS handshake</code>. It covers many complex concepts like <code>encryption/decryption</code> <code>hash function</code> <code>public key</code> <code>private key</code>  and <code>digital certificate</code>. These concepts are defined in the framework of <code>Public Key Infrastructure (PKI)</code>.</p>
-<p>Let’ continue exploring the PKI. This article focuses on understanding the <code>certificates</code> used to establish trust between clients and servers.  </p>
-<h3 id="Symmetric-plus-Asymmetric"><a href="#Symmetric-plus-Asymmetric" class="headerlink" title="Symmetric plus Asymmetric"></a>Symmetric plus Asymmetric</h3><p><a href="https://organicprogrammer.com/2019/02/22/https-handshake/" target="_blank" rel="noopener">Last post</a> examined the <code>TLS handshake</code>. What is remarkable in this process is both <code>symmetric encryption</code> and <code>asymmetric encryption</code> are used. </p>
-<p><code>symmetric encryption</code> and <code>asymmetric encryption</code> are the two broad categories of cryptographic algorithms. </p>
-<p>Symmetric key encryption uses the same key on both sides of the communication channel to encrypt or decrypt data. In <code>HTTPS</code> case, the client and server agree upon new keys to use for symmetric encryption, called <strong>session key</strong>. The HTTP messages are encrypted by this symmetric session key. </p>
-<p>It has the advantage of being very fast with low overhead. In this way, it can minimize the performance impact <code>TLS</code> will have on the network communications. </p>
-<p>But the real challenge of symmetric encryption is <strong>how to keep the key private and secure!</strong> The client and server must exchange keys without letting an interested eavesdropper see them. This seems like a <strong>chicken and egg problem</strong>; you can’t establish keys over an insecure channel, and you can’t establish a secure channel without keys. Right? </p>
-<p>This key management turns out to be the most difficult part of encryption operations and is where asymmetric or public-key cryptography enters. </p>
-<p>Simply speaking, <strong>a secure channel is firstly established with asymmetric cryptography and then the symmetric session key is exchanged through this secure channel</strong>. </p>
-<p><strong>Note</strong>: Cryptography is a complex topic, which isn’t in the scope of this series of articles. You can find <a href="https://opensource.com/article/19/6/cryptography-basics-openssl-part-2" target="_blank" rel="noopener">tons</a> of documents on the internet about it for deeper understanding. You can regard it as a block box and ignore the details. This doesn’t influence your understanding of <code>HTTPS</code> in high level </p>
-<h3 id="Why-do-we-need-certificates"><a href="#Why-do-we-need-certificates" class="headerlink" title="Why do we need certificates"></a>Why do we need certificates</h3><p>Now we know public-key cryptography is needed to establish a secure channel. Can we directly transmit the public key from servers to clients? Why do we need a certificate as the carrier to pass the public key? Can we exchange the public key without certificates as follows: </p>
-<img src="/images/https_wo_certificate.png" title="public key without certificate" width="600px" height="400px">
-
-<p>But the ultimate question is how you(as the client) know that the public key can be trusted as authentic? Assume that an attacker can not only view traffic, but also can intercept and modify it. Then the attacker can carry out <code>man-in-the-middle</code> attack as follows:  </p>
-<img src="/images/https_mitm.png" title="man in the middle attack" width="800px" height="600px">
-
-<p>The attacker can replace the server’s public key with its own and send it to the client. The client doesn’t feel anything wrong and keeps using this public key as normal. The client encrypts the session key with the forged public key(the one from attackers) and sends it out. The attacker decrypts the session key with its private key, re-encrypt the session key with the server’s public key, and sends it to the server. As normal, the server decrypts the session key and agrees on it. But this session key is in the attacker’s hand too. The attacker can decrypt all the subsequent network traffic. </p>
-<p>The problem here is that the client blindly <strong>trusts</strong> that the public key belongs to the server. That’s the reason why we need the <code>certificates</code> to establish trust between clients and servers.</p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we understand the importance of public-key cryptography and certificates. In the next article, we will take a deep look at the certificate.  </p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/02/25/https-certificate/" data-id="cl2b4mk11001ftgmm5gvv4oba" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
 
     </footer>
   </div>
@@ -856,7 +874,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
     </div>
   </div>
 
@@ -866,7 +884,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 20px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 10px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 20px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -875,7 +893,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
     </div>
   </div>
 
@@ -886,6 +904,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2022/05/04/how-to-write-a-netfilter-firewall/">Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules</a>
+          </li>
         
           <li>
             <a href="/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/">Write a Linux packet sniffer from scratch: part two- BPF</a>
@@ -901,10 +923,6 @@
         
           <li>
             <a href="/2022/01/28/how-to-implement-arp-spoof/">how-to-implement-arp-spoof</a>
-          </li>
-        
-          <li>
-            <a href="/2022/01/20/extern-in-c/">extern-in-c</a>
           </li>
         
       </ul>

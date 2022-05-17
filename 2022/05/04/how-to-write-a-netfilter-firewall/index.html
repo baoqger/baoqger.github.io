@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules | Chris Bao&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="BackgroundFirewalls are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting aga">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules">
+<meta property="og:url" content="https://baoqger.github.io/2022/05/04/how-to-write-a-netfilter-firewall/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundFirewalls are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting aga">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://baoqger.github.io/images/netfilter-arch.png">
+<meta property="article:published_time" content="2022-05-04T10:06:50.000Z">
+<meta property="article:modified_time" content="2022-05-17T08:49:08.075Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Linux module, Netfilter, firewall">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://baoqger.github.io/images/netfilter-arch.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://baoqger.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-how-to-write-a-netfilter-firewall" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2022/05/04/how-to-write-a-netfilter-firewall/" class="article-date">
+  <time datetime="2022-05-04T10:06:50.000Z" itemprop="datePublished">2022-05-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p><code>Firewalls</code> are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting against network attacks. There are both hardware-based firewalls and software-based firewalls. I will not discuss too much about firewalls, since you can find many online documents about <a href="https://en.wikipedia.org/wiki/Firewall_(computing)" target="_blank" rel="noopener">it</a>. I </p>
+<p>Have you ever thought of implementing a simple firewall from scratch? Sounds crazy? But with the power of Linux, you can do that. After you read this series of articles, you will find that actually, it is quite simple. </p>
+<p>You may once use various firewalls on Linux such as <a href="https://en.wikipedia.org/wiki/Iptables" target="_blank" rel="noopener">iptables</a>, <a href="https://en.wikipedia.org/wiki/Nftables" target="_blank" rel="noopener">nftables</a>, <a href="https://en.wikipedia.org/wiki/Uncomplicated_Firewall" target="_blank" rel="noopener">UFW</a>, etc. All of these firewall tools are user-space utility programs, and they are all relying on <a href="https://en.wikipedia.org/wiki/Netfilter" target="_blank" rel="noopener"><code>Netfilter</code></a>. <code>Netfilter</code> is the Linux kernel subsystem that allows various networking-related operations to be implemented. <code>Netfilter</code> allows you to develop your firewall using the <code>Linux Kernel Module</code>.  If you don’t know the techniques such as the Linux Kernel module and Netfilter, don’t worry. In this article, let’s write a Linux firewall from scratch based on Netfilter. You can learn the following interesting points:</p>
+<ul>
+<li>Linux kernel module development.</li>
+<li>Linux kernel network programming. </li>
+<li>Netfilter module development.</li>
+</ul>
+<h3 id="Netfilter-and-Kernel-modules"><a href="#Netfilter-and-Kernel-modules" class="headerlink" title="Netfilter and Kernel modules"></a>Netfilter and Kernel modules</h3><h4 id="Basics-of-Netfilter"><a href="#Basics-of-Netfilter" class="headerlink" title="Basics of Netfilter"></a>Basics of Netfilter</h4><p><code>Netfilter</code> can be considered to be the third generation of <code>firewall</code> on Linux. Before <code>Netfilter</code>was introduced in Linux Kernel 2.4, there are two older generations of firewalls on Linux as follows: </p>
+<ul>
+<li>The first generation was a port of an early version of BSD UNIX’s <code>ipfw</code> to Linux 1.1. </li>
+<li>The second generation was <code>ipchains</code> developed in the 2.2 series of Linux Kernel. </li>
+</ul>
+<p>As we mentioned above, <code>Netfilter</code> was designed to provide the infrastructure inside the Linux kernel for various networking operations. So <code>firewall</code> is just one of the multiple functionalities provided by <code>Netfilter</code> as follows:</p>
+<img src="/images/netfilter-arch.png" title="Netfilter architecture" width="600px" height="400px">
+
+<ul>
+<li><strong>Packet filtering</strong>: is in charge of filtering the packets based on the rules. It is also the topic of this article. </li>
+<li><strong>NAT (Network address translation)</strong>: is in charge of translating the IP address of network packets. <code>NAT</code> is an important protocol, which has become a popular and essential tool in <code>conserving global address space in the face of IPv4 address exhaustion</code>. If you don’t know <code>NAT</code> protocol, you can refer to other <a href="https://en.wikipedia.org/wiki/Network_address_translation" target="_blank" rel="noopener">documents</a>. I will examine it in other future articles. </li>
+<li><strong>Packet mangling</strong>: is in charge of modifying the packet content(In fact, <code>NAT</code> is one kind of packet mangling, which modifies the source or destination IP address). For example, <code>MSS (Maximum Segment Size)</code> value of TCP SYN packets can be altered to allow large-size packets transported over the network. </li>
+</ul>
+<p>Note: this article will focus on building a simple firewall to filter packets based on Netfilter. So the <code>NAT</code> and <code>Packet Mangling</code> parts are not in the scope of this article. </p>
+<p>Packet filtering can only be done inside the Linux kernel (Netfilter’s code is in the kernel as well), if we want to write a mini firewall, it has to run in the kernel space. Right? Does it mean we need to add our code into the kernel and recompile the kernel? Imagine you have to recompile the kernel each time you want to add a new packet filtering rule. That’s a bad idea. The good news is that <code>Netfilter</code> allows you to add extensions using the <a href="https://wiki.archlinux.org/title/Kernel_module" target="_blank" rel="noopener"><code>Linux kernel modules</code></a>. </p>
+<h4 id="Basics-of-Linux-Kernel-modules"><a href="#Basics-of-Linux-Kernel-modules" class="headerlink" title="Basics of Linux Kernel modules"></a>Basics of Linux Kernel modules</h4><p>Although Linux is a <a href="https://en.wikipedia.org/wiki/Monolithic_kernel" target="_blank" rel="noopener"><code>monolithic kernel</code></a>, it can be extended using kernel modules. Modules can be inserted into the kernel and removed on demand. Linux isolates the kernel but allows you to add specific functionality on the fly through modules. In this way, Linux keeps a balance between stability and usability. </p>
+<p>I want to examine one confusing point about the kernel module here: what is the difference between <code>driver</code> and <code>module</code>:</p>
+<ul>
+<li>A driver is a bit of code that runs in the kernel to talk to some hardware device. It drives the hardware. Standard practice is to build drivers as kernel modules where possible, rather than link them statically to the kernel since that gives more flexibility. </li>
+<li>A kernel module may not be a device driver at all.    </li>
+</ul>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In the first post of this series, we examine the basics of Netfilter and Linux kernel modules. In the next post, let’s start implementing the mini firewall. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2022/05/04/how-to-write-a-netfilter-firewall/" data-id="cl39x23it0016j0mmbbm67nyu" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Write a Linux packet sniffer from scratch: part two- BPF</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 10px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 20px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/05/04/how-to-write-a-netfilter-firewall/">Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules</a>
+          </li>
+        
+          <li>
+            <a href="/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/">Write a Linux packet sniffer from scratch: part two- BPF</a>
+          </li>
+        
+          <li>
+            <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/">Write a Linux packet sniffer from scratch: part one- PF_PACKET socket and promiscuous mode</a>
+          </li>
+        
+          <li>
+            <a href="/2022/02/07/stack-smashing-detect-in-c/">stack-smashing-detect-in-c</a>
+          </li>
+        
+          <li>
+            <a href="/2022/01/28/how-to-implement-arp-spoof/">how-to-implement-arp-spoof</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2022 Chris Bao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

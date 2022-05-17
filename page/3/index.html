@@ -66,6 +66,108 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-how-to-deisgn-a-load-test-tool" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2021/07/04/how-to-deisgn-a-load-test-tool/" class="article-date">
+  <time datetime="2021-07-04T02:18:43.000Z" itemprop="datePublished">2021-07-04</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2021/07/04/how-to-deisgn-a-load-test-tool/">How to write a load performance test CLI tool</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>When you want to do the load performance test to your HTTP backend service, a handy and powerful tool can make your job much easier. For example, <code>ApacheBench</code> (short for <a href="https://en.wikipedia.org/wiki/ApacheBench" target="_blank" rel="noopener">ab</a>) is widely used in this field. But it is not today’s topic. Instead, I want to introduce <a href="https://github.com/rakyll/hey" target="_blank" rel="noopener">Hey</a> written in <code>Golang</code> and supports the same functionality as <code>ab</code>.  </p>
+<p><code>Hey</code> usage goes as follows:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Usage: hey [options...] &lt;url&gt;</span><br><span class="line"></span><br><span class="line">Options:</span><br><span class="line">  -n  Number of requests to run. Default is <span class="number">200.</span></span><br><span class="line">  -c  Number of workers to run concurrently. Total number of requests cannot</span><br><span class="line">      be smaller than the concurrency level. Default is <span class="number">50.</span></span><br><span class="line">  -q  Rate limit, in queries per second (QPS) per worker. Default is no rate limit.</span><br><span class="line">  -z  Duration of application to send requests. When duration is reached,</span><br><span class="line">      application stops and exits. If duration is specified, n is ignored.</span><br><span class="line">      Examples: -z <span class="number">10</span>s -z <span class="number">3</span>m.</span><br><span class="line">  ...</span><br><span class="line"><span class="comment">// other options are hidden</span></span><br></pre></td></tr></table></figure>
+
+<p>I didn’t list all of the options but only show several related to this article’s content. As you can see in the above list, <code>Hey</code> can support different practical features, such as <strong>multiple workers</strong> to run in the <strong>concurrent</strong> style and <strong>rate limit</strong> by <strong>queries per second (QPS)</strong>. It can also support <strong>run by duration</strong> and <strong>run by request number</strong> two modes.</p>
+<p>In this article, we can review the design and implementation of <code>Hey</code> to see how to make a load performance testing tool.</p>
+<h3 id="Architecture-Design"><a href="#Architecture-Design" class="headerlink" title="Architecture Design"></a>Architecture Design</h3><p>The design of <code>Hey</code> is not complex, and the architecture can be divided into the following three parts:</p>
+<ul>
+<li>Control logic: the main workflow like how to set up multiple concurrent workers, how to control QPS rate limiter, and how to exit the process when duration is reached; </li>
+<li>HTTP request configuration: the headers or parameters needed to send  request;   </li>
+<li>Test report: print or save the result after the load testing finish. </li>
+</ul>
+<p>The architecture diagram goes as follows, after reading this article you’ll understand every element in this diagram: </p>
+<img src="/images/hey.png" title="hey architecture" width="800px" height="400px">
+
+<p>This article will focus on the first item (since it is the real interesting part) to show how to use <code>Golang</code>‘s concurrent programming techniques to realize these features.</p>
+<h3 id="Exit-the-process"><a href="#Exit-the-process" class="headerlink" title="Exit the process"></a>Exit the process</h3><p>In the <code>hey.go</code> file, you can find the entry point <strong>main</strong> function. Let’s hide the boilerplate code and review  the core logic in the <strong>main</strong> function as follows:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">   w := &amp;requester.Work&#123;</span><br><span class="line">	N:  num,  <span class="comment">// number of request</span></span><br><span class="line">	C:  conc, <span class="comment">// number of concurrent works</span></span><br><span class="line">	QPS: q,   <span class="comment">// QPS setting </span></span><br><span class="line">	results  <span class="keyword">chan</span> *result, <span class="comment">// channel for request response</span></span><br><span class="line">	stopCh   <span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;, <span class="comment">// channle for stop the worker 		    </span></span><br><span class="line">       <span class="comment">//  hide the other fields</span></span><br><span class="line">   &#125;</span><br><span class="line">w.Init()</span><br><span class="line"></span><br><span class="line">c := <span class="built_in">make</span>(<span class="keyword">chan</span> os.Signal, <span class="number">1</span>)</span><br><span class="line">signal.Notify(c, os.Interrupt)</span><br><span class="line"><span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	&lt;-c</span><br><span class="line">	w.Stop()</span><br><span class="line">&#125;()</span><br><span class="line">   <span class="comment">// if the duration is set, then launch another goroutine</span></span><br><span class="line"><span class="keyword">if</span> dur &gt; <span class="number">0</span> &#123; </span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		time.Sleep(dur)</span><br><span class="line">		w.Stop()</span><br><span class="line">	&#125;()</span><br><span class="line">&#125;</span><br><span class="line">w.Run()</span><br></pre></td></tr></table></figure>
+
+<p><strong>requester.Work</strong> struct contains all the option settings, including request numbers, concurrent workers, and QPS (it also contains the test result report). </p>
+<p>After creating an instance of <strong>requester.Work</strong>, then call the <strong>Init()</strong> method. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Work)</span> <span class="title">Init</span><span class="params">()</span></span> &#123;</span><br><span class="line">	b.initOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		b.results = <span class="built_in">make</span>(<span class="keyword">chan</span> *result, min(b.C*<span class="number">1000</span>, maxResult))</span><br><span class="line">		b.stopCh = <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;, b.C)</span><br><span class="line">	&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>Init()</strong> method will initialize two <code>channel</code>: <strong>results</strong> and <strong>stopCh</strong>. <strong>results</strong> channel is used for request response communication. And <strong>stopCh</strong> channel is used for signal to stop the concurrent workers.</p>
+<p>Note that there are two ways to exit from the program. The first one is the user manually stops the program, for example, by pressing <strong>ctrl + c</strong>. In this case, the <code>signal.Notify()</code> method from the std library can catch the signal to terminate the process. The second one is by the time <strong>duration</strong> option. Both of the process exiting logics are running in a <code>Goroutine</code>. </p>
+<p>To stop the worker, <strong>Stop()</strong> method will be called:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Work)</span> <span class="title">Stop</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="comment">// Send stop signal so that workers can stop gracefully.</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.C; i++ &#123;</span><br><span class="line">		b.stopCh &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>What it does is sending several values to the <strong>stopCh</strong> channel. Note that it sends <strong>b.C</strong> values to the channel, which is the same as the number of concurrent workers. </p>
+<p>You can imagine that each worker should wait for the value from the <strong>stopCh</strong> channel. When the worker receives one value, it should stop sending requests. Right? Then in this way, I can stop all the concurrent workers.  Let’s check our guess in the following sections.</p>
+<h3 id="Concurrent-Workers"><a href="#Concurrent-Workers" class="headerlink" title="Concurrent Workers"></a>Concurrent Workers</h3><p>In the above <strong>main</strong> function, you can see that <strong>Run()</strong> is called:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Work)</span> <span class="title">Run</span><span class="params">()</span></span> &#123;</span><br><span class="line">	b.Init()</span><br><span class="line">	b.start = now()</span><br><span class="line">	b.report = newReport(b.writer(), b.results, b.Output, b.N)</span><br><span class="line">	<span class="comment">// Run the reporter first, it polls the result channel until it is closed.</span></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		runReporter(b.report)</span><br><span class="line">	&#125;()</span><br><span class="line">	b.runWorkers()</span><br><span class="line">	b.Finish()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>There are several points worthy of discussion. In this section, let’s review <strong>runWorkers()</strong>. And <strong>runReporter()</strong> and <strong>Finish()</strong> are related to test result reports, and we will revisit them later in this article. </p>
+<p><strong>runWorkers()</strong> goes as follows: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Work)</span> <span class="title">runWorkers</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> wg sync.WaitGroup</span><br><span class="line">	wg.Add(b.C)</span><br><span class="line"></span><br><span class="line">	client := &amp;http.Client&#123;</span><br><span class="line">		<span class="comment">// hide details</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.C; i++ &#123;</span><br><span class="line">		<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			b.runWorker(client, b.N/b.C)</span><br><span class="line">			wg.Done()</span><br><span class="line">		&#125;()</span><br><span class="line">	&#125;</span><br><span class="line">	wg.Wait() <span class="comment">// block here before all workers stop</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>This is a very typical pattern to launch multiple <code>goroutine</code> via <code>sync.WaitGroup</code>. Each worker is created by calling <strong>b.runWorker</strong> in a goroutine. In this way, multiple concurrent workers can run together. </p>
+<p>Note that before all workers finish their tasks, <strong>wg.Wait()</strong> will block <strong>Finish()</strong> to run, which is used to report test results. And we will talk about it in the following sections.</p>
+<p>Next step, the logic goes into <strong>runWorker</strong> method, and let’s review how <strong>QPS</strong> rate limit works? </p>
+<h3 id="QPS"><a href="#QPS" class="headerlink" title="QPS"></a>QPS</h3><p>The core code of <strong>runWorker</strong> goes as follows:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Work)</span> <span class="title">runWorker</span><span class="params">(client *http.Client, n <span class="keyword">int</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> throttle &lt;-<span class="keyword">chan</span> time.Time</span><br><span class="line">	<span class="keyword">if</span> b.QPS &gt; <span class="number">0</span> &#123;</span><br><span class="line">		throttle = time.Tick(time.Duration(<span class="number">1e6</span>/(b.QPS)) * time.Microsecond)</span><br><span class="line">	&#125;</span><br><span class="line">	... <span class="comment">// hide some detail codes</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; n; i++ &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> &lt;-b.stopCh: <span class="comment">// receive worker stop signal from stopCh channel</span></span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		<span class="keyword">default</span>:</span><br><span class="line">			<span class="keyword">if</span> b.QPS &gt; <span class="number">0</span> &#123;</span><br><span class="line">				&lt;-throttle <span class="comment">// receive timer signal from QPS rate limite channel</span></span><br><span class="line">			&#125;</span><br><span class="line">			b.makeRequest(client)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The first parameter of method <strong>runWorker</strong> is <strong>client</strong> for sending requests. We need more analysis about the second parameter <strong>n</strong> denoting the number of requests this worker needs to send out. When <strong>runWorker</strong> is called, <strong>b.N/b.C</strong> is passed to it. <strong>b.N</strong> is the total number of request need to be sent out, and <strong>b.C</strong> is the number of concurrent workers. <strong>b.N</strong> divided by <strong>b.C</strong> is just the number of requests for each worker. Right? </p>
+<p>But if the user sets the <strong>duration</strong> option, what is the number of requests? You can find the following logic in the <strong>main</strong> entry function:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> dur &gt; <span class="number">0</span> &#123;</span><br><span class="line">	num = math.MaxInt32 <span class="comment">// use MaxInt32</span></span><br><span class="line">	<span class="keyword">if</span> conc &lt;= <span class="number">0</span> &#123;</span><br><span class="line">		usageAndExit(<span class="string">"-c cannot be smaller than 1."</span>)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>When the user sets <strong>duration</strong> option, the request number will be <code>math.MaxInt32</code>. In this method, <strong>Hey</strong> can combine <strong>run by duration</strong> and <strong>run by request number</strong> two modes together. </p>
+<p>As we mentioned in the introduction part, <code>Hey</code> can support <strong>QPS</strong> rate limit, and this strategy is written inside the <strong>runWorker</strong> method. Note that a <code>receive-only channel</code> <strong>throttle</strong> is created with <code>time.Tick</code>, which sends out a value in each time period. And the time period is defined by </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">time.Duration(<span class="number">1e6</span>/(b.QPS)) * time.Microsecond</span><br></pre></td></tr></table></figure>
+
+<p>For example, <strong>QPS = 1000</strong>, then the time period is 100ms, every 100ms <strong>throttle</strong> channel will receive a value.  </p>
+<p><strong>throttle</strong> is placed before <strong>makeRequest()</strong> call, and in this way, we can realize the rate limit effect. </p>
+<h3 id="Stop-Worker"><a href="#Stop-Worker" class="headerlink" title="Stop Worker"></a>Stop Worker</h3><p>In the <strong>runWorker</strong> method, you can also see the <code>select and case</code> usage. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> &#123;</span><br><span class="line"><span class="keyword">case</span> &lt;-b.stopCh: <span class="comment">// receive worker stop signal from stopCh channel</span></span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line"><span class="comment">// hide other code</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>As we mentioned in the above section, <strong>stopCh</strong> channel is used to stop the worker. Right? Now you can see how it is implemented. It maps to the <strong>Stop</strong> method we reviewed above as follows:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Send stop signal so that workers can stop gracefully.</span></span><br><span class="line"><span class="keyword">for</span> i := <span class="number">0</span>; i &lt; b.C; i++ &#123;</span><br><span class="line">	b.stopCh &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>b.C</code> numbers of value are sent to <strong>stopCh</strong> channel, and there are <code>b.C</code> numbers of concurrent workers as well. Each worker can receive one value from the channel and stop running. </p>
+<h3 id="Result-Report"><a href="#Result-Report" class="headerlink" title="Result Report"></a>Result Report</h3><p>Let’s also have a quick review of how the result report work. Firstly in the <strong>makeRequest</strong> method, each request’s result is sent to the <strong>results</strong> channel as follows: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Work)</span> <span class="title">makeRequest</span><span class="params">(c *http.Client)</span></span> &#123;</span><br><span class="line">	<span class="comment">// hide details</span></span><br><span class="line">	b.results &lt;- &amp;result&#123;</span><br><span class="line">		<span class="comment">// hide details</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>And in the <code>runReporter</code> method, you can see the logic like this:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">runReporter</span><span class="params">(r *report)</span></span> &#123;</span><br><span class="line">	<span class="comment">// b.results is assign to r.results in newReport() constructor</span></span><br><span class="line">	<span class="keyword">for</span> res := <span class="keyword">range</span> r.results &#123; <span class="comment">// receive result from results channel</span></span><br><span class="line">		<span class="comment">// append result to report struct</span></span><br><span class="line">		<span class="comment">// hide details</span></span><br><span class="line">  	&#125;</span><br><span class="line">  	r.done &lt;- <span class="literal">true</span> <span class="comment">// send value done channel</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>In this case, a <code>for</code> is used to receive all the values from the channel. Note that <strong>the loop will continue until the channel is closed</strong>. It is another very typical concurrent programming pattern in <code>Golang</code>. We can realize the same functionality by using <code>select case</code> pattern, as long as we can add one more channel to send the exit signal. But on the syntax level, <code>for</code> loop pattern is much more cleaner.  </p>
+<p>So there must be one place where the channel is closed, or else the <code>deadlock</code> issue will occur. In detail, you can refer to my previous <a href="https://baoqger.github.io/2020/10/26/golang-concurrent-twoways/">article</a> for more advanced explanations.  </p>
+<p>The channel is closed in the <strong>Finish</strong> method like this: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Work)</span> <span class="title">Finish</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="built_in">close</span>(b.results)</span><br><span class="line">	total := now() - b.start</span><br><span class="line">	<span class="comment">// Wait until the reporter is done.</span></span><br><span class="line">	&lt;-b.report.done</span><br><span class="line">	b.report.finalize(total)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Please also note that how the <strong>done</strong> channel works. <strong>Finish</strong> method firstly <code>close</code> the <strong>results</strong> channel, then the <strong>for</strong> loop will break and <code>r.done &lt;- true</code> can have chance to run. Finally <strong>b.report.finalize()</strong> can print the result since <strong>&lt;-b.report.done</strong> is not blocked.  t</p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, I show you how to write a load performance testing CLI tool by reviewing <strong>Hey</strong> as an example. In the code level we discussed several concurrent programming patterns provided by Golang. Concurrent(or parallel) programming is difficult, and Golang is build just for that. Keep practice. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2021/07/04/how-to-deisgn-a-load-test-tool/" data-id="cl39x23in000rj0mm1jise0ih" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-hystrix-circuit-breaker-part4" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2021/06/29/hystrix-circuit-breaker-part4/" class="article-date">
@@ -92,7 +194,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/06/29/hystrix-circuit-breaker-part4/" data-id="cl2b4mk14001mtgmm0h4jhf3p" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/06/29/hystrix-circuit-breaker-part4/" data-id="cl39x23ix001mj0mmbx10cno2" class="article-share-link">Share</a>
       
       
     </footer>
@@ -161,7 +263,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/06/18/hystrix-circuit-breaker-part3/" data-id="cl2b4mk16001utgmme7i7bbjf" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/06/18/hystrix-circuit-breaker-part3/" data-id="cl39x23ix001jj0mm6bsn45w2" class="article-share-link">Share</a>
       
       
     </footer>
@@ -274,7 +376,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/05/30/hystrix-circuit-breaker-part2/" data-id="cl2b4mk16001wtgmm02hggczy" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/05/30/hystrix-circuit-breaker-part2/" data-id="cl39x23iy001nj0mm1u5zc77o" class="article-share-link">Share</a>
       
       
     </footer>
@@ -340,7 +442,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/" data-id="cl2b4mk13001ktgmm3kjp7kja" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/" data-id="cl39x23iw001ij0mm4dik5ra8" class="article-share-link">Share</a>
       
       
     </footer>
@@ -376,7 +478,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/05/14/golang-sync-cond/" data-id="cl2b4mk0r000mtgmm87uo6osx" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/05/14/golang-sync-cond/" data-id="cl39x23ik000jj0mm0rz9eeey" class="article-share-link">Share</a>
       
       
     </footer>
@@ -448,7 +550,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/05/11/golang-sync-once/" data-id="cl2b4mk0x0011tgmm3n97fnsv" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/05/11/golang-sync-once/" data-id="cl39x23im000nj0mmbjpf1ot5" class="article-share-link">Share</a>
       
       
     </footer>
@@ -518,7 +620,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/04/28/golang-context-source-code-part2/" data-id="cl2b4mk0q000ktgmm9ynecp7s" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/04/28/golang-context-source-code-part2/" data-id="cl39x23ih000dj0mm501dc1q7" class="article-share-link">Share</a>
       
       
     </footer>
@@ -626,7 +728,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/04/26/golang-context-source-code/" data-id="cl2b4mk0u000utgmm0j4r8iyk" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/04/26/golang-context-source-code/" data-id="cl39x23ii000ej0mmfa7f3glq" class="article-share-link">Share</a>
       
       
     </footer>
@@ -713,47 +815,11 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/04/04/golang-bytes-buffer/" data-id="cl2b4mk0n000btgmm6mj3cgd6" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2021/04/04/golang-bytes-buffer/" data-id="cl39x23ig000bj0mmhmn9g2di" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li></ul>
 
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-go-module" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2021/03/31/go-module/" class="article-date">
-  <time datetime="2021-03-31T06:42:49.000Z" itemprop="datePublished">2021-03-31</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2021/03/31/go-module/">go-module</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2021/03/31/go-module/" data-id="cl2b4mk0l0006tgmm140y5xra" class="article-share-link">Share</a>
-      
-      
     </footer>
   </div>
   
@@ -779,7 +845,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
     </div>
   </div>
 
@@ -789,7 +855,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 20px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 10px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 20px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -798,7 +864,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li></ul>
     </div>
   </div>
 
@@ -809,6 +875,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2022/05/04/how-to-write-a-netfilter-firewall/">Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules</a>
+          </li>
         
           <li>
             <a href="/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/">Write a Linux packet sniffer from scratch: part two- BPF</a>
@@ -824,10 +894,6 @@
         
           <li>
             <a href="/2022/01/28/how-to-implement-arp-spoof/">how-to-implement-arp-spoof</a>
-          </li>
-        
-          <li>
-            <a href="/2022/01/20/extern-in-c/">extern-in-c</a>
           </li>
         
       </ul>
