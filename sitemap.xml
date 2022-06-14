@@ -149,14 +149,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/10/25/understand-http1-1-persistent-connection-golang/</loc>
+    <loc>https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/</loc>
+    <loc>https://baoqger.github.io/2021/10/25/understand-http1-1-persistent-connection-golang/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -205,13 +205,6 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2020/08/19/stack-frame/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://baoqger.github.io/2020/04/12/rxjs-marble-testing/</loc>
     
     <lastmod>2021-12-23</lastmod>
@@ -219,7 +212,7 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2020/07/28/linux-cpp-docker/</loc>
+    <loc>https://baoqger.github.io/2020/08/19/stack-frame/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -227,6 +220,13 @@
   
   <url>
     <loc>https://baoqger.github.io/2021/06/29/hystrix-circuit-breaker-part4/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2020/07/28/linux-cpp-docker/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -317,6 +317,13 @@
   </url>
   
   <url>
+    <loc>https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/2021/02/06/golang-package-module/</loc>
     
     <lastmod>2021-12-23</lastmod>
@@ -338,7 +345,7 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/</loc>
+    <loc>https://baoqger.github.io/2020/10/26/golang-concurrent-twoways/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -346,13 +353,6 @@
   
   <url>
     <loc>https://baoqger.github.io/2021/04/04/golang-bytes-buffer/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/2020/10/26/golang-concurrent-twoways/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -373,6 +373,13 @@
   </url>
   
   <url>
+    <loc>https://baoqger.github.io/2021/03/31/go-module/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/2021/08/25/cgo-golang/</loc>
     
     <lastmod>2021-12-23</lastmod>
@@ -381,13 +388,6 @@
   
   <url>
     <loc>https://baoqger.github.io/2021/02/20/fabio-golang-best-practise/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/2021/03/31/go-module/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -431,13 +431,6 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/Golang-bufio-bytes-buffer/</loc>
-    <lastmod>2022-06-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://baoqger.github.io/tags/Fabio-Golang-Source-code/</loc>
     <lastmod>2022-06-14</lastmod>
     <changefreq>daily</changefreq>
@@ -452,6 +445,20 @@
   </url>
   
   <url>
+    <loc>https://baoqger.github.io/tags/Golang-bufio-bytes-buffer/</loc>
+    <lastmod>2022-06-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/</loc>
+    <lastmod>2022-06-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/tags/Golang-package-workspace-vendor/</loc>
     <lastmod>2022-06-14</lastmod>
     <changefreq>daily</changefreq>
@@ -460,13 +467,6 @@
   
   <url>
     <loc>https://baoqger.github.io/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/</loc>
-    <lastmod>2022-06-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/</loc>
     <lastmod>2022-06-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -543,14 +543,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/</loc>
+    <loc>https://baoqger.github.io/tags/HTTP-1-1-concurrent/</loc>
     <lastmod>2022-06-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/HTTP-1-1-concurrent/</loc>
+    <loc>https://baoqger.github.io/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/</loc>
     <lastmod>2022-06-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
