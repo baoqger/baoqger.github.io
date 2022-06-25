@@ -16,7 +16,7 @@
 <meta property="og:locale" content="en_US">
 <meta property="og:image" content="https://baoqger.github.io/images/netfilter-arch.png">
 <meta property="article:published_time" content="2022-05-04T10:06:50.000Z">
-<meta property="article:modified_time" content="2022-05-17T08:49:08.075Z">
+<meta property="article:modified_time" content="2022-06-22T02:15:31.063Z">
 <meta property="article:author" content="Chris Bao">
 <meta property="article:tag" content="Linux module, Netfilter, firewall">
 <meta name="twitter:card" content="summary">
@@ -97,7 +97,7 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p><code>Firewalls</code> are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting against network attacks. There are both hardware-based firewalls and software-based firewalls. I will not discuss too much about firewalls, since you can find many online documents about <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Firewall_(computing)">it</a>. I </p>
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p><code>Firewalls</code> are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting against network attacks. There are both hardware-based firewalls and software-based firewalls. I will not discuss too much about the background here, since you can find many online documents about <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Firewall_(computing)">it</a>.</p>
 <p>Have you ever thought of implementing a simple firewall from scratch? Sounds crazy? But with the power of Linux, you can do that. After you read this series of articles, you will find that actually, it is quite simple. </p>
 <p>You may once use various firewalls on Linux such as <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Iptables">iptables</a>, <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Nftables">nftables</a>, <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Uncomplicated_Firewall">UFW</a>, etc. All of these firewall tools are user-space utility programs, and they are all relying on <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Netfilter"><code>Netfilter</code></a>. <code>Netfilter</code> is the Linux kernel subsystem that allows various networking-related operations to be implemented. <code>Netfilter</code> allows you to develop your firewall using the <code>Linux Kernel Module</code>.  If you don’t know the techniques such as the Linux Kernel module and Netfilter, don’t worry. In this article, let’s write a Linux firewall from scratch based on Netfilter. You can learn the following interesting points:</p>
 <ul>
@@ -131,7 +131,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/05/04/how-to-write-a-netfilter-firewall-part1/" data-id="cl4ep7lki0015rcmmcpjifxe5" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/05/04/how-to-write-a-netfilter-firewall-part1/" data-id="cl4tczhz40017ogmm7fmqap0w" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li></ul>
@@ -146,7 +146,7 @@
       <strong class="article-nav-caption">Newer</strong>
       <div class="article-nav-title">
         
-          Write a Linux firewall from scratch based on Netfilter: part two- hello world module
+          Write a Linux firewall from scratch based on Netfilter: part two - hello world module
         
       </div>
     </a>
@@ -205,11 +205,11 @@
       <ul>
         
           <li>
-            <a href="/2022/06/08/how-to-write-a-netfilter-firewall-part3/">how-to-write-a-netfilter-firewall-part3</a>
+            <a href="/2022/06/08/how-to-write-a-netfilter-firewall-part3/">Write a Linux firewall from scratch based on Netfilter: part three - Netfilter module</a>
           </li>
         
           <li>
-            <a href="/2022/05/05/how-to-write-a-netfilter-firewall-part2/">Write a Linux firewall from scratch based on Netfilter: part two- hello world module</a>
+            <a href="/2022/05/05/how-to-write-a-netfilter-firewall-part2/">Write a Linux firewall from scratch based on Netfilter: part two - hello world module</a>
           </li>
         
           <li>
