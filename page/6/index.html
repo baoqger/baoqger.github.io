@@ -72,6 +72,102 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-https-certificate-manual-verify-openssl" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/03/06/https-certificate-manual-verify-openssl/" class="article-date">
+  <time datetime="2019-03-06T08:00:47.000Z" itemprop="datePublished">2019-03-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2019/03/06/https-certificate-manual-verify-openssl/">How HTTPS works: part five - manual verification of SSL/TLS certificates</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the previous articles of this series, we examined how digital signatures and certificates make the <code>TLS handshake</code> process work. Generally speaking, this process is handled by platforms like web browsers. In this article, I want to <strong>demystify the process of TLS handshake by manual verification of SSL/TLS certificates step by step</strong>. </p>
+<h3 id="Certificate-chain"><a href="#Certificate-chain" class="headerlink" title="Certificate chain"></a>Certificate chain</h3><p>In this previous <a target="_blank" rel="noopener" href="http://localhost:4000/2019/03/02/https-certificate-anatomy/">article</a>, we mentioned that <strong>the server returns not one, but multiple certificates. These associated certificates form a certificate chain</strong> as follows: </p>
+<img src="/images/https-certificates-chain.png" title="certificates chain" width="800px" height="600px">
+
+<p>The intermediate CA signs the server certificate, and Root CA signs the certificate of the intermediate CA (There can be multiple intermediate CAs). Pay attention to the <code>subject</code> and <code>issuer</code> names of each certificate, and you can notice that one certificate’s issue name is another certificate’s subject name. Certificates can find their CA’s certificate in the chain with this information. </p>
+<p>For example, the following <code>openssl</code> command prints the certificate chain of google.com: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl s_client -showcerts -connect google.com:443</span><br></pre></td></tr></table></figure>
+
+<p>The previous <a target="_blank" rel="noopener" href="http://localhost:4000/2019/03/02/https-certificate-anatomy/">article</a> explained that the chain contains three certificates. Let us extract the google.com server certificate into file <a target="_blank" rel="noopener" href="https://gist.github.com/baoqger/8c854336118737db2cb55997ca7888c9"><strong>google_com.pem</strong></a> and the intermediate CA certificate into file <a target="_blank" rel="noopener" href="https://gist.github.com/baoqger/59cd171e2114030a9f70790e99bd86d0"><strong>intermediate_ca.pem</strong></a>. These two files are the input data for this manual verification experiment. </p>
+<h3 id="Manual-verification-of-SSL-TLS-certificates"><a href="#Manual-verification-of-SSL-TLS-certificates" class="headerlink" title="Manual verification of SSL/TLS certificates"></a>Manual verification of SSL/TLS certificates</h3><p>The entire process can be illustrated as follows: </p>
+<img src="/images/https-manual-verification.png" title="certificates chain" width="800px" height="600px">
+
+<p>Let us go through it step by step. </p>
+<h4 id="Extract-the-public-key-of-intermediate-CA"><a href="#Extract-the-public-key-of-intermediate-CA" class="headerlink" title="Extract the public key of intermediate CA"></a>Extract the public key of intermediate CA</h4><p>Since the certificate of the google.com server is signed with intermediate CA’s private key. The first step is to extract the public key of intermediate CA from its certificate. </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -in ./intermediate_ca.pem -noout -pubkey &gt; ./intermediate_ca_pub.pem</span><br></pre></td></tr></table></figure>
+
+<p>The content of file <strong>intermediate_ca_pub.pem</strong> goes as follows:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">-----BEGIN PUBLIC KEY-----</span><br><span class="line">MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA9Yjf52KMHjf4N0KQf2yH</span><br><span class="line">0PtlgiX96MtrpP9t6Voj4pn2HOmSA5kTfAkKivpC1l5WJKp6M4Qf0elpu7l07FdM</span><br><span class="line">ZmiTdzdVU/45EE23NLtfJXc3OxeU6jzlndW8w7RD6y6nR++wRBFj2LRBhd1BMEiT</span><br><span class="line">G7+39uBFAiHglkIXz9krZVY0ByYEDaj9fcou7+pIfDdNPwCfg9/vdYQueVdc/Fdu</span><br><span class="line">Gpb//Iyappm+Jdl/liwG9xEqAoCA62MYPFBJh+WKyl8ZK1mWgQCg+1HbyncLC8mW</span><br><span class="line">T+9wScdcbSD9mbS04soud/0t3Au2axMMjBkrF5aYufCL9qAnu7bjjVGPva7Hm7GJ</span><br><span class="line">nQIDAQAB</span><br><span class="line">-----END PUBLIC KEY-----</span><br></pre></td></tr></table></figure>
+<p>You can look at the public key in PEM format (which is not readable to humans). </p>
+<h4 id="Extract-the-signature"><a href="#Extract-the-signature" class="headerlink" title="Extract the signature"></a>Extract the signature</h4><p>Next, let us extract the digital signature of the google.com server’s certificate. This task is a little bit complex, and we need several Linux commands to form a data stream pipeline as follows: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -in ./google_com.pem -text -noout -certopt ca_default,no_validity,no_serial,no_subject,no_extensions,no_signame \</span><br><span class="line">| grep -v &#x27;Signature Algorithm&#x27; \</span><br><span class="line">| tr -d &#x27;[:space:]:&#x27; \</span><br><span class="line">| xxd -r -p &gt; ./certificate-signature.bin</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>openssl x509</code>: extract the digital signature. <code>openssl</code> command supports <code>certopt</code> option, which allows multiple arguments separated by commas. The output of the first command should be:</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Signature Algorithm: sha256WithRSAEncryption</span><br><span class="line">        76:6a:8a:d8:44:ac:14:40:92:36:f3:4a:b5:cb:54:36:67:c7:</span><br><span class="line">        &lt;... content omitted ...&gt;</span><br><span class="line">        14:22:3f:2a:90:a5:e4:9b:26:df:33:15:4b:d2:5c:f7:89:8e:</span><br><span class="line">        f7:6a:c4:a6</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>grep -v</code>: invert the sense of matching and select non-matching lines (because of -v option).<code>Signature Algorithm: sha256WithRSAEncryption</code> is matched, but only the Hex code lines are selected based on the invert-match rule. The data stream after filtering should be:</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">76:6a:8a:d8:44:ac:14:40:92:36:f3:4a:b5:cb:54:36:67:c7:</span><br><span class="line">&lt;... content omitted ...&gt;</span><br><span class="line">14:22:3f:2a:90:a5:e4:9b:26:df:33:15:4b:d2:5c:f7:89:8e:</span><br><span class="line">f7:6a:c4:a6</span><br></pre></td></tr></table></figure>
+
+<p>Note <strong>Signature Algorithm: sha256WithRSAEncryption</strong> means that the signature is signed with <code>SHA-256</code> hash function and <code>RSA</code> encryption algorithm. When we need to re-compute the hash again, we must use the same hash function: <code>SHA-256</code>. </p>
+<ul>
+<li><p><code>tr -d</code>: delete the colons. The colons are to make it more readable. After removing the formatting colons, the output only contains Hex code. </p>
+</li>
+<li><p><code>xxd -r -p</code>: convert the Hex code into binary format and redirect to file <strong>certificate-signature.bin</strong> </p>
+</li>
+</ul>
+<h4 id="Decrypt-the-signature"><a href="#Decrypt-the-signature" class="headerlink" title="Decrypt the signature"></a>Decrypt the signature</h4><p>Now that we have both the digital signature and the public key of the intermediate CA. We can decrypt the signature as follows:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl rsautl -verify -inkey ./intermediate_ca_pub.pem -in ./certificate-signature.bin -pubin &gt; ./certificate-signature-decrypted.bin</span><br></pre></td></tr></table></figure>
+
+<p>Store the decrypted signature in file <strong>certificate-signature-decrypted.bin</strong>. We can view the hash with openssl like so:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl asn1parse -inform der -in ./certificate-signature-decrypted.bin</span><br></pre></td></tr></table></figure>
+<p>The output is: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0:d=0  hl=2 l=  49 cons: SEQUENCE</span><br><span class="line">2:d=1  hl=2 l=  13 cons: SEQUENCE</span><br><span class="line">4:d=2  hl=2 l=   9 prim: OBJECT            :sha256</span><br><span class="line">15:d=2  hl=2 l=   0 prim: NULL</span><br><span class="line">17:d=1  hl=2 l=  32 prim: OCTET STRING      [HEX DUMP]:66EFBE4CEA76272C76CEE8FA297C1BF70C41F8E049C7E0E4D23C965CBE8F1B84</span><br></pre></td></tr></table></figure>
+<p>The hash is in the last line: <code>66EFBE4CEA76272C76CEE8FA297C1BF70C41F8E049C7E0E4D23C965CBE8F1B84</code>. </p>
+<h4 id="Re-compute-the-hash"><a href="#Re-compute-the-hash" class="headerlink" title="Re-compute the hash"></a>Re-compute the hash</h4><p>Now that we got the original hash of the certificate, we need to verify whether we can re-compute the same hash using the same hashing function (as mentioned above SHA-256 in this case).</p>
+<p>The previous <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2019/03/05/https-certificate-signature/">article</a> explained that <strong>the digital signature is signed based on all of the information instead of only public key</strong>. We need to extract everything but the signature from the certificate. </p>
+<p>We can extract the data and output it to file <strong>google_com_cert_body.bin</strong> as follows: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl asn1parse -i -in ./google_com.pem -strparse 4 -out ./google_com_cert_body.bin  -noout</span><br></pre></td></tr></table></figure>
+
+<p>Note: you can refer to this openssl <a target="_blank" rel="noopener" href="https://linux.die.net/man/1/asn1parse">document</a> to have a deeper understanding about the behavior of this command. </p>
+<p>Finally, let us re-compute the hash with SHA256 as follows: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">openssl dgst -sha256 ./google_com_cert_body.bin</span><br><span class="line"></span><br><span class="line">SHA256(./google_com_cert_body.bin)= 66efbe4cea76272c76cee8fa297c1bf70c41f8e049c7e0e4d23c965cbe8f1b84</span><br></pre></td></tr></table></figure>
+
+<p>The re-computed hash is <code>66efbe4cea76272c76cee8fa297c1bf70c41f8e049c7e0e4d23c965cbe8f1b84</code>, which matches with the original hash. So we can get the conclusion that: <strong>the intermediate CA signs the goole.com server certificate</strong>. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we go through the verification process of SSL/TLS certificates step by step manually. I have to admit that the concepts of digital signatures and certificates are too abstract to understand, especially in the details. I hope the experiment, which carries out with certificates from the real world, can help you do that.  </p>
+<h3 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h3><p><a target="_blank" rel="noopener" href="https://linuxctl.com/2017/02/x509-certificate-manual-signature-verification/">x509 Certificate Manual Signature Verification</a> written by George Bolo.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2019/03/06/https-certificate-manual-verify-openssl/" data-id="cl8cqvbnj001imcmmh6wi8ygh" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-https-certificate-signature" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2019/03/05/https-certificate-signature/" class="article-date">
@@ -150,7 +246,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="cl7s9rtp6001h68mmhh9y38eg" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="cl8cqvbnk001kmcmm0kh18uug" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li></ul>
@@ -212,7 +308,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/02/https-certificate-anatomy/" data-id="cl7s9rtp5001d68mm1fyjfulu" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/02/https-certificate-anatomy/" data-id="cl8cqvbnh001fmcmmfk0sg557" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li></ul>
@@ -269,7 +365,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/02/25/https-certificate/" data-id="cl7s9rtp7001j68mm0hau9i76" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/02/25/https-certificate/" data-id="cl8cqvbnm001mmcmmhrty5xv6" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
@@ -337,7 +433,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/02/22/https-handshake/" data-id="cl7s9rtp8001n68mmh4bygkgf" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/02/22/https-handshake/" data-id="cl8cqvbnn001omcmm119sgh3m" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li></ul>
@@ -402,7 +498,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2018/12/14/why-tcp-four-way-handshake/" data-id="cl7s9rtph002l68mm049u6kjk" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2018/12/14/why-tcp-four-way-handshake/" data-id="cl8cqvbo8002omcmm7pen99sj" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li></ul>
@@ -440,7 +536,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2018/11/12/array-pointer-similarities-c/" data-id="cl7s9rtos000868mm4gqn0p5z" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2018/11/12/array-pointer-similarities-c/" data-id="cl8cqvbmz0006mcmm9y234aps" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li></ul>
@@ -580,7 +676,7 @@ T(n) &lt;= 2n = O(n)</annotation></semantics></math></span><span class="katex-ht
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2018/10/08/why-build-heap-is-a-linear-operation/" data-id="cl7s9rtpg002i68mm2xad7qgm" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2018/10/08/why-build-heap-is-a-linear-operation/" data-id="cl8cqvbo6002nmcmm8txb09mb" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li></ul>
@@ -610,7 +706,7 @@ T(n) &lt;= 2n = O(n)</annotation></semantics></math></span><span class="katex-ht
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
     </div>
   </div>
 
@@ -620,7 +716,7 @@ T(n) &lt;= 2n = O(n)</annotation></semantics></math></span><span class="katex-ht
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -629,7 +725,7 @@ T(n) &lt;= 2n = O(n)</annotation></semantics></math></span><span class="katex-ht
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
     </div>
   </div>
 
@@ -640,6 +736,10 @@ T(n) &lt;= 2n = O(n)</annotation></semantics></math></span><span class="katex-ht
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2022/07/22/CPacketSniffer/">cPacketSniffer</a>
+          </li>
         
           <li>
             <a href="/2022/06/08/how-to-write-a-netfilter-firewall-part3/">Write a Linux firewall from scratch based on Netfilter: part three - Netfilter module</a>
@@ -655,10 +755,6 @@ T(n) &lt;= 2n = O(n)</annotation></semantics></math></span><span class="katex-ht
         
           <li>
             <a href="/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/">Write a Linux packet sniffer from scratch: part two- BPF</a>
-          </li>
-        
-          <li>
-            <a href="/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/">Write a Linux packet sniffer from scratch: part one- PF_PACKET socket and promiscuous mode</a>
           </li>
         
       </ul>
