@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Understand userland heap memory allocation: part one - overview | Chris Bao&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="IntroductionIn my eyes, compared with developing applications with high-level programming languages, one of the biggest differences for system programming with low-level languages like C and C++, is y">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Understand userland heap memory allocation: part one - overview">
+<meta property="og:url" content="https://baoqger.github.io/2022/10/05/userland-memory-allocation-one/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionIn my eyes, compared with developing applications with high-level programming languages, one of the biggest differences for system programming with low-level languages like C and C++, is y">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://baoqger.github.io/images/process-memory-address.png">
+<meta property="og:image" content="https://baoqger.github.io/images/virtual-memory-technique.png">
+<meta property="og:image" content="https://baoqger.github.io/images/maps-capture.png">
+<meta property="article:published_time" content="2022-10-05T12:31:11.000Z">
+<meta property="article:modified_time" content="2022-10-08T06:54:45.168Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Linux, memory layout, heap, stack">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://baoqger.github.io/images/process-memory-address.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+          <a class="main-nav-link" href="/project">Project</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://baoqger.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-userland-memory-allocation-one" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2022/10/05/userland-memory-allocation-one/" class="article-date">
+  <time datetime="2022-10-05T12:31:11.000Z" itemprop="datePublished">2022-10-05</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Understand userland heap memory allocation: part one - overview
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In my eyes, compared with developing applications with high-level programming languages, one of the biggest differences for system programming with low-level languages like C and C++, is you have to manage the memory by yourself. So you call APIs like <code>malloc</code>, and <code>free</code> to allocate the memory based on your need and release the memory when the resource is no longer needed. It is not only one of the most frequent causes of <a target="_blank" rel="noopener" href="https://developers.redhat.com/articles/2021/11/01/debug-memory-errors-valgrind-and-gdb">bugs</a> in system programming; but also can lead to many <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Memory_safety">security issues</a>. </p>
+<p>It’s not difficult to understand the correct usage of APIs like <code>malloc</code>, and <code>free</code>. But have you ever wondered how they work, for example: </p>
+<ul>
+<li>When you call <code>malloc</code>, does it trigger system calls and delegate the task to the kernel or there are some other mechanisms? </li>
+<li>When you call <code>malloc(10)</code> and try to allocate 10 bytes of heap memory, how many bytes of memory do you get? 10 bytes or more?</li>
+<li>When the memory is allocated, where exactly the heap objects are located?</li>
+<li>When you call <code>free</code>, is the memory directly returned to the kernel? </li>
+</ul>
+<p>This article will try to answer these questions. </p>
+<p>Note that memory is a super complex topic, so I can’t cover everything about it in one article (In fact, what is covered in this article is very limited). This article will focus on <code>userland memory(heap) allocation</code>. </p>
+<h3 id="Process-memory-management-overview"><a href="#Process-memory-management-overview" class="headerlink" title="Process memory management overview"></a>Process memory management overview</h3><h4 id="Process-virtual-memory"><a href="#Process-virtual-memory" class="headerlink" title="Process virtual memory"></a>Process virtual memory</h4><p>Every time we start a program, a memory area for that program is reserved, and that’s <code>process virtual memory</code> as shown in the following image: </p>
+<img src="/images/process-memory-address.png" title="process virtual memory" width="400px" height="300px">
+
+<p>You can note that each process has one <strong>invisible</strong> memory segment containing kernel codes and data structures. This invisible memory segment is important; since it’s directly related to <code>virtual memory</code>, which is employed by the kernel for memory management. Before we dive into the other different segments, let’s understand virtual memory first. </p>
+<h4 id="Virtual-memory-technique"><a href="#Virtual-memory-technique" class="headerlink" title="Virtual memory technique"></a>Virtual memory technique</h4><img src="/images/virtual-memory-technique.png" title="virtual memory technique" width="600px" height="400px">
+
+<p>Why do we need virtual memory? Virtual memory is a service provided by the kernel in the form of abstraction. Without virtual memory, applications would need to manage their physical memory space, coordinating with every other process running on the computer. Virtual memory leaves that management to the kernel by creating the maps that allow translation between virtual and physical memory.  The kernel creates an illusion that each process occupies the entire physical memory space. We can also realize <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Process_isolation">process isolation</a> based on virtual memory to enhance security. </p>
+<p>Virtual memory is out of this article’s scope, if you’re interested, please take a look at the core techniques: <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Memory_paging">paging</a> and <a target="_blank" rel="noopener" href="https://linuxhint.com/linux-memory-management-swap-space/">swapping</a>. </p>
+<h4 id="Static-vs-Dynamic-memory-allocation"><a href="#Static-vs-Dynamic-memory-allocation" class="headerlink" title="Static vs Dynamic memory allocation"></a>Static vs Dynamic memory allocation</h4><p>Next, let’s take a close look at the process memory layout above and understand where they are from. Generally speaking, there are two ways via which memories can be allocated for storing data: <code>static</code> and <code>dynamic</code>. Static memory allocation happens at <code>compile time</code>, while dynamic memory allocation occurs at <code>runtime</code>. </p>
+<p>When a program started, the executable file(on the Linux system, it’s called an <code>ELF</code> file) will be loaded into the memory as a <code>Process Image</code>. This <code>ELF</code> file contains the following segments:</p>
+<ul>
+<li>.TEXT: contains the executable part of the program with all the machine codes.</li>
+<li>.DATA: contains <code>initialized</code> static and global variables. </li>
+<li>.BSS: is short for <code>block started by symbol</code> contains <code>uninitialized</code> static and global variables. </li>
+</ul>
+<p>The <code>ELF</code> file will be loaded by the kernel and create a process image. And these static data will be mapped into the corresponding segments of the virtual memory. The <a target="_blank" rel="noopener" href="https://www.linuxjournal.com/article/1060">ELF loader</a> is also an interesting topic, I will write another article about it in the future. Please keep watching my blog!</p>
+<p>The <code>memory-mapped region</code> segment is used for storing the <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2019/08/25/how-to-write-linux-c-program-with-external-library/">shared libraries</a>. </p>
+<p>Finally, <code>stack</code> and <code>heap</code> segments are produced at runtime dynamically, which are used to store and operate on temporary variables that are used during the execution of the program. Previously, I once wrote an article about the <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2020/08/19/stack-frame/">stack</a>, please refer to it if you want to know the details.</p>
+<p>The only remaining segment we didn’t mention yet is the <code>heap</code>, which is this article’s focus! </p>
+<p>You can check the memory layout of one process by examining this file <code>/proc/&#123;pid&#125;/maps</code> as below: </p>
+<img src="/images/maps-capture.png" title="proc/pid/maps" width="800px" height="600px">
+
+<p>Note that the above investigation doesn’t consider multiple threads. The memory layout of the process with multi-threads will be more complex, please refer to other online <a target="_blank" rel="noopener" href="https://azeria-labs.com/heap-exploitation-part-2-glibc-heap-free-bins/">documents</a>.</p>
+<p>In this section, we had a rough overview of memory management from top to bottom. Hope you can see the big picture and know where we are. Next, let’s dig into the <code>heap</code> segment and see how it works. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2022/10/05/userland-memory-allocation-one/" data-id="cl8zkcuvw002nnsmm7xpv2smh" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2022/07/22/CPacketSniffer/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">cPacketSniffer</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/10/">October 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/10/05/userland-memory-allocation-one/">Understand userland heap memory allocation: part one - overview</a>
+          </li>
+        
+          <li>
+            <a href="/2022/07/22/CPacketSniffer/">cPacketSniffer</a>
+          </li>
+        
+          <li>
+            <a href="/2022/06/08/how-to-write-a-netfilter-firewall-part3/">Write a Linux firewall from scratch based on Netfilter: part three - Netfilter module</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/05/how-to-write-a-netfilter-firewall-part2/">Write a Linux firewall from scratch based on Netfilter: part two - hello world module</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/04/how-to-write-a-netfilter-firewall-part1/">Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2022 Chris Bao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+    <a href="/project" class="mobile-nav-link">Project</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
