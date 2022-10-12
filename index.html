@@ -72,6 +72,93 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-userland-memory-allocation-three" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2022/10/10/userland-memory-allocation-three/" class="article-date">
+  <time datetime="2022-10-10T08:27:46.000Z" itemprop="datePublished">2022-10-10</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2022/10/10/userland-memory-allocation-three/">Understand userland heap memory allocation: part three - free chunk</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In the last <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2022/09/08/userland-memory-allocation-two/">article</a>,  we investigated how the allocated chunks are aligned and stored in the heap. This article continues to examine how to free a chunk of memory and how the freed chunks are stored in the heap. </p>
+<h3 id="Hands-on-demo"><a href="#Hands-on-demo" class="headerlink" title="Hands-on demo"></a>Hands-on demo</h3><p>Let’s continue debugging the demo code shown in the last article: </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;malloc.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line">    <span class="type">char</span> *a = (<span class="type">char</span>*)<span class="built_in">malloc</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="built_in">strcpy</span>(a, <span class="string">&quot;AAAABBBBCCCCDDDD&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(a);</span><br><span class="line">    <span class="type">char</span> *b = (<span class="type">char</span>*)<span class="built_in">malloc</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="built_in">free</span>(b);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Previously, we allocated a chunk of memory and put data in it. The next line will free this chunk. Before we run the instruction and show the demo result, let’s discuss the theory first. </p>
+<p>The freed chunk will not be returned to the kernel immediately after the <code>free</code> is called. Instead, the heap <code>allocator</code> keeps track of the freed chunks in a <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Linked_list"><code>linked list</code></a> data structure. So the freed chunks in the linked list can be reused when the application requests new allocations again. This can decrease the performance overhead by avoiding too many system calls. </p>
+<p>The <code>allocator</code> could store all the freed chunks together in a long linked list, this would work but the performance would be slow. Instead, the <code>glibc</code> maintains a series of freed linked lists called <code>bins</code>, which can speed up the allocations and frees. We will examine how <code>bins</code> work later.  </p>
+<p>It is worth noting that each free chunk needs to store <code>pointers</code> to other chunks to form the linked list. That’s what we discussed in the last section, there’re two points in the <code>malloc_chunk</code> structure: <code>fd</code> and <code>bk</code>, right? Since the <code>user data</code> region of the freed chunk is free for use by the <code>allocator</code>, so it repurposes the <code>user data</code> region as the place to store the pointer. </p>
+<p>Based on the above description, the following picture illustrates the exact structure of a freed chunk:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">chunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             Size of previous chunk, if freed                  | </span><br><span class="line">            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             Size of chunk, in bytes                     |A|M|P|</span><br><span class="line">      mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             pointer to the next freed chunk                   |</span><br><span class="line">            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             pointer to the previous freed chunk               |</span><br><span class="line">            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            .                                                               .</span><br><span class="line">            .                           ......                              .</span><br><span class="line">nextchunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             Size of chunk                                     |</span><br><span class="line">            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Now step over one line in <code>gdb</code> and check chunks in the heap as follows: </p>
+<img src="/images/heap-demo-heap-free.png" title="pwndbg 1" width="300px" height="200px">
+
+<p>You can see the changes: the allocated chunk is marked as a <code>Free chunk (tcache)</code> and pointer <code>fd</code> is set(which indicates this freed chunk is inserted into a linked list). </p>
+<p>The <code>tcache</code> is one kind of <code>bins</code> provided by <code>glibc</code>. The gdb <code>pwndbg</code> plugin allows you to check the content of <code>bins</code> by running command <code>bins</code> as follows:</p>
+<img src="/images/heap-demo-bins.png" title="pwndbg 2" width="300px" height="200px">
+
+<p>Note that the freed chunk(at 0x5555555592a0) is inserted into <code>tcache bins</code> as the liked list header.  </p>
+<p>Note that there 5 types of bins: <code>small bins</code>, <code>large bins</code>, <code>unsorted bins</code>, <code>fast bins</code> and <code>tcache bins</code>. If you don’t know, don’t worry I will examine them in the following section. </p>
+<p>According to the definition, after the second <code>malloc(100)</code> is called, the <code>allocator</code> should reuse the freed chunk in the <code>bins</code>. The following image can prove this:  </p>
+<img src="/images/heap-demo-reuse-100.png" title="pwndbg 3" width="300px" height="200px">
+
+<p>The freed chunk at 0x555555559290 is in use again and all <code>bins</code> are empty after the chunk is removed from the linked list. All right! </p>
+<h3 id="Recycling-memory-with-bins"><a href="#Recycling-memory-with-bins" class="headerlink" title="Recycling memory with bins"></a>Recycling memory with bins</h3><p>Next, I want to spend a little bit of time examining why we need <code>bins</code> and how <code>bins</code> optimize chunk allocation and free. </p>
+<p>If the <code>allocator</code> keeps track of all the freed chunks in a long linked list. The time complexity is <code>O(N)</code> for the allocator to find a freed chunk with fit size by traversing from the head to the tail. If the <code>allocator</code> wants to keep the chunks in order, then at least  <code>O(NlogN)</code> time is needed to sort the list by size. This slow process would have a bad impact on the overall performance of programs. That’s the reason why we need bins to optimize this process. In summary, the optimization is done on the following two aspects:</p>
+<ul>
+<li>High-performance data structure</li>
+<li>Per-thread cache without lock contention</li>
+</ul>
+<h4 id="High-performance-data-structure"><a href="#High-performance-data-structure" class="headerlink" title="High-performance data structure"></a>High-performance data structure</h4><p>Take the <code>small bins</code> and <a target="_blank" rel="noopener" href="https://sourceware.org/git/gitweb.cgi?p=glibc.git;a=blob;f=malloc/malloc.c;h=6e766d11bc85b6480fa5c9f2a76559f8acf9deb5;hb=HEAD#l1686"><code>large bins</code></a> as a reference, they are defined as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> NBINS             128</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">mchunkptr</span>;</span></span><br><span class="line"></span><br><span class="line">mchunkptr bins[NBINS * <span class="number">2</span> - <span class="number">2</span>];</span><br></pre></td></tr></table></figure>
+
+<p>They are defined together in an array of linked lists and each linked list(or bin) stores chunks that are all <code>the same fixed size</code>. From <code>bins[2] to bins[63]</code> are the <code>small bins</code>, which track freed chunks less than 1024 bytes while the <code>large bins</code> are for bigger chunks.  <code>small bins</code> and <code>large bins</code> can be represented as a <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Doubly_linked_list"><code>double-linked list</code></a> shown below: </p>
+<img src="/images/small-bins-index.png" title="pwndbg 4" width="600px" height="400px">
+
+<p>The <code>glibc</code> provides a <a target="_blank" rel="noopener" href="https://sourceware.org/git/gitweb.cgi?p=glibc.git;a=blob;f=malloc/malloc.c;h=6e766d11bc85b6480fa5c9f2a76559f8acf9deb5;hb=HEAD#l1686">function</a> to calculate the <code>index</code> of the corresponding small(or large) bin in the array based on the requested <code>size</code>. Since the <code>index</code> operation of the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Array_(data_structure)">array</a> is in <code>O(1)</code> time. Moreover, each bin contains chunks of the same size, so it can also take <code>O(1)</code> time to insert or remove one chunk into or from the list. As a result, the entire allocation time is optimized to  <code>O(1)</code>. </p>
+<p><code>bins</code> are <code>LIFO(Last In First Out)</code> data structure. The insert and remove operations can be illustrated as follows: </p>
+<img src="/images/LIFO-linked-list.png" title="pwndbg 4" width="600px" height="400px">
+
+<p>Moreover, for <code>small bins</code> and <code>large bins</code>, if the neighbors of the current chunk are free, they are <code>merged</code> into a larger one. That’s the reason we need a <code>double-linked list</code> to allow running fast traverse both forward and backward. </p>
+<p>Unlike <code>small bins</code> and <code>large bins</code>, <code>fast bins</code> and <code>tcache bins</code> chunks are <code>never merged</code> with their neighbors. In practice, the glibc <code>allocator</code> doesn’t set the <code>P</code> special flag at the start of the next chunk. This can avoid the overhead of merging chunks so that the freed chunk can be immediately reused if the same size chunk is requested. Moreover, since <code>fast bins</code> and <code>tcache bins</code> are never merged, they are implemented as a <a target="_blank" rel="noopener" href="https://sourceware.org/git/gitweb.cgi?p=glibc.git;a=blob;f=malloc/malloc.c;h=6e766d11bc85b6480fa5c9f2a76559f8acf9deb5;hb=HEAD#l1678"><code>single-linked list</code></a>.</p>
+<p>This can be proved by running the second <code>free</code> method in the demo code and checking the chunks in the heap as follows: </p>
+<img src="/images/heap-demo-heap-free.png" title="pwndbg 1" width="300px" height="200px">
+
+<p>First, the <code>top</code> chunk’s size is still <code>0x20d01</code> rather than <code>0x20d00</code>, which indicates the <code>P</code> bit is equal to 1. Second, the <code>Free chunk</code> only has one pointer: <code>fd</code>. If it’s in a double-linked list, both <code>fd</code> and <code>bk</code> should point to a valid address. </p>
+<h4 id="Per-thread-cache-without-lock-contention"><a href="#Per-thread-cache-without-lock-contention" class="headerlink" title="Per-thread cache without lock contention"></a>Per-thread cache without lock contention</h4><p>The letter <code>t</code> in <code>tcache bins</code> represents the <code>thread</code>, which is used to optimize the performance of multi-thread programs. In multi-thread programming, the most common way solution to prevent the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Race_condition"><code>race condition</code></a> issue is using the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Lock_(computer_science)"><code>lock or mutex</code></a>. Similarly, The <code>glibc</code> maintains a <code>lock</code> in the data structure for each heap. But this design comes with a performance cost: <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Lock_(computer_science)#:~:text=lock%20contention%3A%20this%20occurs%20whenever,lock%20held%20by%20the%20other."><code>lock contention</code></a>, which happens when one thread attempts to acquire a lock held by another thread. This means the thread can’t do any tasks. </p>
+<p><code>tcache bins</code> are per-thread bins. This means if the thread has a chunk on its <code>tcache bins</code>, it can serve the allocation without waiting for the heap lock!  </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined how the userland heap allocaor works by debugging into the heap memory with gdb. The discussion is fully based on the <code>glibc</code> implementation. The design and behavior of the <code>glibc</code> heap allocator are complex but interesting, what we covered here just touches the tip of the iceberg. You can explore more by yourself. </p>
+<p>Moreover, I plan to write a simple version of a heap allocator for learning and teaching purpose. Please keep watching my blog!</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2022/10/10/userland-memory-allocation-three/" data-id="cl95b06vp002obomm7wc4gacz" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-userland-memory-allocation-two" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2022/09/08/userland-memory-allocation-two/" class="article-date">
@@ -107,7 +194,7 @@
 <h3 id="Hands-on-demo"><a href="#Hands-on-demo" class="headerlink" title="Hands-on demo"></a>Hands-on demo</h3><p>We will use <code>gdb</code> and <code>pwndbg</code>(which is a gdb <a target="_blank" rel="noopener" href="https://github.com/pwndbg/pwndbg">plugin</a>) and break into the heap memory to see how it works. The <code>gdb</code> provides the functionality to extend it via <code>Python</code> plugins. <code>pwndbg</code> is the most widely used. </p>
 <p>The demo code is as follows: </p>
 <figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;malloc.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line">    <span class="type">char</span> *a = (<span class="type">char</span>*)<span class="built_in">malloc</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="built_in">strcpy</span>(a, <span class="string">&quot;AAAABBBBCCCCDDDD&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(a);</span><br><span class="line">    <span class="type">char</span> *b = (<span class="type">char</span>*)<span class="built_in">malloc</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="built_in">free</span>(b);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>The demo code above just allocates some memory, set the content of the memory and releases it later. And then allocate the other chunk of memory again. Very simple, all right? </p>
+<p>The demo code above just allocates some memory, set the content of the memory and releases it later. And then allocate other chunks of memory again. Very simple, all right? </p>
 <p>First, set a <code>breakpoint</code> at line 7(the first <code>malloc</code> call) and run the program in <code>gdb</code>. Then run <code>vmmap</code> command from <code>pwndbg</code>, which can get the process memory layout as follows: </p>
 <img src="/images/heap-demo-vmmap-no-heap.png" title="pwndbg 1" width="800px" height="600px">
 
@@ -144,19 +231,19 @@
 <p>For the <code>size</code> field, it is worth noting: </p>
 <ul>
 <li>It includes both the size of metadata and the size of the actual user data.</li>
-<li>It is usually aligned to a multiple of 8 bytes. You can investigate the <a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/381244/purpose-of-memory-alignment">purpose of memory alignment</a> by yourself.</li>
+<li>It is usually aligned to a multiple of 16 bytes. You can investigate the <a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/381244/purpose-of-memory-alignment">purpose of memory alignment</a> by yourself.</li>
 <li>It contains three special flags(<code>A|M|P</code>) at the three least significant bits. We can ignore the other two bits for now, but the last bit indicates whether the previous chunk is in use(set to 1) or not(set to 0). </li>
 </ul>
 <p>According to this, let’s review the content of this chunk again:</p>
 <img src="/images/heap-demo-display-mark.png" title="pwndbg 3" width="600px" height="400px">
 
-<p>I add marks on the image to help you understand. Let’s do some simple calculations. <code>100 + 8 = 108</code>, 100 is the size of memory we requested, 8 is the size of metadata(for <code>size</code> field). Then <code>108</code> is aligned to <code>112</code> as a multiple of 8 bytes. Finally, since the special flag P is set to 1, then we get <code>112 + 1 = 113(0x71)</code>(that’s the reason why the size is <code>0x71</code> instead of <code>0x70</code>).  </p>
+<p>I add marks on the image to help you understand. Let’s do some simple calculations. <code>100 + 8 = 108</code>, 100 is the size of memory we requested, 8 is the size of metadata(for <code>size</code> field). Then <code>108</code> is aligned to <code>112</code> as a multiple of 16 bytes. Finally, since the special flag P is set to 1, then we get <code>112 + 1 = 113(0x71)</code>(that’s the reason why the size is <code>0x71</code> instead of <code>0x70</code>).  </p>
 <p>In this section, we break into the heap segment and see how an allocated chunk works. Next, we’ll check how to free a chunk. </p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/09/08/userland-memory-allocation-two/" data-id="cl923p3rp002m5wmmd2l093xx" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/09/08/userland-memory-allocation-two/" data-id="cl95b06vq002sbomm4ooxcvmq" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li></ul>
@@ -228,7 +315,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/08/05/userland-memory-allocation-one/" data-id="cl923p3ro002i5wmmcp3l9l14" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/08/05/userland-memory-allocation-one/" data-id="cl95b06vn002ibommhvdv09ax" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li></ul>
@@ -316,7 +403,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/07/22/CPacketSniffer/" data-id="cl923p3qu00045wmmfcqbab2o" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/07/22/CPacketSniffer/" data-id="cl95b06us0003bomm8fwz05d1" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li></ul>
@@ -498,7 +585,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/06/08/how-to-write-a-netfilter-firewall-part3/" data-id="cl923p3rw00365wmmhqbm9oe8" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/06/08/how-to-write-a-netfilter-firewall-part3/" data-id="cl95b06vw003bbommgbe992dj" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li></ul>
@@ -580,7 +667,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/05/05/how-to-write-a-netfilter-firewall-part2/" data-id="cl923p3ra001b5wmm4t3o7iiw" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/05/05/how-to-write-a-netfilter-firewall-part2/" data-id="cl95b06v9001abommb1nq6lmj" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li></ul>
@@ -648,7 +735,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/05/04/how-to-write-a-netfilter-firewall-part1/" data-id="cl923p3r9001a5wmmawy65cj6" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/05/04/how-to-write-a-netfilter-firewall-part1/" data-id="cl95b06va001cbomm8y4102nl" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li></ul>
@@ -779,7 +866,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/" data-id="cl923p3rv00335wmm41rohdm4" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/" data-id="cl95b06vw003abomm641w3xu6" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li></ul>
@@ -864,7 +951,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/" data-id="cl923p3r800165wmm1p5x6tao" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/" data-id="cl95b06v80016bommehtd2333" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li></ul>
@@ -902,43 +989,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/02/07/stack-smashing-detect-in-c/" data-id="cl923p3rm002b5wmm7wn71p6z" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-how-to-implement-arp-spoof" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2022/01/28/how-to-implement-arp-spoof/" class="article-date">
-  <time datetime="2022-01-28T09:29:48.000Z" itemprop="datePublished">2022-01-28</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2022/01/28/how-to-implement-arp-spoof/">how-to-implement-arp-spoof</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/01/28/how-to-implement-arp-spoof/" data-id="cl923p3r700125wmm9rq1eckq" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/02/07/stack-smashing-detect-in-c/" data-id="cl95b06vm002bbommepsbegih" class="article-share-link">Share</a>
       
       
     </footer>
@@ -952,7 +1003,7 @@
 
   <nav id="page-nav">
     
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/page/7/">7</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
   </nav>
 
 </section>
@@ -976,7 +1027,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 10px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -985,7 +1036,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/08/">August 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/10/">October 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/08/">August 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
     </div>
   </div>
 
@@ -996,6 +1047,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2022/10/10/userland-memory-allocation-three/">Understand userland heap memory allocation: part three - free chunk</a>
+          </li>
         
           <li>
             <a href="/2022/09/08/userland-memory-allocation-two/">Understand userland heap memory allocation: part two - allocate chunk</a>
@@ -1011,10 +1066,6 @@
         
           <li>
             <a href="/2022/06/08/how-to-write-a-netfilter-firewall-part3/">Write a Linux firewall from scratch based on Netfilter: part three - Netfilter module</a>
-          </li>
-        
-          <li>
-            <a href="/2022/05/05/how-to-write-a-netfilter-firewall-part2/">Write a Linux firewall from scratch based on Netfilter: part two - hello world module</a>
           </li>
         
       </ul>
