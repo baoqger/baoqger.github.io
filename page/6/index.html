@@ -72,6 +72,69 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-rxjs-marble-testing" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/04/12/rxjs-marble-testing/" class="article-date">
+  <time datetime="2020-04-12T12:08:45.000Z" itemprop="datePublished">2020-04-12</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/04/12/rxjs-marble-testing/">Typical usage case of Marble Testing for RxJS</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="What’s-Marble-Testing"><a href="#What’s-Marble-Testing" class="headerlink" title="What’s Marble Testing"></a>What’s Marble Testing</h3><p>RxJS is a powerful tool to handle various asynchronous tasks. Sometime RxJS observables are hard to test. In the community, there is one particular unit testing solution for RxJS observables called marble testing.</p>
+<p>For marble testing, you can refer to <a target="_blank" rel="noopener" href="https://medium.com/@bencabanes/marble-testing-observable-introduction-1f5ad39231c">these articles</a>. They all do an excellent job of introducing what it is. </p>
+<h3 id="A-real-case-to-show-Marble-Testing’s-power"><a href="#A-real-case-to-show-Marble-Testing’s-power" class="headerlink" title="A real case to show Marble Testing’s power"></a>A real case to show Marble Testing’s power</h3><p>Recently in my development work, I came across a case where I used marble testing properly to solve the issue. </p>
+<p>The background is for my application in the root <code>index.html</code> file, there is one third-party javascript library/SDK. For some business reasons, after the third-party library is loaded, we bind some value to the global <code>window</code> object. </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">window</span>.<span class="property">onSecretLibraryLoad</span> = <span class="function">(<span class="params">res</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="variable language_">window</span>.<span class="property">SecretLibrary</span> = res; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Before the loaded event is triggered, the <code>window.SecretLibary</code> was <code>undefiend</code>. After the event is triggered, it will be assigned some value. </p>
+<p>This global value is vital for my application since one of the UI components depends on it to determine to show or hide. </p>
+<p>Since the script was loaded with <code>async</code> flag for performance consideration, this component needs to check the <code>window.SecretLibrary</code> value repeatedly. </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">class</span> <span class="title class_">UIComponent</span> implements <span class="title class_">OnInit</span> &#123;</span><br><span class="line">    public <span class="attr">isSecretLibraryReady$</span>: <span class="title class_">Observable</span>&lt;boolean&gt;;</span><br><span class="line">    public <span class="title function_">ngOnInit</span>(): <span class="keyword">void</span> &#123;</span><br><span class="line">        <span class="variable language_">this</span>.<span class="property">isSecretLibraryReady$</span> = <span class="variable language_">this</span>.<span class="title function_">getSecretLibraryLoadStatus</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public <span class="title function_">getSecretLibraryLoadStatus</span>(): <span class="title class_">Observable</span>&lt;boolean&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="title function_">timer</span>(<span class="number">0</span>, <span class="number">500</span>).<span class="title function_">pipe</span>(</span><br><span class="line">            <span class="title function_">map</span>(<span class="function">(<span class="params">t</span>) =&gt;</span> (&#123;</span><br><span class="line">                <span class="attr">currentTimeTick</span>: t,</span><br><span class="line">                <span class="attr">isReady</span>: <span class="title class_">Boolean</span>((<span class="variable language_">window</span> <span class="keyword">as</span> any).<span class="property">SecretLibrary</span>)</span><br><span class="line">            &#125;)),</span><br><span class="line">            <span class="title function_">takeWhile</span>(</span><br><span class="line">                <span class="function">(<span class="params">val</span>) =&gt;</span> !val.<span class="property">isReady</span> &amp;&amp; val.<span class="property">currentTimeTick</span> &lt;= <span class="number">30000</span>/<span class="number">500</span>,</span><br><span class="line">                <span class="literal">true</span></span><br><span class="line">            ),</span><br><span class="line">            <span class="title function_">pluck</span>(<span class="string">&quot;isReady&quot;</span>)</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The interesting part comes from the <code>getSecretLibraryLoadStatus</code> function. It utilizes the <code>timer</code>, <code>map</code>, <code>takeWhile</code>, and <code>pluck</code> operators of RxJS library to realize the repeatedly status checking and updating purpose. </p>
+<p>RxJS operator is not this article’s topic, so I will not dig deep into it. Just add one comment for the <code>takeWhile</code> part, which seems a little hard to understand at the first look. It defines two conditions to stop the observable: first case is the <code>window.SecretLibrary</code> value is not undefined, which means the script is loaded; the second case is it reaches the maximum time limit (30 seconds). </p>
+<h3 id="How-to-test-it-marble-testing"><a href="#How-to-test-it-marble-testing" class="headerlink" title="How to test it: marble testing"></a>How to test it: marble testing</h3><p>Traditionally we use <code>subscribe and assert</code> pattern to test RxJS observables. But for the case, as mentioned above: time-based observables, the traditional solution can’t handle it well. We can’t wait 30 seconds when we run the unit tests during local development or in CI pipeline. That’s unacceptable.</p>
+<p>Marble testing can fix this issue correctly by the concept of virtual time. For what is virtual time, you can refer to <a target="_blank" rel="noopener" href="https://medium.com/angular-in-depth/how-to-test-observables-a00038c7faad">these great articles</a>. I will not discuss it at a detailed level in this post. Simply speaking, virtual time empowers us to test asynchronous RxJS observable synchronously. In virtual time asynchronous functions like <code>setTimeout</code> and <code>setInterval</code> will use fake time instead of actual time. And the magic comes from the <code>TestScheduler</code> of RxJS. </p>
+<p>The marble testing solution as following: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">describe</span>(<span class="string">&quot;UIComponent&quot;</span>, <span class="function">() =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">let</span> <span class="attr">component</span>: <span class="title class_">UIComponent</span>;</span><br><span class="line">  <span class="keyword">let</span> <span class="attr">fixture</span>: <span class="title class_">ComponentFixture</span>&lt;<span class="title class_">UIComponent</span>&gt;;</span><br><span class="line">  <span class="keyword">let</span> <span class="attr">scheduler</span>: <span class="title class_">TestScheduler</span>;</span><br><span class="line"></span><br><span class="line">  <span class="title function_">beforeEach</span>(<span class="title function_">async</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="title class_">TestBed</span>.<span class="title function_">configureTestingModule</span>(&#123;</span><br><span class="line">      <span class="attr">declarations</span>: [<span class="title class_">UIComponent</span>],</span><br><span class="line">    &#125;).<span class="title function_">compileComponents</span>();</span><br><span class="line">  &#125;));</span><br><span class="line"></span><br><span class="line">  <span class="title function_">beforeEach</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    fixture = <span class="title class_">TestBed</span>.<span class="title function_">createComponent</span>(<span class="title class_">UIComponent</span>);</span><br><span class="line">    component = fixture.<span class="property">componentInstance</span>;</span><br><span class="line">    scheduler = <span class="keyword">new</span> <span class="title class_">TestScheduler</span>(<span class="function">(<span class="params">actual, expected</span>) =&gt;</span> <span class="title function_">expect</span>(actual).<span class="title function_">toEqual</span>(expected));</span><br><span class="line">    (<span class="variable language_">window</span> <span class="keyword">as</span> any).<span class="property">SecretLibrary</span> = <span class="literal">undefined</span>;</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">  <span class="title function_">it</span>(<span class="string">&quot;getSecretLibraryLoadStatus method should return a boolean observable stream, for script load success case&quot;</span>, <span class="function">() =&gt;</span> &#123;</span><br><span class="line">    scheduler.<span class="title function_">run</span>(<span class="function">(<span class="params">&#123; expectObservable &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="title function_">timer</span>(<span class="number">2</span> * <span class="number">1000</span>).<span class="title function_">subscribe</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">        (<span class="variable language_">window</span> <span class="keyword">as</span> any).<span class="property">SecretLibrary</span> = <span class="string">&quot;SecretLibrary&quot;</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">      <span class="comment">// tricky point about marble test: a, b, c these placeholders account 1 frame of virtual time</span></span><br><span class="line">      <span class="title function_">expectObservable</span>(component.<span class="title function_">getSecretLibraryLoadStatus</span>()).<span class="title function_">toBe</span>(</span><br><span class="line">        <span class="string">&quot;a 499ms b 499ms c 499ms d 499ms (e|)&quot;</span>,</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="attr">a</span>: <span class="literal">false</span>,</span><br><span class="line">          <span class="attr">b</span>: <span class="literal">false</span>,</span><br><span class="line">          <span class="attr">c</span>: <span class="literal">false</span>,</span><br><span class="line">          <span class="attr">d</span>: <span class="literal">false</span>,</span><br><span class="line">          <span class="attr">e</span>: <span class="literal">true</span></span><br><span class="line">        &#125;</span><br><span class="line">      );</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Let me emphasize several key points to understand the above testing case. <code>getSecretLibraryLoadStatus</code> will repeatedly check the status of <code>window.SecretLibrary</code> every 500 milliseconds and return a boolean value stream. </p>
+<p>I manually set the <code>window.SecretLibrary</code> value after 2 seconds by calling this: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">timer</span>(<span class="number">2</span> * <span class="number">1000</span>).<span class="title function_">subscribe</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">  (<span class="variable language_">window</span> <span class="keyword">as</span> any).<span class="property">SecretLibrary</span> = <span class="string">&quot;SecretLibrary&quot;</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>So Let’s imagine what the result should be: the first four emit value will be <code>false</code>,  and the last value is <code>true</code>. That’s the expected observable. </p>
+<p>But please notice that <code>scheduler.run</code>, everything run inside the callback will use virtual time. So we didn’t wait 2 seconds for the <code>timer</code> operator. Instead, it runs synchronously. </p>
+<p>The second point needs to notice is the syntax of the marble string <code>a 499ms b 499ms c 499ms d 499ms (e|)</code>. Yes, it looks a little wired, but be careful that’s the correct way to represent marble. <strong>The alphanumeric values represent an actual emitted value, which advances time one virtual frame</strong>.</p>
+<p>Here I only show the case where the third-party script load successfully. Of course, to have full testing coverage, we need to consider the negative case where the script failed to load. You can figure it out. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this post, I didn’t go into the detailed syntax of marble testing. I think the reader can find the related document easily. I record a real usage case in the development where marble testing can show its power to handle async observables. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2020/04/12/rxjs-marble-testing/" data-id="clbc8ggcq002bj8mm2zhv6dwy" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-algo-part2" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2020/04/11/algo-part2/" class="article-date">
@@ -123,7 +186,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/11/algo-part2/" data-id="clbbn1wji0006xcmmh6g710gz" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/04/11/algo-part2/" data-id="clbc8ggbz0004j8mmawnu9rvp" class="article-share-link">Share</a>
       
       
     </footer>
@@ -202,7 +265,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2020/04/10/algo-part1/" data-id="clbbn1wjf0003xcmm7aqzc5uf" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2020/04/10/algo-part1/" data-id="clbc8ggbv0000j8mm9m24dldp" class="article-share-link">Share</a>
       
       
     </footer>
@@ -281,7 +344,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/09/09/what-happen-dpkg-install/" data-id="clbbn1wka002oxcmmaw3l515c" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/09/09/what-happen-dpkg-install/" data-id="clbc8ggcv002uj8mm1yat97p4" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li></ul>
@@ -405,7 +468,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/08/25/how-to-write-linux-c-program-with-external-library/" data-id="clbbn1wjy001gxcmmg52zbkox" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/08/25/how-to-write-linux-c-program-with-external-library/" data-id="clbc8ggci001ij8mm0e2xcm4t" class="article-share-link">Share</a>
       
       
     </footer>
@@ -499,7 +562,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/06/https-certificate-manual-verify-openssl/" data-id="clbbn1wjz001kxcmmh3pja1g7" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/06/https-certificate-manual-verify-openssl/" data-id="clbc8ggcj001oj8mm9f262eww" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li></ul>
@@ -589,7 +652,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="clbbn1wjz001mxcmm7ube6obi" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/05/https-certificate-signature/" data-id="clbc8ggck001qj8mm7o7i5sb2" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li></ul>
@@ -651,7 +714,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/03/02/https-certificate-anatomy/" data-id="clbbn1wjy001ixcmmg098da1v" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/03/02/https-certificate-anatomy/" data-id="clbc8ggci001kj8mm9xl5dij1" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li></ul>
@@ -708,7 +771,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/02/25/https-certificate/" data-id="clbbn1wk0001oxcmm2cg769jb" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/02/25/https-certificate/" data-id="clbc8ggck001rj8mmbvszhtih" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
@@ -776,75 +839,10 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2019/02/22/https-handshake/" data-id="clbbn1wk0001qxcmm6plu91dw" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2019/02/22/https-handshake/" data-id="clbc8ggcl001uj8mm488q5783" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-why-tcp-four-way-handshake" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2018/12/14/why-tcp-four-way-handshake/" class="article-date">
-  <time datetime="2018-12-14T08:34:58.000Z" itemprop="datePublished">2018-12-14</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/12/14/why-tcp-four-way-handshake/">Why TCP connection termination needs four-way handshake</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In <code>TCP/IP</code> protocol stack, the <code>three way handshake</code> for connection establishment and <code>four way handshake</code> for connection termination are some concepts you must understand.</p>
-<p>But after I learned <code>TCP/IP</code> stack, one question coming to my mind is why the connection termination needs four-way handshake. In this article, I will focus on this topic. To understand the answer to this question, we need to first explain the details of these two processes and compare them to find the difference. </p>
-<h3 id="TCP-connection-establishment"><a href="#TCP-connection-establishment" class="headerlink" title="TCP connection establishment"></a>TCP connection establishment</h3><p>In contrast to <code>UDP</code>, TCP is a <code>connection-oriented</code> and <code>reliable full duplex</code> protocol, which requires a logical connection to be established between the two processes before data is exchanged. The connection must be maintained during the entire process that communication is taking place. And in TCP both sides can send data to its peer. </p>
-<p>So four things need to happen for fully establishing a TCP connection:</p>
-<ul>
-<li>Each node has send a <code>SYN</code> flag to its peer (that’s two things, one <code>SYN</code> in each direction)</li>
-<li>Each node has received a <code>ACK</code> flag of its own <code>SYN</code> flag from its peer  (that’s two things) </li>
-</ul>
-<p>Both <code>SYN</code> and <code>ACK</code> are properties in <code>TCP</code> header, where <code>SYN</code> means <code>synchronization</code> and <code>ACK</code> means <code>acknowledgement</code>. In detail the process goes as follows:</p>
-<p>Firstly, the client sends the <code>SYN: 1</code> packet to server to start the connection. When the server receives the packet, it will send the <code>ACK: 1</code> packet to client to confirm that. Since in the TCP protocol, the server can also send data to the client. So the server needs to send the <code>SYN: 1</code> packet to the client as well. Finally, when the client sends the <code>ACK: 1</code> packet to the server. The establishment process is done, which goes as follows: </p>
-<img src="/images/tcp-establishment-4-packets.png" title="tcp establishment with four packets" width="600px" height="400px">
-
-<p>Note that the server sends two packets: <code>ACK: 1</code> and <code>SYN: 1</code> in sequence. Why not combine these two packets into one to have a better network performance? So the common implementation of TCP protocol  goes as follows:</p>
-<img src="/images/tcp-establishment-3-packets.png" title="tcp establishment with three packets" width="600px" height="400px">
-
-<p><strong>Note</strong>: besides <code>SYN</code> and <code>ACK</code> flag, in the establishment stage there are other fields need to be set in TCP header such as: <code>sequence number</code> and <code>window</code>. I will discuss these important TCP header fields in other articles.</p>
-<h3 id="TCP-connection-termination"><a href="#TCP-connection-termination" class="headerlink" title="TCP connection termination"></a>TCP connection termination</h3><p>When the data stream transportation (I will not cover this part in this article) is over, we need to terminate the TCP connection. </p>
-<p>Same as above, four things need to happen for fully terminating a TCP connection:</p>
-<ul>
-<li>Each node has send a <code>FIN</code> flag to its peer (that’s two things, one <code>FIN</code> in each direction)</li>
-<li>Each node has received a <code>ACK</code> flag of its own <code>FIN</code> flag from its peer  (that’s two things) </li>
-</ul>
-<img src="/images/tcp_termination.png" title="tcp termination" width="600px" height="400px">
-
-<p>But the difference is that in most TCP implementation, four packets are used to terminate the connection. We didn’t combine the <code>ACK: 1</code> packet (marked as ②) and the <code>FIN: 1</code> packet (marked as ③) into one packet. </p>
-<p>The reason is <code>ACK: 1</code> packet (marked as ②) is send by TCP stack automatically. And the next <code>FIN: 1</code> packet (marked as ③) is controlled in application level by calling <code>close</code> socket API. Application has the control to terminate the connection. So in common case, we didn’t merge this two packets into one. </p>
-<p>It’s flexible for the application to control this process, for example, in this way the application can reuse existing TCP connection to reduce the overhead and improve the performance. In next article, I will talk about this topic.  </p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2018/12/14/why-tcp-four-way-handshake/" data-id="clbbn1wkg0037xcmm69b1344g" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li></ul>
 
     </footer>
   </div>
@@ -881,7 +879,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/algorithm-external-disk/" style="font-size: 10px;">algorithm, external, disk</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/algorithm-external-disk/" style="font-size: 15px;">algorithm, external, disk</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -890,7 +888,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/11/">November 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/10/">October 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/08/">August 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/12/">December 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/11/">November 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/10/">October 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/08/">August 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
     </div>
   </div>
 
@@ -901,6 +899,10 @@
     <h3 class="widget-title">Recent Posts</h3>
     <div class="widget">
       <ul>
+        
+          <li>
+            <a href="/2022/12/06/external-sorting-two/">External Mergesort: part two</a>
+          </li>
         
           <li>
             <a href="/2022/11/02/external-sorting-one/">External Mergesort: part one</a>
@@ -916,10 +918,6 @@
         
           <li>
             <a href="/2022/08/05/userland-memory-allocation-one/">Understand userland heap memory allocation: part one - overview</a>
-          </li>
-        
-          <li>
-            <a href="/2022/07/22/CPacketSniffer/">cPacketSniffer</a>
           </li>
         
       </ul>

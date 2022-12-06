@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://baoqger.github.io/2022/12/06/external-sorting-two/</loc>
+    
+    <lastmod>2022-12-06</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/2022/11/02/external-sorting-one/</loc>
     
     <lastmod>2022-12-06</lastmod>
@@ -191,14 +198,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/</loc>
+    <loc>https://baoqger.github.io/2021/10/25/understand-http1-1-persistent-connection-golang/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/10/25/understand-http1-1-persistent-connection-golang/</loc>
+    <loc>https://baoqger.github.io/2021/10/27/understand-http1-1-persitent-connection-golang-part2/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -219,14 +226,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/</loc>
+    <loc>https://baoqger.github.io/2021/12/15/understand-http-1-1-client-golang-part2/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/12/15/understand-http-1-1-client-golang-part2/</loc>
+    <loc>https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -282,14 +289,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/</loc>
+    <loc>https://baoqger.github.io/2021/05/30/hystrix-circuit-breaker-part2/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/05/30/hystrix-circuit-breaker-part2/</loc>
+    <loc>https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -331,14 +338,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/07/14/how-to-collect-metrics-k8s/</loc>
+    <loc>https://baoqger.github.io/2021/05/11/golang-sync-once/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/05/11/golang-sync-once/</loc>
+    <loc>https://baoqger.github.io/2021/07/14/how-to-collect-metrics-k8s/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -366,13 +373,6 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/02/06/golang-package-module/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://baoqger.github.io/2020/11/16/golang-service-discovery-consul/</loc>
     
     <lastmod>2021-12-23</lastmod>
@@ -381,6 +381,13 @@
   
   <url>
     <loc>https://baoqger.github.io/2021/05/14/golang-sync-cond/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/02/06/golang-package-module/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -408,14 +415,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/08/25/cgo-golang/</loc>
+    <loc>https://baoqger.github.io/2020/04/11/algo-part2/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2020/04/11/algo-part2/</loc>
+    <loc>https://baoqger.github.io/2021/08/25/cgo-golang/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -515,14 +522,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/Golang-package-workspace-vendor/</loc>
+    <loc>https://baoqger.github.io/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/</loc>
     <lastmod>2022-12-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/</loc>
+    <loc>https://baoqger.github.io/tags/Golang-package-workspace-vendor/</loc>
     <lastmod>2022-12-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -599,14 +606,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/HTTP-1-1-concurrent/</loc>
+    <loc>https://baoqger.github.io/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/</loc>
     <lastmod>2022-12-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/</loc>
+    <loc>https://baoqger.github.io/tags/HTTP-1-1-concurrent/</loc>
     <lastmod>2022-12-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>

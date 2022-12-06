@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>External Mergesort: part two | Chris Bao&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="IntroductionIn this last article, we examined how external mergesort works in theory, let’s implement it now.  First, you can find all the source codes of this implementation in this Github repo. In t">
+<meta property="og:type" content="article">
+<meta property="og:title" content="External Mergesort: part two">
+<meta property="og:url" content="https://baoqger.github.io/2022/12/06/external-sorting-two/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionIn this last article, we examined how external mergesort works in theory, let’s implement it now.  First, you can find all the source codes of this implementation in this Github repo. In t">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://baoqger.github.io/images/pass0.png">
+<meta property="og:image" content="https://baoqger.github.io/images/two-way-merge.png">
+<meta property="og:image" content="https://baoqger.github.io/images/multi-way-merge.png">
+<meta property="article:published_time" content="2022-12-06T03:11:06.000Z">
+<meta property="article:modified_time" content="2022-12-06T10:08:35.892Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="algorithm, external, disk">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://baoqger.github.io/images/pass0.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+          <a class="main-nav-link" href="/project">Project</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://baoqger.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-external-sorting-two" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2022/12/06/external-sorting-two/" class="article-date">
+  <time datetime="2022-12-06T03:11:06.000Z" itemprop="datePublished">2022-12-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      External Mergesort: part two
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In this last <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2022/11/02/external-sorting-one/">article</a>, we examined how <code>external mergesort</code> works in theory, let’s implement it now. </p>
+<p>First, you can find all the source codes of this implementation in this Github <a target="_blank" rel="noopener" href="https://github.com/baoqger/external-merge-sort">repo</a>. In this repo, I implemented both <code>two-way</code> and <code>multi-way</code> solutions, which are tracked in different branches, please be aware of this. But for the sake of simplicity, I will focus on the generalized <code>multi-way</code> mergesort solution in this article. </p>
+<h3 id="Data-Preparation"><a href="#Data-Preparation" class="headerlink" title="Data Preparation"></a>Data Preparation</h3><p>Before diving into the code, let’s define the problem we need to solve here. I will generate an input file containing several millions of seven digits random numbers, from 1,000,000 to 9,999,999. The random numbers can be duplicated, and each number is stored in one new line of the input file. The input file can be prepared with the following Bash script which calls GNU <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Shuf">shuf</a> : </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/bash </span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Author: Chris Bao</span></span><br><span class="line"><span class="comment"># Generate millions of seven digits random integers</span></span><br><span class="line"><span class="comment"># based on shuf utility</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">shuf</span> -i 1000000-9999999 -n 7777777 &gt; ./input.txt</span><br></pre></td></tr></table></figure>
+
+<p>The generated input file is roughly <code>60 MB</code> in size. For modern computers, it can be loaded to memory easily. But since we are working external memory algorithm, so let’s assume we are running the algorithm on an old computer, which has only <code>100000 Byte</code> memory. Based on this assumed restriction, we need to sort the numbers in the input file and save the result in a new file. </p>
+<h3 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h3><p>Let’s define some global constants in this algorithm:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">ifndef</span> CONSTANT_H</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CONSTANT_H</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MEMORY_LIMIT 100000</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RECORD_SIZE 4</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MULTI_WAY_NUMBER 2</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span> </span></span><br></pre></td></tr></table></figure>
+
+<p><code>MEMORY_LIMIT</code> denotes the <code>100000 bytes</code> memory limit; In C, we can use the type <code>unsigned int</code> to store an integer in the range from 1,000,000 to 9,999,999. So <code>RECORD_SIZE</code> means each record(or integer) will take up 4 bytes of memory.</p>
+<p>And by default, the algorithm will use the <code>two-way</code> merge, but the user can pass an argument to run a <code>multi-way</code> merge too. </p>
+<h5 id="Sort-phase"><a href="#Sort-phase" class="headerlink" title="Sort phase"></a>Sort phase</h5><p>The sort phase is implemented inside the <code>separationSort</code> function as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Goes through a given file and separates that file into sorted 1MB files using (internal) mergeSort algorithm</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">separationSort</span><span class="params">(FILE *input)</span> &#123;</span><br><span class="line">    FILE *fp;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> *buffer = <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="type">unsigned</span> <span class="type">int</span>)*(MEMORY_LIMIT/RECORD_SIZE));</span><br><span class="line">    <span class="type">char</span> *line = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">size_t</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="type">ssize_t</span> nread;</span><br><span class="line">    <span class="type">int</span> count = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Sort phase start.\n&quot;</span>);</span><br><span class="line">    <span class="keyword">while</span>((nread = getline(&amp;line, &amp;len, input)) != <span class="number">-1</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (count &lt; MEMORY_LIMIT/RECORD_SIZE) &#123;</span><br><span class="line">            buffer[count++] = (<span class="type">unsigned</span> <span class="type">int</span>)strtoul(line, <span class="literal">NULL</span>, <span class="number">10</span>); </span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            mergeSort(buffer, count); <span class="comment">// sort records</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment">// output sorted to file</span></span><br><span class="line">            <span class="keyword">if</span> (fileNum == <span class="number">1</span>) &#123; <span class="comment">// create the dir</span></span><br><span class="line">                <span class="type">int</span> status;</span><br><span class="line">                <span class="comment">// create tmp directory</span></span><br><span class="line">                <span class="keyword">if</span> ((status = mkdir(<span class="string">&quot;./tmp&quot;</span>, S_IRWXU | S_IRWXU | S_IROTH | S_IXOTH)) == <span class="number">-1</span>) &#123;</span><br><span class="line">                    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create tmp directory.\n&quot;</span>);</span><br><span class="line">                    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// create pass0 directory for sort phase</span></span><br><span class="line">                <span class="keyword">if</span> ((status = mkdir(<span class="string">&quot;./tmp/pass0&quot;</span>, S_IRWXU | S_IRWXU | S_IROTH | S_IXOTH)) == <span class="number">-1</span>) &#123;</span><br><span class="line">                    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create pass0 directory.\n&quot;</span>);</span><br><span class="line">                    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">                &#125;</span><br><span class="line"> </span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="type">char</span> fileName[<span class="number">20</span>];</span><br><span class="line">            <span class="built_in">sprintf</span>(fileName, <span class="string">&quot;./tmp/pass0/%d.txt&quot;</span>, fileNum);</span><br><span class="line">            <span class="keyword">if</span> ((fp = fopen(fileName, <span class="string">&quot;w+&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create file: %s.\n&quot;</span>, fileName);</span><br><span class="line">                <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            outputToFile(buffer, count, fp);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Reset memory buffer(zero-out the entire array)</span></span><br><span class="line">            <span class="built_in">memset</span>(buffer, <span class="number">0</span>, <span class="keyword">sizeof</span>(<span class="type">unsigned</span> <span class="type">int</span>)*(MEMORY_LIMIT/RECORD_SIZE));</span><br><span class="line">            count = <span class="number">0</span>;</span><br><span class="line">            fileNum++;</span><br><span class="line">            buffer[count++] = (<span class="type">unsigned</span> <span class="type">int</span>)strtoul(line, <span class="literal">NULL</span>, <span class="number">10</span>); <span class="comment">// add the current record into new buffer&#x27;s as first element</span></span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// sort the last and final file</span></span><br><span class="line">    mergeSort(buffer, count);</span><br><span class="line">    <span class="type">char</span> fileName[<span class="number">20</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(fileName, <span class="string">&quot;./tmp/pass0/%d.txt&quot;</span>, fileNum);</span><br><span class="line">    <span class="keyword">if</span> ((fp = fopen(fileName, <span class="string">&quot;w+&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create file: %s.\n&quot;</span>, fileName);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line">    outputToFile(buffer, count, fp);</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">free</span>(buffer);</span><br><span class="line">    <span class="built_in">free</span>(line);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Sort phase done. %d tmp sorted files are produced.\n&quot;</span>, fileNum);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The logic is not difficult. The function takes the input file descriptor as a parameter and reads each line(via the <code>getline</code> method) in a loop until reaches the end of the file. The numbers will be read into the memory buffer before hitting the memory limit. When the memory buffer is full(100000 bytes), the numbers are sorted with the function <code>mergeSort</code>. </p>
+<p>The function <code>mergeSort</code> is defined inside the file <a target="_blank" rel="noopener" href="https://github.com/baoqger/external-merge-sort/blob/multi-way-with-pass/internal_sort.c"><code>internal_sort.c</code></a>, which implements the classic internal <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Merge_sort"><code>merge sorting</code></a> algorithm. I will not cover it in this article, since you can find many documents about it online. If you don’t know about it, please spend some time learning about it. Of course, you can replace it with other sorting algorithms like <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Quicksort"><code>quick sort</code></a> too. I leave this for the readers. </p>
+<p>After sorting, the numbers are saved in the temporary files in the directory of <code>./tmp/pass0</code>. The filename is just the run number. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Output sorted record to given file(of)</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">outputToFile</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> *buffer, <span class="type">int</span> size, FILE *of)</span> &#123;</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(of, <span class="string">&quot;%u\n&quot;</span>, buffer[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    fclose(of);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>We can verify the result of the sort phase as follows: </p>
+<img src="/images/pass0.png" title="Random access machine model" width="600px" height="400px">
+
+<p>You can see each file contains up to <code>25000</code> (equal to <code>MEMORY_LIMIT/RECORD_SIZE</code>) numbers and 312 files are created in pass0. </p>
+<p>Note that I will not examine the details about how to make a new directory and how to open a new file to read or write. You can learn such Linux file I/O concepts by yourself. </p>
+<h5 id="Merge-phase"><a href="#Merge-phase" class="headerlink" title="Merge phase"></a>Merge phase</h5><p>The <code>exMerge</code> function controls the passes in the merge phase starting from <code>pass1</code>. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">exMerge</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">/* some code omitted ... */</span></span><br><span class="line">    <span class="type">int</span> pass = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">while</span> (fileNum &gt; <span class="number">1</span>) &#123;</span><br><span class="line">        exMergeSort(pass, fileNum);</span><br><span class="line">        <span class="type">int</span> remainer = fileNum % ways;</span><br><span class="line">        fileNum = fileNum / ways;</span><br><span class="line">        <span class="keyword">if</span> (remainer &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            fileNum++;</span><br><span class="line">        &#125; </span><br><span class="line">        pass++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* some code omitted ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The variable <code>fileNum</code> stores the <code>run</code> number in each pass. And the variable <code>ways</code> denotes the number of multi-way. Thus, the <code>run</code> number of the next pass should be calculated as <code>fileNum / ways</code>.</p>
+<p>The detailed merging logic is inside the function <code>exMergeSort</code>, which takes two parameters. <code>pass</code> means the current pass number(starting from 1), while <code>nums</code> means how many runs(or sub-files) in the last pass need to be merged. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">exMergeSort</span><span class="params">(<span class="type">int</span> pass, <span class="type">int</span> nums)</span> &#123;</span><br><span class="line">    <span class="comment">/* some code omitted ... */</span></span><br><span class="line">    <span class="type">int</span> inputFileNum = <span class="number">0</span>; </span><br><span class="line">    <span class="type">int</span> run = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (; inputFileNum &lt; nums;) &#123; </span><br><span class="line">        </span><br><span class="line">        <span class="comment">// create the dir for current pass</span></span><br><span class="line">        <span class="keyword">if</span> (inputFileNum == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="type">int</span> status;</span><br><span class="line">            <span class="type">char</span> dirName[<span class="number">20</span>];</span><br><span class="line">            <span class="built_in">sprintf</span>(dirName, <span class="string">&quot;./tmp/pass%d&quot;</span>, pass);</span><br><span class="line">            <span class="keyword">if</span> ((status = mkdir(dirName, S_IRWXU | S_IRWXU | S_IROTH | S_IXOTH)) == <span class="number">-1</span>) &#123;</span><br><span class="line">                <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create tmp directory %s.\n&quot;</span>, dirName);</span><br><span class="line">                <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// open new file to merge in each run</span></span><br><span class="line">        FILE *fm; </span><br><span class="line">        <span class="type">char</span> mergedFileName[<span class="number">20</span>];</span><br><span class="line">        <span class="built_in">sprintf</span>(mergedFileName, <span class="string">&quot;./tmp/pass%d/%d.txt&quot;</span>, pass, run);</span><br><span class="line">        <span class="keyword">if</span> ((fm = fopen(mergedFileName, <span class="string">&quot;w+&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, strerror(errno));</span><br><span class="line">            <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;merged file %s: can&#x27;t create or open.\n&quot;</span>, mergedFileName);</span><br><span class="line">        &#125;</span><br><span class="line">        run++;</span><br><span class="line">        <span class="comment">/* some code omitted ... */</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The above code creates a temp directory for each pass and a temp file for each run. </p>
+<p>Next, we create an array of the input files for each run. And the input file is inside the temp directory of the last pass. Each run merges multiple files in the <code>for</code> loop. The only trick logic here is that the remaining files in the last run may be less than the number of ways declared, we need to handle that properly (line 5 of the below code block).  </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Rewind the sorted files in previous pass, each run merge way_numbers numbers of files</span></span><br><span class="line"><span class="comment">// Merge the sorted files with multi ways in N runs. </span></span><br><span class="line"><span class="comment">// In the first N - 1 runs, each run merge ways numbers of files</span></span><br><span class="line"><span class="comment">// In the last run, merge the remaining files. </span></span><br><span class="line"><span class="type">int</span> way_numbers = run * ways &lt;= nums ? ways : nums - inputFileNum;</span><br><span class="line">FILE *fiarr[way_numbers];</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; way_numbers; i++) &#123;</span><br><span class="line">   <span class="type">char</span> inputFileName[<span class="number">20</span>];</span><br><span class="line">   inputFileNum++; <span class="comment">// start from 0 to nums</span></span><br><span class="line">   <span class="built_in">sprintf</span>(inputFileName, <span class="string">&quot;./tmp/pass%d/%d.txt&quot;</span>, pass - <span class="number">1</span>, inputFileNum);</span><br><span class="line">   <span class="keyword">if</span> ((fiarr[i] = fopen(inputFileName, <span class="string">&quot;r&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, strerror(errno));</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;input file %s: can&#x27;t create or open.\n&quot;</span>, inputFileName);</span><br><span class="line">   &#125;</span><br><span class="line">   rewind(fiarr[i]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Next, we need to read one number from every input file until only one file is not run out. Find the smallest one and save it in the temp output run file. And for the last remaining file, remember to put the rest numbers into the output file too.  </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// get and compare records until files runs out of records</span></span><br><span class="line"><span class="type">char</span> *records[way_numbers]; </span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; way_numbers; i++) &#123;</span><br><span class="line">    records[i] = getRecord(fiarr[i]);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// loop until only one file is not run-out</span></span><br><span class="line"><span class="keyword">while</span>(validateRecords(records, way_numbers )) &#123;</span><br><span class="line">    <span class="type">int</span> index = getMinRecordIndex(records, way_numbers);</span><br><span class="line">    <span class="built_in">fprintf</span>(fm, <span class="string">&quot;%s&quot;</span>, records[index]); <span class="comment">// print record to new merged file</span></span><br><span class="line">    <span class="built_in">free</span>(records[index]); <span class="comment">// free the memory allocated by getline in getRecord function</span></span><br><span class="line">    records[index] = getRecord(fiarr[index]); <span class="comment">// Get new record from the file</span></span><br><span class="line">&#125;</span><br><span class="line">       </span><br><span class="line"><span class="comment">// put the rest record in the last remaining file into new file </span></span><br><span class="line"><span class="type">int</span> lastIndex = getLastRemainRecordIndex(records, way_numbers);</span><br><span class="line"><span class="keyword">while</span>(records[lastIndex]) &#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(fm, <span class="string">&quot;%s&quot;</span>, records[lastIndex]);</span><br><span class="line">    <span class="built_in">free</span>(records[lastIndex]);</span><br><span class="line">    records[lastIndex] = getRecord(fiarr[lastIndex]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The above code bock utilizes several methods like <code>getRecord</code>, <code>validateRecords</code>, <code>getMinRecordIndex</code> and <code>getLastRemainRecordIndex</code> as follows, and these functions are easy to understand. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Returns a copy of the record</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">char</span>* <span class="title function_">getRecord</span><span class="params">(FILE *ifp)</span> &#123;</span><br><span class="line">    <span class="type">char</span> *line = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">size_t</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="type">ssize_t</span> nread;</span><br><span class="line">    <span class="keyword">while</span> ((nread = getline(&amp;line, &amp;len, ifp)) != <span class="number">-1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> line;       </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Validate whether at least two records are non-zero</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">bool</span> <span class="title function_">validateRecords</span><span class="params">(<span class="type">char</span> **records, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="type">int</span> count = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (records[i] != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            count++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> count &gt;= <span class="number">2</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Get the min valid record&#x27;s index</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">getMinRecordIndex</span><span class="params">(<span class="type">char</span> **records, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="type">int</span> index = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> min = (<span class="type">int</span>)INFINITY;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (records[i] == <span class="literal">NULL</span>) &#123; <span class="comment">// pass invalid run-out record files</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">if</span> (strtoul(records[i], <span class="literal">NULL</span>, <span class="number">10</span>) &lt; min) &#123;</span><br><span class="line">            min = strtoul(records[i], <span class="literal">NULL</span>, <span class="number">10</span>);</span><br><span class="line">            index = i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> index;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Get the last remainer of the records</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">getLastRemainRecordIndex</span><span class="params">(<span class="type">char</span> **records, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (records[i] != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In detail, you can refer to the source code of this <a target="_blank" rel="noopener" href="https://github.com/baoqger/external-merge-sort/blob/multi-way-with-pass/main.c">github repo</a>. Next, let’s evaluate the performance of this algorithm by tuning the number of ways for merging. </p>
+<h3 id="Performance-Evaluation"><a href="#Performance-Evaluation" class="headerlink" title="Performance Evaluation"></a>Performance Evaluation</h3><p>We’ll use the Linux <code>time</code> utility to measure the running time of this algorithm. </p>
+<p>The result of two-way mergesort is: </p>
+<img src="/images/two-way-merge.png" title="two way merge sort" width="600px" height="400px">
+
+<p>while six-way mergesort can complete with a shorter runtime. </p>
+<img src="/images/multi-way-merge.png" title="two way merge sort" width="600px" height="400px">
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2022/12/06/external-sorting-two/" data-id="clbc8ggc3000cj8mm5lnebfd3" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2022/11/02/external-sorting-one/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">External Mergesort: part one</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/algorithm-external-disk/" style="font-size: 15px;">algorithm, external, disk</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/12/">December 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/11/">November 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/10/">October 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/08/">August 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/12/06/external-sorting-two/">External Mergesort: part two</a>
+          </li>
+        
+          <li>
+            <a href="/2022/11/02/external-sorting-one/">External Mergesort: part one</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/10/userland-memory-allocation-three/">Understand userland heap memory allocation: part three - free chunk</a>
+          </li>
+        
+          <li>
+            <a href="/2022/09/08/userland-memory-allocation-two/">Understand userland heap memory allocation: part two - allocate chunk</a>
+          </li>
+        
+          <li>
+            <a href="/2022/08/05/userland-memory-allocation-one/">Understand userland heap memory allocation: part one - overview</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2022 Chris Bao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+    <a href="/project" class="mobile-nav-link">Project</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
