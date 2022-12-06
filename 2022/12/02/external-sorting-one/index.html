@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>External Mergesort: part one | Chris Bao&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="IntroductionThis article will examine one interesting question which I came across when reading the book Programming Pearls. This question simply goes like this: How to sort a large disk file? The dis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="External Mergesort: part one">
+<meta property="og:url" content="https://baoqger.github.io/2022/12/02/external-sorting-one/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionThis article will examine one interesting question which I came across when reading the book Programming Pearls. This question simply goes like this: How to sort a large disk file? The dis">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://baoqger.github.io/images/RAM-Model.png">
+<meta property="og:image" content="https://baoqger.github.io/images/external-model.png">
+<meta property="og:image" content="https://baoqger.github.io/images/external-mergesort.png">
+<meta property="article:published_time" content="2022-12-02T08:44:29.000Z">
+<meta property="article:modified_time" content="2022-12-06T02:17:03.899Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="algorithm, external, disk">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://baoqger.github.io/images/RAM-Model.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+          <a class="main-nav-link" href="/project">Project</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://baoqger.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-external-sorting-one" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2022/12/02/external-sorting-one/" class="article-date">
+  <time datetime="2022-12-02T08:44:29.000Z" itemprop="datePublished">2022-12-02</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      External Mergesort: part one
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>This article will examine one interesting question which I came across when reading the book <strong><em>Programming Pearls</em></strong>. This question simply goes like this: <code>How to sort a large disk file? The disk file has so much data that it cannot all fit into the main memory.</code> I considered this <code>algorithm</code> question for a while; but noticed that all the classic sorting algorithms, like <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Quicksort"><code>Quick sort</code></a> and <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Merge_sort"><code>merge sort</code></a>, can’t solve it easily. Then I did some research about it, and I will share what I learned in this article. I believe you can solve this problem as well, after reading this article.</p>
+<h3 id="Background-of-External-Algorithm"><a href="#Background-of-External-Algorithm" class="headerlink" title="Background of External Algorithm"></a>Background of External Algorithm</h3><p>Traditionally, computer scientists analyze the running time of an algorithm by counting the number of executed instructions, which is usually expressed as a function of the input size n, like the well-known <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Big_O_notation"><code>Big O notation</code></a>. This kind of algorithm complexity analysis is based on the <code>Random access machine(RAM)</code> model, which defines the following assumptions:</p>
+<ul>
+<li>A machine with an unbounded amount of available memory;</li>
+<li>Any desired memory location can be accessed in unit time;</li>
+<li>Every instruction takes the same amount of time. </li>
+</ul>
+<img src="/images/RAM-Model.png" title="Random access machine model" width="300px" height="200px">
+
+<p>This model works well when the amount of memory that the algorithm needs to use is smaller than the amount of memory in the computer running the code. </p>
+<p>But in the real world, some applications need to process data that are too large to fit into a computer’s main memory at once. And the algorithms used to solve such problems are called <code>external memory algorithms</code> or <code>disk-based algorithms</code>; since the input data are stored on an <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/External_storage"><code>external memory</code> storage device</a>.</p>
+<p>Instead of the <code>RAM</code> model, the <code>external memory algorithm</code> is analyzed based on the <code>external memory model</code>. The model consists of a CPU processor with an internal memory of bounded size, connected to an unbounded external memory. One I/O operation consists of moving a block of contiguous elements from external to internal memory(this is called <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Page_cache"><code>page cache</code></a> and is managed by the kernel.). </p>
+<img src="/images/external-model.png" title="external memory model" width="400px" height="300px">
+
+<p>Compared with the main memory, the access speed of external memory is slower by <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Memory_hierarchy">several orders of magnitude</a>, even though modern storage techniques such as <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Solid-state_drive"><code>SSD</code></a> are already adopted. Thus, for external algorithms, the bottleneck of the performance is <code>disk IO</code> speed instead of the CPU cycles. </p>
+<p>In this section, we examined the computational model of the external memory algorithms. Next, let’s review one typical type of external memory algorithm: external sorting. </p>
+<h3 id="External-Mergesort"><a href="#External-Mergesort" class="headerlink" title="External Mergesort"></a>External Mergesort</h3><p>Similar to the traditional internal sorting algorithms, several different solutions are available for external sorting. In this article, I will focus on <code>external mergesort</code>.</p>
+<p>External mergesort is a straightforward generalization of internal mergesort. The algorithm starts by repeatedly loading M input items into the memory(since the memory buffer size is limited, can only store M input items at once), sorting them, and writing them back out to disk. This step divides the input file into some(or many, if the input file is very large) sorted runs, each with M items sorted. Then the algorithm repeatedly merges multiple sorted runs, until only a single sorted run containing all the input data remains. </p>
+<p>Let’s use the following example model to analyze this algorithm. First of all, assume the memory buffer is limited, and the size is one <code>page</code>. And the input file size is 8 <code>pages</code>. External mergesort can be divided into two phases: <code>sort phase</code> and <code>merge phase</code>.  </p>
+<img src="/images/external-mergesort.png" title="external mergesort" width="800px" height="600px">
+
+<p><strong><em>Sort phase</em></strong>:</p>
+<ul>
+<li>Divide the entire input file into 8 groups, each group size is one page(memory buffer capacity).</li>
+<li>Load each page into the memory, sort the items in the memory buffer(with an internal sorting algorithm), and save the sorted items in a temporary sub-file. Each sub-file is called a <code>run</code>.</li>
+</ul>
+<p>At the end of the sort phase, 8 temporary sorted 1-page runs will be created. This step can be marked as <strong><em>pass 0</em></strong>.</p>
+<p><strong><em>Merge phase</em></strong>: </p>
+<p>The 8 sorted runs in pass 0 will be merged into a single sorted file with 3 more passes.</p>
+<ul>
+<li>pass 1: Perform 4 runs for the merge. <ul>
+<li>Run 1: Merge the first two small 1-page runs into a big 2-page run. This merging step goes as follows: <ul>
+<li>Read the first two sorted sub-files (one item from each file).</li>
+<li>Find the smaller item, output it in the new sub-file, and the appropriate input sub-file is advanced. Repeat this cycle until the input sub-file is completed. <strong>This routine’s logic is the same as the internal mergesort algorithm.</strong></li>
+</ul>
+</li>
+<li>Run 2: Merge the next two 1-page runs into a 2-page run. </li>
+<li>Run 3 and 4: follow the same process.   </li>
+<li>At the end of <strong><em>pass 1</em></strong>, 4 temporary sorted 2-page runs will be created. </li>
+</ul>
+</li>
+<li>pass 2: Perform 2 runs for the merge. <ul>
+<li>At the end of <strong><em>pass 2</em></strong>, 2 temporary sorted 4-page runs will be created. </li>
+</ul>
+</li>
+<li>pass 3: Perform 1 run for the merge. <ul>
+<li>At the end of <strong><em>pass 3</em></strong>, the final 8-page run containing all the sorted items will be created.</li>
+</ul>
+</li>
+</ul>
+<p>Note: the above process may seem complicated at the first sight, but the logic is nearly the same as the internal merge sort. The only difference is internal merging is based on memory buffers, while external merging is based on disk files, and needs reading the item from disk to memory.</p>
+<p>Since we keep merging two small sub-files into a big one with doubled size, the above algorithm can be called <code>two-way</code> external merge sorting. We can generalize the idea to <code>multi-way</code> external merge sorting, which merges M runs into one.  </p>
+<p>Next, let’s analyze its complexity. Suppose the input file has <code>N</code> items and each page consists of <code>B</code> items. And <code>M</code> denotes the number of ways used in the merge phase, thus the number of passes should be: <b>log<sub>M</sub>(N/B) + 1</b>, where plus one means the first pass in the sort phase. And each pass, each item is read and written once from and to the disk file. So the total number of disk I/O is: <b>2N*(log<sub>M</sub>(N/B) + 1)</b></p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined the abstract computational model of the external memory algorithm and analyzed the details of the external mergesort algorithm. Next article, let’s implement the code and evaluate the performance. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2022/12/02/external-sorting-one/" data-id="clbbmnf90000awsmm9aus4b05" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2022/10/10/userland-memory-allocation-three/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Understand userland heap memory allocation: part three - free chunk</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/algorithm-external-disk/" style="font-size: 10px;">algorithm, external, disk</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/12/">December 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/10/">October 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/08/">August 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2022/12/02/external-sorting-one/">External Mergesort: part one</a>
+          </li>
+        
+          <li>
+            <a href="/2022/10/10/userland-memory-allocation-three/">Understand userland heap memory allocation: part three - free chunk</a>
+          </li>
+        
+          <li>
+            <a href="/2022/09/08/userland-memory-allocation-two/">Understand userland heap memory allocation: part two - allocate chunk</a>
+          </li>
+        
+          <li>
+            <a href="/2022/08/05/userland-memory-allocation-one/">Understand userland heap memory allocation: part one - overview</a>
+          </li>
+        
+          <li>
+            <a href="/2022/07/22/CPacketSniffer/">cPacketSniffer</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2022 Chris Bao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+    <a href="/project" class="mobile-nav-link">Project</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
