@@ -134,10 +134,106 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2023/01/13/note-on-red-black-tree/" data-id="clghc5g2j0027ngmm4tgx4l0q" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2023/01/13/note-on-red-black-tree/" data-id="clgorr6xv002c0gmmc0zv0n7m" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" rel="tag">Algorithm, Data structure, Tree, Red Black Tree</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-bst-deletion-issue" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2023/01/01/bst-deletion-issue/" class="article-date">
+  <time datetime="2023-01-01T04:10:04.000Z" itemprop="datePublished">2023-01-01</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2023/01/01/bst-deletion-issue/">Deletion operation in Binary Search Tree: successor or predecessor</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>Today, in this article I want to examine one concrete topic: how to delete a node from a <code>binary search tree</code>. This question is important for understanding other tree data structures, like the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/AVL_tree">AVL tree</a>, and the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Red%E2%80%93black_tree">Red-Black tree</a>. </p>
+<p>As is common with many data structures, <code>deletion</code> is always the hardest operation. For example, to delete a specific element from the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Array">array</a>, we need to shift all the elements after it by one index. And to delete one node from the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Linked_list">linked list</a>, we need to reset the pointer of the previous node (if it’s a doubled linked list, we need to reset more points, which is a more complex case). This is the same for the binary search tree as well. Let’s see in the following section. </p>
+<p>Note: the idea of this article is inspired by the book <strong><em>Data Structures and Algorithm Analysis in C</em></strong> written by <a target="_blank" rel="noopener" href="http://users.cs.fiu.edu/~weiss/">Mark Allen Weiss</a>. The demo code shown in the following section is from this book. And I made some changes based on it. I highly recommend this great book to readers.  </p>
+<h3 id="Deletion-of-the-binary-search-tree"><a href="#Deletion-of-the-binary-search-tree" class="headerlink" title="Deletion of the binary search tree"></a>Deletion of the binary search tree</h3><p>Before we can examine the deletion operation in depth, let’s quickly review the concept of the binary search tree as follows:</p>
+<ul>
+<li>Binary search tree: is a binary tree holding the following property that for every node, X, in the tree, the values of all the keys in its left subtree are smaller than the key value in X, and the values of all the keys in its right subtree are larger than the key value in X. </li>
+</ul>
+<p>Simply speaking, the binary search tree is a binary tree satisfying the <code>binary search</code> property. So each node of a binary search tree can have two children subtrees at most. When we need to delete one node from the binary search tree, then it’s necessary to consider the following 3 cases. </p>
+<p>If the node is a <code>leaf</code>, then it can be deleted immediately. For example, to delete node <code>1</code> from the following binary search tree: </p>
+<img src="/images/left-node-deletion.png" title="Delete leaf node from binary search tree" width="400px" height="500px">
+
+<p>I will show you how to implement it at the code level later, which summarizes all the cases. </p>
+<p>If the node has only <code>one child subtree</code>, the node can be deleted after we reset its parent’s pointer to bypass the node and point to its child node. For example, to delete node <code>4</code> as follows: </p>
+<img src="/images/onechild-node-deletion.png" title="Delete leaf node from binary search tree" width="400px" height="500px">
+
+<p>In the above example, node <code>4</code> has only one left child node <code>3</code>. Let’s consider the symmetric scenario, imagine what will happen when it has only one right child node. The answer is it doesn’t influence how we handle the deleted node here and the result is the same. I will not draw the diagram here and leave it for you to explore. </p>
+<p>The complicated case is how to deal with a node with <code>two children</code>. Before we introduce the solution, let’s clarify one concept about the binary search tree: <code>successor</code>: </p>
+<ul>
+<li>Successor: is the node with the <code>minimum</code> value in the <code>right</code> subtree of any node.</li>
+</ul>
+<img src="/images/twochildren-delete-origin.png" title="Delete leaf node from binary search tree" width="200px" height="300px">
+
+<p>Let’s take node <code>16</code> in the above binary search tree as an example, the <code>successor</code> is node <code>17</code>. All right! Based on this concept, the solution to delete a node with two children is straightforward:</p>
+<ul>
+<li>Replace the data of the deleted node with the value of the <code>successor</code> and recursively delete the <code>successor</code> from the <code>right</code> subtree. </li>
+</ul>
+<p>Let’s try to analyze this solution. Firstly, replacing the data of the node with the value of the <code>successor</code> can keep the <code>binary search</code> property after the deletion operation. Secondly, since the <code>successor</code> has the minimum value of the subtree, which means it cannot have a left child. So the <code>successor</code> is either a leaf node without any child node or a node with only one right child node. So recursively deleting the <code>successor</code> can be resolved by the two simple cases we discussed above, it’s perfect, right?  For instance, the deletion of node <code>16</code> goes as follows: </p>
+<img src="/images/twochildren-delete-after.png" title="Delete leaf node from binary search tree" width="500px" height="600px">
+
+<p>As we mentioned above, node <code>16</code>‘s <code>successor</code> is node <code>17</code>. So replace the value with 17 and delete node <code>17</code> from the right subtree, where node <code>17</code> is just a leaf node. Next, let’s implement the node deletion operation. </p>
+<h3 id="Code-implementation"><a href="#Code-implementation" class="headerlink" title="Code implementation"></a>Code implementation</h3><p>In this article, I will only show the codes related to the deletion operation rather than the complete implementation of a binary search tree. If you want to know how to write a BST from scratch, please refer to this GitHub <a target="_blank" rel="noopener" href="https://github.com/baoqger/data-structures-and-algorithm-analysis-in-c-practice/tree/main/trees/BinarySearchTree">repo</a>.</p>
+<p>Firstly, let’s examine the header file, which contains the data type definitions and function declarations. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;utility.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> _BST_H</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> _BST_H</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="type">int</span> ET;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">TreeNode</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">TreeNode</span> *<span class="title">Position</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> Position BST;</span><br><span class="line"></span><br><span class="line">BST <span class="title function_">delete</span><span class="params">(ET, BST)</span>;</span><br><span class="line">Position <span class="title function_">findMinBST</span><span class="params">(BST)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// code omitted here</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+<p>You can notice that besides the <code>delete</code> function, we also define a helper function <code>findMinBST</code> which is used to find the <code>successor</code> node. </p>
+<p>Next, let’s examine the function definitions as follows: </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">BST</span><br><span class="line"><span class="title function_">delete</span><span class="params">(ET elem, BST T)</span></span><br><span class="line">&#123;</span><br><span class="line">    Position tmpCell;</span><br><span class="line">  </span><br><span class="line">    <span class="keyword">if</span> (T == <span class="literal">NULL</span>)</span><br><span class="line">        fatal(<span class="string">&quot;Element not found&quot;</span>);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (elem &lt; T-&gt;Element)</span><br><span class="line">        T-&gt;Left = delete(elem, T-&gt;Left);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (elem &gt; T-&gt;Element)</span><br><span class="line">        T-&gt;Right = delete(elem, T-&gt;Right);</span><br><span class="line">    <span class="keyword">else</span> <span class="comment">// we found the element to be deleted</span></span><br><span class="line">    <span class="keyword">if</span> (T-&gt;Left != <span class="literal">NULL</span> &amp;&amp; T-&gt;Right != <span class="literal">NULL</span>) <span class="comment">// two children</span></span><br><span class="line">    &#123;</span><br><span class="line">        tmpCell = findMinBST(T-&gt;Right);</span><br><span class="line">        T-&gt;Element = tmpCell-&gt;Element;</span><br><span class="line">        T-&gt;Right = delete(T-&gt;Element, T-&gt;Right);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="comment">// one or zero children, change the pointer T pointing to new address(NULl or the child node)</span></span><br><span class="line">    &#123;</span><br><span class="line">        tmpCell = T;</span><br><span class="line">        <span class="comment">// for leaf node, T will be reset to null</span></span><br><span class="line">        <span class="keyword">if</span> (T-&gt;Right == <span class="literal">NULL</span>)</span><br><span class="line">            T = T-&gt;Left;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (T-&gt;Left == <span class="literal">NULL</span>)</span><br><span class="line">            T = T-&gt;Right;</span><br><span class="line">        <span class="built_in">free</span>(tmpCell);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> T;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Position</span><br><span class="line"><span class="title function_">findMinBST</span><span class="params">(BST T)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> (T == <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (T-&gt;Left == <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">return</span> T;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    <span class="keyword">return</span> findMinBST(T-&gt;Left);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>I add some comments in the above code block which can help your understanding of this recursive algorithm. Please go ahead and think hard about it. </p>
+<p>In the next section, we’ll have some open discussions about this solution. Let’s see whether there is any other solution. And what’re the potential issues of the current solution? </p>
+<h3 id="Open-discussion"><a href="#Open-discussion" class="headerlink" title="Open discussion"></a>Open discussion</h3><h4 id="successor-vs-predecessor"><a href="#successor-vs-predecessor" class="headerlink" title="successor vs predecessor"></a>successor vs predecessor</h4><p>Firstly, in the above solution, we delete the node with two children based on the <code>successor</code>. And there is the other concept called <code>predecessor</code>: </p>
+<ul>
+<li>Predecessor: is the node with the <code>maximum</code> value in the left subtree of any node.</li>
+</ul>
+<p>So similarly, the alternative solution to delete the node with two children is: </p>
+<ul>
+<li>Replace the data of the deleted node with the value of the <code>predecessor</code> and recursively delete the <code>predecessor</code> from the <code>left</code> subtree.</li>
+</ul>
+<p>We can do this by writing another helper function <code>findMaxBST</code> as follows: </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Position</span><br><span class="line"><span class="title function_">findMaxBST</span><span class="params">(BST T)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> (T != <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">while</span> (T-&gt;Right != <span class="literal">NULL</span>)</span><br><span class="line">      T = T-&gt;Right;</span><br><span class="line">  <span class="keyword">return</span> T;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Does it work? The answer is yes. But the performance of the solution based on the <code>predecessor</code> is worse than the one based on the <code>successor</code>. Because the <code>predecessor</code> has the maximum value of the left subtree, it means that the <code>predecessor</code> can have two children. Then when we delete the <code>predecessor</code> recursively, the worst-case time complexity can reach <code>O(logN)</code> while the solution based on the <code>successor</code> only requires constant(<code>O(1)</code>) time. That’s the difference. </p>
+<h4 id="balanced-vs-unbalanced"><a href="#balanced-vs-unbalanced" class="headerlink" title="balanced vs unbalanced"></a>balanced vs unbalanced</h4><p>Although the above solution can work, it exposes a serious performance issue. The reason why people invent binary search tree data structures is that we can get <code>O(logN)</code> level performance for searching operations. But imagine what will happen if we keep inserting and deleting nodes in the binary search tree in the way we mentioned here. The depth of the tree will become <code>unbalanced</code>. The left subtree grows deeper than the right subtree because we are always replacing a deleted node with the <code>successor</code>(which is from the right subtree, right?) </p>
+<p>The following image is borrowed from Mark’s great book I mentioned above, which clearly shows that the tree becomes <code>unbalanced</code> after many rounds of insertion and deletion. If you want to know about it in theory, please refer to the book.  </p>
+<img src="/images/bst-unbalanced.png" title="Unbalanced binary search tree" width="800px" height="1000px">
+
+<p>For an unbalanced BST, the worst-case time complexity can be degraded to <code>O(n)</code>. To keep the desired performance, people invent a more advanced data structure <code>self-balancing binary search tree</code>, like the <code>AVL tree</code> and <code>Red-black tree</code>. I will share about them in the coming articles, please keep watching my blog. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined various solutions to delete a node from the binary search tree and evaluated their performance. We also discussed some open questions about BST, which prove why we need more advanced data structures like the red-black tree. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2023/01/01/bst-deletion-issue/" data-id="clgorr6x900070gmmeatlg6rr" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Binary-Search-Tree-delete-balanced-performance/" rel="tag">Binary Search Tree, delete, balanced, performance</a></li></ul>
 
     </footer>
   </div>
@@ -218,7 +314,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/12/06/external-sorting-two/" data-id="clghc5g1v0009ngmmbu3o64kf" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/12/06/external-sorting-two/" data-id="clgorr6xa000d0gmm2lnj3dsz" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li></ul>
@@ -310,7 +406,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/11/02/external-sorting-one/" data-id="clghc5g1w000cngmmequc9tky" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/11/02/external-sorting-one/" data-id="clgorr6xa000b0gmmhpjl1ckc" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li></ul>
@@ -397,7 +493,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/10/10/userland-memory-allocation-three/" data-id="clghc5g2n002qngmmac5o3cy3" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/10/10/userland-memory-allocation-three/" data-id="clgorr6y0002v0gmm9enoex75" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li></ul>
@@ -493,7 +589,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/09/08/userland-memory-allocation-two/" data-id="clghc5g2o002sngmmffb3cok1" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/09/08/userland-memory-allocation-two/" data-id="clgorr6y0002w0gmme3w9gcjx" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li></ul>
@@ -565,7 +661,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/08/05/userland-memory-allocation-one/" data-id="clghc5g2n002pngmmdyoh1hbf" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/08/05/userland-memory-allocation-one/" data-id="clgorr6y0002t0gmm1ibcc3om" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li></ul>
@@ -653,7 +749,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/07/22/CPacketSniffer/" data-id="clghc5g1u0008ngmm1hg17474" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/07/22/CPacketSniffer/" data-id="clgorr6x300010gmm871y8os2" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li></ul>
@@ -835,7 +931,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/06/08/how-to-write-a-netfilter-firewall-part3/" data-id="clghc5g2x003ingmm70ywbq7l" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/06/08/how-to-write-a-netfilter-firewall-part3/" data-id="clgorr6yb003l0gmme75515fv" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li></ul>
@@ -917,75 +1013,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/05/05/how-to-write-a-netfilter-firewall-part2/" data-id="clghc5g2a001fngmm6olihnhe" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-how-to-write-a-netfilter-firewall-part1" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2022/05/04/how-to-write-a-netfilter-firewall-part1/" class="article-date">
-  <time datetime="2022-05-04T10:06:50.000Z" itemprop="datePublished">2022-05-04</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2022/05/04/how-to-write-a-netfilter-firewall-part1/">Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p><code>Firewalls</code> are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting against network attacks. There are both hardware-based firewalls and software-based firewalls. I will not discuss too much about the background here, since you can find many online documents about <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Firewall_(computing)">it</a>.</p>
-<p>Have you ever thought of implementing a simple firewall from scratch? Sounds crazy? But with the power of Linux, you can do that. After you read this series of articles, you will find that actually, it is quite simple. </p>
-<p>You may once use various firewalls on Linux such as <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Iptables">iptables</a>, <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Nftables">nftables</a>, <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Uncomplicated_Firewall">UFW</a>, etc. All of these firewall tools are user-space utility programs, and they are all relying on <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Netfilter"><code>Netfilter</code></a>. <code>Netfilter</code> is the Linux kernel subsystem that allows various networking-related operations to be implemented. <code>Netfilter</code> allows you to develop your firewall using the <code>Linux Kernel Module</code>.  If you don’t know the techniques such as the Linux Kernel module and Netfilter, don’t worry. In this article, let’s write a Linux firewall from scratch based on Netfilter. You can learn the following interesting points:</p>
-<ul>
-<li>Linux kernel module development.</li>
-<li>Linux kernel network programming. </li>
-<li>Netfilter module development.</li>
-</ul>
-<h3 id="Netfilter-and-Kernel-modules"><a href="#Netfilter-and-Kernel-modules" class="headerlink" title="Netfilter and Kernel modules"></a>Netfilter and Kernel modules</h3><h4 id="Basics-of-Netfilter"><a href="#Basics-of-Netfilter" class="headerlink" title="Basics of Netfilter"></a>Basics of Netfilter</h4><p><code>Netfilter</code> can be considered to be the third generation of <code>firewall</code> on Linux. Before <code>Netfilter</code>was introduced in Linux Kernel 2.4, there are two older generations of firewalls on Linux as follows: </p>
-<ul>
-<li>The first generation was a port of an early version of BSD UNIX’s <code>ipfw</code> to Linux 1.1. </li>
-<li>The second generation was <code>ipchains</code> developed in the 2.2 series of Linux Kernel. </li>
-</ul>
-<p>As we mentioned above, <code>Netfilter</code> was designed to provide the infrastructure inside the Linux kernel for various networking operations. So <code>firewall</code> is just one of the multiple functionalities provided by <code>Netfilter</code> as follows:</p>
-<img src="/images/netfilter-arch.png" title="Netfilter architecture" width="600px" height="400px">
-
-<ul>
-<li><strong>Packet filtering</strong>: is in charge of filtering the packets based on the rules. It is also the topic of this article. </li>
-<li><strong>NAT (Network address translation)</strong>: is in charge of translating the IP address of network packets. <code>NAT</code> is an important protocol, which has become a popular and essential tool in <code>conserving global address space in the face of IPv4 address exhaustion</code>. If you don’t know <code>NAT</code> protocol, you can refer to other <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Network_address_translation">documents</a>. I will examine it in other future articles. </li>
-<li><strong>Packet mangling</strong>: is in charge of modifying the packet content(In fact, <code>NAT</code> is one kind of packet mangling, which modifies the source or destination IP address). For example, <code>MSS (Maximum Segment Size)</code> value of TCP SYN packets can be altered to allow large-size packets transported over the network. </li>
-</ul>
-<p>Note: this article will focus on building a simple firewall to filter packets based on Netfilter. So the <code>NAT</code> and <code>Packet Mangling</code> parts are not in the scope of this article. </p>
-<p>Packet filtering can only be done inside the Linux kernel (Netfilter’s code is in the kernel as well), if we want to write a mini firewall, it has to run in the kernel space. Right? Does it mean we need to add our code into the kernel and recompile the kernel? Imagine you have to recompile the kernel each time you want to add a new packet filtering rule. That’s a bad idea. The good news is that <code>Netfilter</code> allows you to add extensions using the <a target="_blank" rel="noopener" href="https://wiki.archlinux.org/title/Kernel_module"><code>Linux kernel modules</code></a>. </p>
-<h4 id="Basics-of-Linux-Kernel-modules"><a href="#Basics-of-Linux-Kernel-modules" class="headerlink" title="Basics of Linux Kernel modules"></a>Basics of Linux Kernel modules</h4><p>Although Linux is a <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Monolithic_kernel"><code>monolithic kernel</code></a>, it can be extended using kernel modules. Modules can be inserted into the kernel and removed on demand. Linux isolates the kernel but allows you to add specific functionality on the fly through modules. In this way, Linux keeps a balance between stability and usability. </p>
-<p>I want to examine one confusing point about the kernel module here: what is the difference between <code>driver</code> and <code>module</code>:</p>
-<ul>
-<li>A driver is a bit of code that runs in the kernel to talk to some hardware device. It drives the hardware. Standard practice is to build drivers as kernel modules where possible, rather than link them statically to the kernel since that gives more flexibility. </li>
-<li>A kernel module may not be a device driver at all.    </li>
-</ul>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In the first post of this series, we examine the basics of Netfilter and Linux kernel modules. In the next post, let’s start implementing the mini firewall. </p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/05/04/how-to-write-a-netfilter-firewall-part1/" data-id="clghc5g29001dngmmajoiaf3m" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/05/05/how-to-write-a-netfilter-firewall-part2/" data-id="clgorr6xo001j0gmm1393foxq" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li></ul>
@@ -1015,7 +1043,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" rel="tag">Algorithm, Data structure, Tree, Red Black Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" rel="tag">Algorithm, Data structure, Tree, Red Black Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Binary-Search-Tree-delete-balanced-performance/" rel="tag">Binary Search Tree, delete, balanced, performance</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
     </div>
   </div>
 
@@ -1025,7 +1053,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" style="font-size: 10px;">Algorithm, Data structure, Tree, Red Black Tree</a> <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/algorithm-external-disk/" style="font-size: 15px;">algorithm, external, disk</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" style="font-size: 10px;">Algorithm, Data structure, Tree, Red Black Tree</a> <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Binary-Search-Tree-delete-balanced-performance/" style="font-size: 10px;">Binary Search Tree, delete, balanced, performance</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/algorithm-external-disk/" style="font-size: 15px;">algorithm, external, disk</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -1051,6 +1079,10 @@
           </li>
         
           <li>
+            <a href="/2023/01/01/bst-deletion-issue/">Deletion operation in Binary Search Tree: successor or predecessor</a>
+          </li>
+        
+          <li>
             <a href="/2022/12/06/external-sorting-two/">External Mergesort: part two</a>
           </li>
         
@@ -1060,10 +1092,6 @@
         
           <li>
             <a href="/2022/10/10/userland-memory-allocation-three/">Understand userland heap memory allocation: part three - free chunk</a>
-          </li>
-        
-          <li>
-            <a href="/2022/09/08/userland-memory-allocation-two/">Understand userland heap memory allocation: part two - allocate chunk</a>
           </li>
         
       </ul>
