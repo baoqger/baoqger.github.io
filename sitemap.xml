@@ -2,16 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://baoqger.github.io/2023/01/01/bst-deletion-issue/</loc>
+    <loc>https://baoqger.github.io/2023/02/13/note-on-red-black-tree/</loc>
     
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2023/01/13/note-on-red-black-tree/</loc>
+    <loc>https://baoqger.github.io/2023/01/01/bst-deletion-issue/</loc>
     
-    <lastmod>2023-04-15</lastmod>
+    <lastmod>2023-04-20</lastmod>
     
   </url>
   
@@ -191,14 +191,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/08/06/win-wsl/</loc>
+    <loc>https://baoqger.github.io/2018/12/14/why-tcp-four-way-handshake/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2018/12/14/why-tcp-four-way-handshake/</loc>
+    <loc>https://baoqger.github.io/2021/08/06/win-wsl/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -254,6 +254,13 @@
   </url>
   
   <url>
+    <loc>https://baoqger.github.io/2020/04/12/rxjs-marble-testing/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/2020/09/22/os-xv6-1/</loc>
     
     <lastmod>2021-12-23</lastmod>
@@ -262,13 +269,6 @@
   
   <url>
     <loc>https://baoqger.github.io/2021/10/08/packet-sniffer-golang/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/2020/04/12/rxjs-marble-testing/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -303,6 +303,13 @@
   </url>
   
   <url>
+    <loc>https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/2021/05/30/hystrix-circuit-breaker-part2/</loc>
     
     <lastmod>2021-12-23</lastmod>
@@ -311,13 +318,6 @@
   
   <url>
     <loc>https://baoqger.github.io/2021/06/18/hystrix-circuit-breaker-part3/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/2021/05/21/hystric-circuit-breaker-part1/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -373,14 +373,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/04/26/golang-context-source-code/</loc>
+    <loc>https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/</loc>
+    <loc>https://baoqger.github.io/2021/04/26/golang-context-source-code/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -408,6 +408,13 @@
   </url>
   
   <url>
+    <loc>https://baoqger.github.io/2020/10/26/golang-concurrent-twoways/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/2021/04/04/golang-bytes-buffer/</loc>
     
     <lastmod>2021-12-23</lastmod>
@@ -422,21 +429,7 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2020/10/26/golang-concurrent-twoways/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://baoqger.github.io/2020/04/11/algo-part2/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/2021/02/20/fabio-golang-best-practise/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -450,7 +443,7 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/03/31/go-module/</loc>
+    <loc>https://baoqger.github.io/2021/02/20/fabio-golang-best-practise/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -458,6 +451,13 @@
   
   <url>
     <loc>https://baoqger.github.io/2021/01/29/fabio-source-code-study/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/2021/03/31/go-module/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -473,232 +473,232 @@
 
   <url>
     <loc>https://baoqger.github.io/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   
   <url>
-    <loc>https://baoqger.github.io/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <loc>https://baoqger.github.io/tags/programming-c-array-pointer/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/programming-c-array-pointer/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <loc>https://baoqger.github.io/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/Binary-Search-Tree-delete-balanced-performance/</loc>
-    <lastmod>2023-04-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/tags/algorithm-external-disk/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/Best-practice/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/Fabio-Golang-Source-code/</loc>
-    <lastmod>2023-04-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/tags/Golang-bufio-bytes-buffer/</loc>
-    <lastmod>2023-04-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <loc>https://baoqger.github.io/tags/algorithm-external-disk/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/golang-concurrent-shared-memory-message-pass/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/Golang-bufio-bytes-buffer/</loc>
+    <lastmod>2023-05-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/Fabio-Golang-Source-code/</loc>
+    <lastmod>2023-05-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/Golang-package-workspace-vendor/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/packet-sniffer-socket-PF-PACKET/</loc>
-    <lastmod>2023-04-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/tags/Linux-module-Netfilter-firewall/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/HTTP-system-call-Linux-Golang/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/certificate-digital-signature-hashing/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <loc>https://baoqger.github.io/tags/Linux-module-Netfilter-firewall/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/digital-signature-hash-function/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/public-key-man-in-the-middle-certificate/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <loc>https://baoqger.github.io/tags/certificate-digital-signature-hashing/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/HTTPS-TLS-handshake-SSL-TLS/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/public-key-man-in-the-middle-certificate/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/docker-c-linux/</loc>
-    <lastmod>2023-04-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/operating-system-xv6-Unix/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/memory-management-stack/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/HTTP-1-1-concurrent/</loc>
-    <lastmod>2023-04-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/tags/Linux-memory-layout-heap-stack/</loc>
-    <lastmod>2023-04-20</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/tags/Linux-memory-layout-heap-gdb/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/apt-Ubuntu-Linux-package-management/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/Linux-memory-layout-heap-gdb/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/Linux-system-programming-Windows-Subsystem-for-Linux/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <loc>https://baoqger.github.io/tags/Linux-memory-layout-heap-stack/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/TCP-IP/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://baoqger.github.io/tags/Linux-system-programming-Windows-Subsystem-for-Linux/</loc>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/BPF-JIT-virtual-machine/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
     <loc>https://baoqger.github.io/tags/HTTP-protocol-Golang-TCP-socket/</loc>
-    <lastmod>2023-04-20</lastmod>
+    <lastmod>2023-05-09</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
