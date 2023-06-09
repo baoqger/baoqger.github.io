@@ -72,6 +72,50 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-lift-scholarship-program" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2023/06/09/lift-scholarship-program/" class="article-date">
+  <time datetime="2023-06-09T02:19:04.000Z" itemprop="datePublished">2023-06-09</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2023/06/09/lift-scholarship-program/">Linux Foundation Scholarship</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>After graduating from campus 10 years ago, I didn’t expect that I would still be eligible for a scholarship, especially considering that I wasn’t a high-achieving student at that time. But recently, I joined one program from Linux Foundation: <a target="_blank" rel="noopener" href="https://www.linuxfoundation.org/about/lift-scholarships"><code>The Shubhra Kar Linux Foundation Training (LiFT) Scholarship Program</code></a>. And very luckily, get awarded. </p>
+<img src="/images/lift-scholarship.png" title="lift" width="800px" height="600px">
+
+<p>I plan and hope to setup a bright new career in the open-source software field, that’s the motivation to join the program! </p>
+<p>Thanks for the award from Linux Foundation, I got the opportunity to select one training course and certification exam freely. Big thanks. </p>
+<p>And the one I choose is <a target="_blank" rel="noopener" href="https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/"><code>CKAD (Certified Kubernetes Application Developer)</code></a>, stay tuned, I will update the status later. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2023/06/09/lift-scholarship-program/" data-id="clinz2q230027fwmm6bukerr8" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-Foundation-Scholarship-LIFT/" rel="tag">Linux Foundation, Scholarship, LIFT</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-understand-more-aws-service-by-negative-cases" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/2023/04/09/understand-more-aws-service-by-negative-cases/" class="article-date">
@@ -132,10 +176,102 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2023/04/09/understand-more-aws-service-by-negative-cases/" data-id="clhitcgy1002s4cmm18ogg50y" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2023/04/09/understand-more-aws-service-by-negative-cases/" data-id="clinz2q2b002wfwmm9h8n1kcc" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Scalability-AWS/" rel="tag">Scalability, AWS</a></li></ul>
+
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-guide-to-service-fabric-architecture" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2023/03/19/guide-to-service-fabric-architecture/" class="article-date">
+  <time datetime="2023-03-19T10:18:32.000Z" itemprop="datePublished">2023-03-19</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2023/03/19/guide-to-service-fabric-architecture/">Build Microservices with Service Fabric: A Hands-on Approach</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In this article, I want to introduce a distributed systems platform: <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-overview"><code>Service Fabric</code></a>, that is used to build microservices. </p>
+<p>First things first, what is <code>Service Fabric</code>? In the software world, <code>Service Fabric</code> is in the scope of the <code>orchestrator</code>. So it is the competitor of <a target="_blank" rel="noopener" href="https://kubernetes.io/"><code>Kubernetes</code></a>, <a target="_blank" rel="noopener" href="https://docs.docker.com/engine/swarm/"><code>Docker Swarm</code></a>, etc. </p>
+<p>I know what you’re thinking about, at the time of writing, <code>Kubernetes</code> already won the competition. Why am I still writing about <code>Service Fabric</code>? My motivation to write this post is as follows:</p>
+<ul>
+<li>Firstly, I once used <code>Service Fabric</code> to build microservices and learned something valuable about it. I want to summarize all my learnings and share them with you here! </li>
+<li>Secondly, we can (simply) examine both <code>Service Fabric</code> and <code>Kubernetes</code> to understand why the cloud-native solution is better and what problems it can solve. </li>
+<li>Finally, <code>Service Fabric</code> is still widely used in some enterprise applications, in detail, you can refer <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-application-scenarios">here</a>. So the skills you learned about service fabric is valuable. </li>
+</ul>
+<h3 id="Hands-on-Project"><a href="#Hands-on-Project" class="headerlink" title="Hands-on Project"></a>Hands-on Project</h3><p>To learn the <code>Service Fabric</code> platform, we will examine an open-source project: <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation">HealthMetrics</a>. This project is originally developed by Microsoft itself to demonstrate the power of service fabric and I added some enhancements to it, in detail please refer to this <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation">GitHub repo</a>.</p>
+<p>At the business requirement level, this application goes like this: each <code>patient</code> keeps reporting the heart rate data to the <code>doctor</code> via the wearable device(the <code>band</code> in this case). And the <code>doctor</code> aggregates the collected health data and reports to the <code>county</code> service. Each <code>county</code> service instance runs some statistics on doctors’ data and sends the report to the <code>country</code> service. Finally, you can get something as follows: </p>
+<img src="/images/health-metrics-ui.png" title="health metrics" width="800px" height="600px">
+
+<p>Before we explore the detailed implementation, you can pause here for a few minutes. How will you design the architecture if this application is assigned to you? How to make it both <code>reliable</code> and <code>scalable</code>?  </p>
+<h3 id="Service-Fabric-Programming-Model"><a href="#Service-Fabric-Programming-Model" class="headerlink" title="Service Fabric Programming Model"></a>Service Fabric Programming Model</h3><p><code>Service Fabric</code> provides multiple ways to write and manage your services: </p>
+<ul>
+<li>Reliable Services: is the most popular choice in the context of service fabric, we’ll examine much more about it later. </li>
+<li>Containers: service fabric can also deploy services in containers. But if you choose to use containers, why not directly use <code>Kubernetes</code>? I’ll not cover it in this post. </li>
+<li>Guest executables: You can run any type of code or script like Node.js as guest executables in the service fabric. Note that the service fabric platform doesn’t include the runtime for the guest executables, instead, the operating system hosting the service fabric must provide the corresponding runtime for the given language. It provides a flexible way to run legacy applications within microservices. If you have an interest in it, please refer to this <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-guest-executables-introduction">article</a>, I will not examine the details in this post.</li>
+</ul>
+<p>Next, let’s examine what is <code>Reliable Services</code>? </p>
+<h3 id="Reliable-Services"><a href="#Reliable-Services" class="headerlink" title="Reliable Services"></a>Reliable Services</h3><p>As I mentioned above, <code>service fabric</code> is an <code>orchestrator</code> which provides infrastructure-level functionalities like <code>cluster management</code>, <code>service discovery</code>, and <code>scaling</code> as <code>Kubernetes</code> does. But <code>service fabric</code> goes further by also providing a <code>reliable services</code> model to guide the development on the application level, this’s a special point compared to <code>Kubernetes</code>. Simply speaking, the application code can call the <code>service fabric</code> runtime APIs to query the system for building reliable applications. In the following sections, I’ll show you what that means with some code blocks. </p>
+<p><code>Reliable Services</code> can be classified into two types as follows: </p>
+<ul>
+<li>Stateless service: when we mentioned stateless service in the context of service fabric, we are not saying that the service doesn’t have any state to store, but it means that the service doesn’t store the data inside the cluster of service fabric. Indeed, the stateless service can store states in the external database. The naming of stateless is relative to the cluster. </li>
+<li>Stateful service: similarly, the stateful service keeps its state locally in the service fabric cluster, which means the data and service are in the same virtual or physical machine. And this is called <code>Reliable Collections</code>. Compared with external data storage, <code>Reliable Collections</code> implies low latency and high performance. In the following section, I will introduce more about <code>Reliable Collections</code>, which is a very interesting topic. Please hold on!</li>
+</ul>
+<img src="/images/reliable-services.png" title="reliable services" width="600px" height="400px">
+
+<p>Besides stateless and stateful services listed above, there is the third type of service provided by Service Fabric: <code>Actor Service</code>. </p>
+<ul>
+<li>Actor Service: is a special type of stateful service, which applies the <code>actor model</code> theory. The <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Actor_model"><code>actor model</code></a> is a general computer science theory handling <code>concurrent computation</code>. It is a very big topic worthy of a separate article. I’ll not cover the details in this post, instead, let’s go through this model in the context of service fabric. </li>
+</ul>
+<p>The <code>actor model</code> is proposed many years ago in 1973 to simplify the process of writing concurrent programs with the following several advantages: </p>
+<ul>
+<li>Encapsulation: in the actor model, each actor is a self-contained unit that encapsulates its own state and behavior. And each actor runs <code>only one thread</code>, so you don’t have to worry about complex multi-threading programming issues. But how does it support high concurrency? Just allocate <code>more actor instances</code> as the load goes up.   </li>
+<li>Message passing: different from the traditional multi-threading programming techniques, actors do not <code>share memories</code>, instead, they communicate with async message-passing communication, which can reduce the complexity of concurrent programs. </li>
+<li>Location transparency: as a self-contained computation unit, each actor can be located on different machines, which makes it the perfect solution for building distributed applications as service fabric does. </li>
+</ul>
+<p>In the future, I will write an article for actor model to examine more details about it. Next, let’s take a look at the demo app: <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation">HealthMetrics</a> and analyze how it was build bsaed on the programming models we discussed above. </p>
+<img src="/images/actor-model.png" title="actor model" width="400px" height="300px">  
+
+<h3 id="Architecture-of-HealthMetrics"><a href="#Architecture-of-HealthMetrics" class="headerlink" title="Architecture of HealthMetrics"></a>Architecture of HealthMetrics</h3><img src="/images/healthmetrics-architecture.png" title="architecture" width="800px" height="600px">
+
+<p>There are several services included in this <code>HealthMetrics</code> demo application. They are: </p>
+<ul>
+<li>BandCreationService: this <code>stateless</code> service read the input CSV file and creates the individual <code>band actors</code> and <code>doctor actors</code>. For example, as the above snapshot shows, the application creates roughly 300 band actors and doctor actors.  </li>
+<li>BandActor: this <code>actor</code> service is the host for the band actors. Each BandActor represents an individual wearable device, which generates heart rate data and then sends it to the designated DoctorActor every 5 seconds. </li>
+<li>DoctorActor: the doctor <code>actor</code> service aggregates all of the data it receives from each band actor and generates an overall view for that doctor and then pushes it into the CountyService every 5 seconds.</li>
+<li>CountyService: this <code>stateful</code> service aggregates the information provided by the doctor actor further and also pushes the data into the NationalService. </li>
+<li>NationalService: this <code>stateful</code> service maintains the total aggerated data for the entire county and is used to serve data requested by WebService. </li>
+<li>WebService: this <code>stateless</code> service just hosts a simple web API to query information from NationalService and render the data on the web UI. </li>
+</ul>
+<p>As you can see, this demo application consists of all three types of services provided by service fabric. </p>
+<p>In the next section, let’s examine what kinds of techniques of service fabric are applied to build this highly <code>scalable</code> and <code>available</code> microservices application. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2023/03/19/guide-to-service-fabric-architecture/" data-id="clinz2q1t0013fwmmgsjs0wge" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Service-Fabric-stateless-stateful-actor-model-scalability-reliability-partition/" rel="tag">Service Fabric, stateless, stateful, actor model, scalability, reliability,  partition</a></li></ul>
 
     </footer>
   </div>
@@ -206,7 +342,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2023/02/13/note-on-red-black-tree/" data-id="clhitcgxx002b4cmmhiaq6od7" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2023/02/13/note-on-red-black-tree/" data-id="clinz2q26002ffwmm9bgyezl0" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" rel="tag">Algorithm, Data structure, Tree, Red Black Tree</a></li></ul>
@@ -302,7 +438,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2023/01/01/bst-deletion-issue/" data-id="clhitcgx600074cmm5hl2ar9z" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2023/01/01/bst-deletion-issue/" data-id="clinz2q1g0007fwmm2g5e0nmm" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Binary-Search-Tree-delete-balanced-performance/" rel="tag">Binary Search Tree, delete, balanced, performance</a></li></ul>
@@ -386,7 +522,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/12/06/external-sorting-two/" data-id="clhitcgx9000f4cmm2sbq2ys6" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/12/06/external-sorting-two/" data-id="clinz2q1j000ffwmm7dzm4rae" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li></ul>
@@ -478,7 +614,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/11/02/external-sorting-one/" data-id="clhitcgx8000c4cmmhr3346ig" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/11/02/external-sorting-one/" data-id="clinz2q1i000cfwmmcq43ache" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li></ul>
@@ -565,7 +701,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/10/10/userland-memory-allocation-three/" data-id="clhitcgy2002w4cmmei71fx9l" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/10/10/userland-memory-allocation-three/" data-id="clinz2q2c0030fwmmg9o11sne" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li></ul>
@@ -661,7 +797,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/09/08/userland-memory-allocation-two/" data-id="clhitcgy3002y4cmm2zhjcy4k" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/09/08/userland-memory-allocation-two/" data-id="clinz2q2d0031fwmm3f1l5jck" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li></ul>
@@ -733,280 +869,10 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/08/05/userland-memory-allocation-one/" data-id="clhitcgy2002u4cmm63ye4dwt" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2022/08/05/userland-memory-allocation-one/" data-id="clinz2q2b002yfwmm56345il2" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-CPacketSniffer" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2022/07/22/CPacketSniffer/" class="article-date">
-  <time datetime="2022-07-22T02:19:48.000Z" itemprop="datePublished">2022-07-22</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2022/07/22/CPacketSniffer/">cPacketSniffer</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In this post, I want to introduce my new project: <a target="_blank" rel="noopener" href="https://github.com/baoqger/cPacketSniffer"><code>cPacketSniffer</code></a>. I worked on it for the past two months. Finally, I worked it out and feel very proud of putting it here!</p>
-<h3 id="Motivation"><a href="#Motivation" class="headerlink" title="Motivation"></a>Motivation</h3><p>Simply speaking, I want to sharpen my techniques in <code>network programming</code> and <code>Linux system programming</code>. Both of these two topics can lead you to the bottom of computers or software. Feynman said <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/There%27s_Plenty_of_Room_at_the_Bottom">“There is plenty of room at the bottom”</a>, I think this physics law can apply to software as well. </p>
-<h3 id="Acknowledgement"><a href="#Acknowledgement" class="headerlink" title="Acknowledgement"></a>Acknowledgement</h3><p>It’s very lucky for me to come across this site <a target="_blank" rel="noopener" href="http://tcpip.marcolavoie.ca/index.html">“Network programming in Linux”</a>, which developed a network packet capturing tool with <code>C++</code>. After confirming that the documents and source code on this site is completed and clear, I decided to refactor it with C language. That’s the starting point for my project <code>cPacketSniffer</code>.      </p>
-<h3 id="Features"><a href="#Features" class="headerlink" title="Features"></a>Features</h3><p>As a network packets sniffer, <code>cPacketSniffer</code> provides the following features: </p>
-<img src="/images/cPacketSniffer.png" title="cPacketSniffer modules" width="600px" height="400px">
-
-<ul>
-<li>Integrate with <code>libpcap</code> to support: filtering captured packets, capturing packets offline, capturing packets on specific devices and capturing packets in promiscuous mode.</li>
-<li>Analyze network packets at low layers of TCP/IP stack, including <code>Ethernet</code>, <code>ARP</code>, <code>ICMP</code>, <code>IP(IPv4)</code>, <code>TCP</code>, <code>UDP</code>, etc. Also one protocol in the application layer: <code>TFTP</code>. </li>
-<li>Detect network security attacks:<ul>
-<li>ARP spoofing detection.</li>
-<li>Ping flood detection.</li>
-</ul>
-</li>
-<li>Analyze and track network traffics:<ul>
-<li>TCP session tracking and traffic analysis.</li>
-<li>TFTP session tracking and traffic analysis.</li>
-</ul>
-</li>
-</ul>
-<p>The following images demonstrate some typical usages of <code>cPacketSniffer</code>:  </p>
-<p><strong>Packet Analysis</strong>:</p>
-<img src="/images/packet-analysis.png" title="packet analysis" width="600px" height="400px">
-
-<p><strong>ARP Spoofing Detection</strong>:</p>
-<img src="/images/arpspoof.png" title="arp spoofing detection" width="600px" height="400px">
-
-<p><strong>PING Flood Detection</strong>:</p>
-<img src="/images/pingflooddetection.png" title="ping flood detection" width="600px" height="400px">
-
-<p><strong>TCP Session Tracking</strong>:</p>
-<img src="/images/tcpsessiontrack.png" title="tcp session track" width="600px" height="400px">
-
-<p>Besides the above network programming-related functionalities, it also covers the following points: </p>
-<ul>
-<li>Develop a generic data structure in C.</li>
-<li>Error handling in C. </li>
-<li>Data encapsulation (object-oriented style programming) in C.</li>
-<li>Manual memory management in C.</li>
-<li>etc.</li>
-</ul>
-<p>This article will not cover these points in detail, I will write articles on these topics separately in the future. Please keep watching my blog!</p>
-<h3 id="Future-work"><a href="#Future-work" class="headerlink" title="Future work"></a>Future work</h3><p>Now <code>cPacketSniffer</code> can work as a network packet sniffer based on the design. Moreover, it can also serve as a testbed to try experimental features. Next step I plan to try the following ideas:</p>
-<ul>
-<li>Implement the network intrusion detection function. </li>
-<li>Improve the performance with advanced data structures, like binary search trees. </li>
-<li>Memory and cache performance tuning. </li>
-<li>Automatic memory management by Garbage Collection.</li>
-<li>Integrate <code>ncurses</code> for Text-based user interface.</li>
-</ul>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/07/22/CPacketSniffer/" data-id="clhitcgx100014cmmbrl09dd1" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li></ul>
-
-    </footer>
-  </div>
-  
-</article>
-
-
-  
-    <article id="post-how-to-write-a-netfilter-firewall-part3" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/2022/06/08/how-to-write-a-netfilter-firewall-part3/" class="article-date">
-  <time datetime="2022-06-08T06:59:19.000Z" itemprop="datePublished">2022-06-08</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2022/06/08/how-to-write-a-netfilter-firewall-part3/">Write a Linux firewall from scratch based on Netfilter: part three - Netfilter module</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the previous <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2022/05/05/how-to-write-a-netfilter-firewall-part2/">article</a>, we examined how to write a Kernel module and load it dynamically into a running Linux system. Based on this understanding, let’s continue our journey to write a <code>Netfilter</code> module as our mini-firewall.  </p>
-<h3 id="Netfilter-architecture"><a href="#Netfilter-architecture" class="headerlink" title="Netfilter architecture."></a>Netfilter architecture.</h3><h5 id="Basics-of-Netfilter-hooks"><a href="#Basics-of-Netfilter-hooks" class="headerlink" title="Basics of Netfilter hooks"></a>Basics of Netfilter hooks</h5><p><strong>The <code>Netfilter</code> framework provides a bunch of <code>hooks</code> in the Linux kernel. As network packets pass through the protocol stack in the kernel, they will traverse these hooks as well</strong>. And Netfilter allows you to write modules and register callback functions with these hooks. When the hooks are triggered, the callback functions will be called. This is the basic idea behind Netfilter architecture. Not difficult to understand, right? </p>
-<img src="/images/netfilter-in-kernel.png" title="Netfilter architecture" width="800px" height="600px">
-
-<p>Currently, Netfilter provides the following 5 hooks for <code>IPv4</code>:</p>
-<ul>
-<li><em>NF_INET_PRE_ROUTING</em>: is triggered right after the packet has been received on a network card. This hook is triggered before the <code>routing decision</code> was made. Then the kernel determines whether this packet is destined for the current host or not. Based on the condition, the following two hooks will be triggered. </li>
-<li><em>NF_INET_LOCAL_IN</em>: is triggered for network packets that are destined for the current host. </li>
-<li><em>NF_INET_FORWARD</em>: is triggered for network packets that should be forwarded. </li>
-<li><em>NF_INET_POST_ROUTING</em>: is triggered for network packets that have been routed and before being sent out to the network card. </li>
-<li><em>NF_INET_LOCAL_OUT</em>: is triggered for network packets generated by the processes on the current host.</li>
-</ul>
-<p>The hook function you defined in the module can mangle or filter the packets, but it eventually must return a status code to Netfilter. There are several possible values for the code, but for now, you only need to understand two of them: </p>
-<ul>
-<li><em>NF_ACCEPT</em>: this means the hook function accepts the packet and it can go on the network stack trip. </li>
-<li><em>NF_DROP</em>: this means the packet is dropped and no further parts of the network stack will be traversed.</li>
-</ul>
-<p>Netfilter allows you to register multiple callback functions to the same hook with different priorities. If the first hook function accepts the packet, then the packet will be passed to the next functions with low priority. If the packet is dropped by one callback function, then the next functions(if existing) will not be traversed. </p>
-<p>As you see, <code>Netfilter</code> has a big scope and I can’t cover every detail in the articles. So the mini-firewall developed here will work on the hook <code>NF_INET_PRE_ROUTING</code>, which means it works by controlling the inbound network traffic. But the way of registering the hook and handling the packet can be applied to all other hooks. </p>
-<p><em>Note</em>: there is another remarkable question: what’s the difference between <code>Netfilter</code> and <code>eBPF</code>? If you don’t know eBPF, please refer to my previous <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/">article</a>. Both of them are important network features in the Linux kernel. The important thing is <code>Netfilter</code> and <code>eBPF</code> hooks are located in different layers of the Kernel. As I drew in the above diagram, <code>eBPF</code> is located in a lower layer. </p>
-<h5 id="Kernel-code-of-Netfilter-hooks"><a href="#Kernel-code-of-Netfilter-hooks" class="headerlink" title="Kernel code of Netfilter hooks"></a>Kernel code of Netfilter hooks</h5><p>To have a clear understanding of how the <code>Netfilter</code> framework is implemented inside the protocol stack, let’s dig a little bit deeper and take a look at the kernel source code (Don’t worry, only shows several simple functions). Let’s use the hook <code>NF_INET_PRE_ROUTING</code> as an example; since the mini-firewall will be written based on it. </p>
-<p>When an IPv4 packet is received, its handler function <code>ip_rcv</code> will be called as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/net/ipv4/ip_input.c</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * IP receive entry point</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">ip_rcv</span><span class="params">(<span class="keyword">struct</span> sk_buff *skb, <span class="keyword">struct</span> net_device *dev, <span class="keyword">struct</span> packet_type *pt,</span></span><br><span class="line"><span class="params">           <span class="keyword">struct</span> net_device *orig_dev)</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">net</span> *<span class="title">net</span> =</span> dev_net(dev);</span><br><span class="line"></span><br><span class="line">        skb = ip_rcv_core(skb, net);</span><br><span class="line">        <span class="keyword">if</span> (skb == <span class="literal">NULL</span>)</span><br><span class="line">                <span class="keyword">return</span> NET_RX_DROP;</span><br><span class="line">        <span class="comment">// run Netfilter NF_INET_PRE_ROUTING hook&#x27;s callback function</span></span><br><span class="line">        <span class="keyword">return</span> NF_HOOK(NFPROTO_IPV4, NF_INET_PRE_ROUTING, </span><br><span class="line">                       net, <span class="literal">NULL</span>, skb, dev, <span class="literal">NULL</span>,</span><br><span class="line">                       ip_rcv_finish);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>In this handler function, you can see the hook is passed to the function <code>NF_HOOK</code>. Based on the name <code>NF_HOOK</code>, you can guess that it is for triggering the Netfilter hooks. Right? Let’s continue to examine how <code>NF_HOOK</code> is implemented as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/netfilter.h</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">int</span></span><br><span class="line"><span class="title function_">NF_HOOK</span><span class="params">(<span class="type">uint8_t</span> pf, <span class="type">unsigned</span> <span class="type">int</span> hook, <span class="keyword">struct</span> net *net, <span class="keyword">struct</span> sock *sk, <span class="keyword">struct</span> sk_buff *skb,</span></span><br><span class="line"><span class="params">        <span class="keyword">struct</span> net_device *in, <span class="keyword">struct</span> net_device *out,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> (*okfn)(<span class="keyword">struct</span> net *, <span class="keyword">struct</span> sock *, <span class="keyword">struct</span> sk_buff *))</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="type">int</span> ret = nf_hook(pf, hook, net, sk, skb, in, out, okfn);</span><br><span class="line">        <span class="keyword">if</span> (ret == <span class="number">1</span>)</span><br><span class="line">                ret = okfn(net, sk, skb); <span class="comment">// in our case: okfn is ip_rcv_finish</span></span><br><span class="line">        <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> *      nf_hook - call a netfilter hook</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *      Returns 1 if the hook has allowed the packet to pass.  The function</span></span><br><span class="line"><span class="comment"> *      okfn must be invoked by the caller in this case.  Any other return</span></span><br><span class="line"><span class="comment"> *      value indicates the packet has been consumed by the hook.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">int</span> <span class="title function_">nf_hook</span><span class="params">(<span class="type">u_int8_t</span> pf, <span class="type">unsigned</span> <span class="type">int</span> hook, <span class="keyword">struct</span> net *net,</span></span><br><span class="line"><span class="params">                          <span class="keyword">struct</span> sock *sk, <span class="keyword">struct</span> sk_buff *skb,</span></span><br><span class="line"><span class="params">                          <span class="keyword">struct</span> net_device *indev, <span class="keyword">struct</span> net_device *outdev,</span></span><br><span class="line"><span class="params">                          <span class="type">int</span> (*okfn)(<span class="keyword">struct</span> net *, <span class="keyword">struct</span> sock *, <span class="keyword">struct</span> sk_buff *))</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// code omit</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>The function <code>NF_HOOK</code> contains two steps:</p>
-<ul>
-<li>First, runs the hook’s callback functions by calling the underlying function <code>nf_hook</code>. </li>
-<li>Second, invokes the function <code>okfn</code> (passed to <em>NF_HOOK</em> as the argument), if the packet passes through the hook functions and doesn’t drop.</li>
-</ul>
-<p>For the hook <em>NF_INET_LOCAL_IN</em>, the function <code>ip_rcv_finish</code> will be invoked after the hook functions pass. Its job is to pass the packet on to the next protocol handler(TCP or UDP) in the protocol stack to continue its journey! </p>
-<p>The other 4 hooks all use the same function <code>NF_HOOK</code> to trigger the callback functions. The following table shows where the hooks are embedded in the kernel, I leave them to the readers. </p>
-<table>
-<thead>
-<tr>
-<th>Hook</th>
-<th>File</th>
-<th>Function</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>NF_INET_PRE_ROUTING</td>
-<td>/kernel-src/net/ipv4/ip_input.c</td>
-<td>ip_rcv()</td>
-</tr>
-<tr>
-<td>NF_INET_LOCAL_IN</td>
-<td>/kernel-src/net/ipv4/ip_input.c</td>
-<td>ip_local_deliver()</td>
-</tr>
-<tr>
-<td>NF_INET_FORWARD</td>
-<td>/kernel-src/net/ipv4/ip_forward.c</td>
-<td>ip_forward()</td>
-</tr>
-<tr>
-<td>NF_INET_POST_ROUTING</td>
-<td>/kernel-src/net/ipv4/ip_output.c</td>
-<td>ip_build_and_send_pkt()</td>
-</tr>
-<tr>
-<td>NF_INET_LOCAL_OUT</td>
-<td>/kernel-src/net/ipv4/ip_output.c</td>
-<td>ip_output()</td>
-</tr>
-</tbody></table>
-<p>Next, Let’s review the Netfilter’s APIs to create and register the hook function. </p>
-<h3 id="Netfilter-API"><a href="#Netfilter-API" class="headerlink" title="Netfilter API"></a>Netfilter API</h3><p>It’s straightforward to create a Netfilter module, which involves three steps: </p>
-<ul>
-<li>Define the hook function.</li>
-<li>Register the hook function in the kernel module initialization process.</li>
-<li>Unregister the hook function in the kernel module clean-up process. </li>
-</ul>
-<p>Let’s go through them quickly one by one. </p>
-<h5 id="Define-a-hook-function"><a href="#Define-a-hook-function" class="headerlink" title="Define a hook function"></a>Define a hook function</h5><p>The hook function name can be whatever you want, but it must follow the signature below: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/netfilter.h</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">nf_hookfn</span><span class="params">(<span class="type">void</span> *priv,</span></span><br><span class="line"><span class="params">                               <span class="keyword">struct</span> sk_buff *skb,</span></span><br><span class="line"><span class="params">                               <span class="type">const</span> <span class="keyword">struct</span> nf_hook_state *state)</span>;</span><br></pre></td></tr></table></figure>
-
-<p>The hook function can mangle or filter the packet whose data is stored in the <code>sk_buff</code> structure (we can ignore the other two parameters; since we don’t use them in our mini-firewall). As we mentioned above, the callback function must return a Netfilter status code which is an integer. For instance, the <code>accepted</code> and <code>dropped</code> status is defined as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In source code file /kernel-src/include/uapi/linux/netfilter.h</span></span><br><span class="line"><span class="comment">/* Responses from hook functions. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NF_DROP 0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NF_ACCEPT 1</span></span><br></pre></td></tr></table></figure>
-<h5 id="Register-and-unregister-a-hook-function"><a href="#Register-and-unregister-a-hook-function" class="headerlink" title="Register and unregister a hook function"></a>Register and unregister a hook function</h5><p>To register a hook function, we should wrap the defined hook function with related information, such as which hook you want to bind to, the protocol family and the priority of the hook function,  into a structure <code>struct nf_hook_ops</code> and pass it to the function <code>nf_register_net_hook</code>. </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/netfilter.h</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">nf_hook_ops</span> &#123;</span></span><br><span class="line">        <span class="comment">/* User fills in from here down. */</span></span><br><span class="line">        nf_hookfn               *hook;    <span class="comment">// callback function</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">net_device</span>       *<span class="title">dev</span>;</span>     <span class="comment">// network device interface</span></span><br><span class="line">        <span class="type">void</span>                    *priv; </span><br><span class="line">        <span class="type">u_int8_t</span>                pf;       <span class="comment">// protocol</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">int</span>            hooknum;  <span class="comment">// Netfilter hook enum</span></span><br><span class="line">        <span class="comment">/* Hooks are ordered in ascending priority. */</span></span><br><span class="line">        <span class="type">int</span>                     priority; <span class="comment">// priority of callback function</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>Most of the fields are very straightforward to understand. The one need to emphasize is the field <code>hooknum</code>, which is just the Netfilter hooks discussed above. They are defined as enumerators as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In source code file /kernel-src/include/uapi/linux/netfilter.h</span></span><br><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">nf_inet_hooks</span> &#123;</span></span><br><span class="line">	NF_INET_PRE_ROUTING,</span><br><span class="line">	NF_INET_LOCAL_IN,</span><br><span class="line">	NF_INET_FORWARD,</span><br><span class="line">	NF_INET_LOCAL_OUT,</span><br><span class="line">	NF_INET_POST_ROUTING,</span><br><span class="line">	NF_INET_NUMHOOKS,</span><br><span class="line">	NF_INET_INGRESS = NF_INET_NUMHOOKS,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>Next, let’s take a look at the functions to register and unregister hook functions goes as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/netfilter.h</span></span><br><span class="line"><span class="comment">/* Function to register/unregister hook points. */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">nf_register_net_hook</span><span class="params">(<span class="keyword">struct</span> net *net, <span class="type">const</span> <span class="keyword">struct</span> nf_hook_ops *ops)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">nf_unregister_net_hook</span><span class="params">(<span class="keyword">struct</span> net *net, <span class="type">const</span> <span class="keyword">struct</span> nf_hook_ops *ops)</span>;</span><br></pre></td></tr></table></figure>
-<p>The first parameter <code>struct net</code> is related to the network namespace, we can ignore it for now and use a default value. </p>
-<p>Next, let’s implement our mini-firewall based on these APIs. All right? </p>
-<h3 id="Implement-mini-firewall"><a href="#Implement-mini-firewall" class="headerlink" title="Implement mini-firewall"></a>Implement mini-firewall</h3><p>First, we need to clarify the requirements for our mini-firewall. We’ll implement two network traffic control rules in the mini-firewall as follows:</p>
-<ul>
-<li><em>Network protocol rule</em>: drops the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol">ICMP</a> protocol packets.</li>
-<li><em>IP address rule</em>: drops the packets from one specific IP address.</li>
-</ul>
-<p>The completed code implementation is in this Github <a target="_blank" rel="noopener" href="https://github.com/baoqger/linux-mini-firewall-netfilter/blob/main/mini_firewall.c">repo</a>.</p>
-<h5 id="Drop-ICMP-protocol-packets"><a href="#Drop-ICMP-protocol-packets" class="headerlink" title="Drop ICMP protocol packets"></a>Drop ICMP protocol packets</h5><p><code>ICMP</code> is a network protocol widely used in the real world. The popular diagnostic tools like <code>ping</code> and <code>traceroute</code> run the ICMP protocol. We can filter out the ICMP packets based on the protocol type in the IP headers with the following hook function: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In mini-firewall.c </span></span><br><span class="line"><span class="type">static</span> <span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">nf_blockicmppkt_handler</span><span class="params">(<span class="type">void</span> *priv, <span class="keyword">struct</span> sk_buff *skb, <span class="type">const</span> <span class="keyword">struct</span> nf_hook_state *state)</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">iphdr</span> *<span class="title">iph</span>;</span>   <span class="comment">// IP header</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">udphdr</span> *<span class="title">udph</span>;</span> <span class="comment">// UDP header</span></span><br><span class="line">	<span class="keyword">if</span>(!skb)</span><br><span class="line">		<span class="keyword">return</span> NF_ACCEPT;</span><br><span class="line">	iph = ip_hdr(skb); <span class="comment">// retrieve the IP headers from the packet</span></span><br><span class="line">	<span class="keyword">if</span>(iph-&gt;protocol == IPPROTO_UDP) &#123; </span><br><span class="line">		udph = udp_hdr(skb);</span><br><span class="line">		<span class="keyword">if</span>(ntohs(udph-&gt;dest) == <span class="number">53</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> NF_ACCEPT; <span class="comment">// accept UDP packet</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (iph-&gt;protocol == IPPROTO_TCP) &#123;</span><br><span class="line">		<span class="keyword">return</span> NF_ACCEPT; <span class="comment">// accept TCP packet</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (iph-&gt;protocol == IPPROTO_ICMP) &#123;</span><br><span class="line">		printk(KERN_INFO <span class="string">&quot;Drop ICMP packet \n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> NF_DROP;   <span class="comment">// drop TCP packet</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> NF_ACCEPT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>The logic in the above hook function is easy to understand. First, we retrieve the IP headers from the network packet. And then according to the <code>protocol</code> type field in the headers, we decided to accept TCP and UDP packets but drop the ICMP packets. The only technique we need to pay attention to is the function <code>ip_hdr</code>, which is the kernel function defined as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/ip.h</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="keyword">struct</span> iphdr *<span class="title function_">ip_hdr</span><span class="params">(<span class="type">const</span> <span class="keyword">struct</span> sk_buff *skb)</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">return</span> (<span class="keyword">struct</span> iphdr *)skb_network_header(skb);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// In source code file /kernel-src/include/linux/skbuff.h</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">skb_network_header</span><span class="params">(<span class="type">const</span> <span class="keyword">struct</span> sk_buff *skb)</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">return</span> skb-&gt;head + skb-&gt;network_header;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>The function <code>ip_hdr</code> delegates the task to the function <code>skb_network_header</code>. It gets IP headers based on the following two data: </p>
-<ul>
-<li>head: is the pointer to the packet;</li>
-<li>network_header: is the offset between the pointer to the packet and the pointer to the network layer protocol header. In detail, you can refer to this <a target="_blank" rel="noopener" href="https://linux-kernel-labs.github.io/refs/heads/master/labs/networking.html">document</a>.</li>
-</ul>
-<p>Next, we can register the above hook function as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In mini-firewall.c </span></span><br><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">nf_hook_ops</span> *<span class="title">nf_blockicmppkt_ops</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> __init <span class="title function_">nf_minifirewall_init</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">	nf_blockicmppkt_ops = (<span class="keyword">struct</span> nf_hook_ops*)kcalloc(<span class="number">1</span>,  <span class="keyword">sizeof</span>(<span class="keyword">struct</span> nf_hook_ops), GFP_KERNEL);</span><br><span class="line">	<span class="keyword">if</span> (nf_blockicmppkt_ops != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		nf_blockicmppkt_ops-&gt;hook = (nf_hookfn*)nf_blockicmppkt_handler;</span><br><span class="line">		nf_blockicmppkt_ops-&gt;hooknum = NF_INET_PRE_ROUTING;</span><br><span class="line">		nf_blockicmppkt_ops-&gt;pf = NFPROTO_IPV4;</span><br><span class="line">		nf_blockicmppkt_ops-&gt;priority = NF_IP_PRI_FIRST; <span class="comment">// set the priority</span></span><br><span class="line">		</span><br><span class="line">		nf_register_net_hook(&amp;init_net, nf_blockicmppkt_ops);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> __exit <span class="title function_">nf_minifirewall_exit</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">	<span class="keyword">if</span>(nf_blockicmppkt_ops != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		nf_unregister_net_hook(&amp;init_net, nf_blockicmppkt_ops);</span><br><span class="line">		kfree(nf_blockicmppkt_ops);</span><br><span class="line">	&#125;</span><br><span class="line">	printk(KERN_INFO <span class="string">&quot;Exit&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">module_init(nf_minifirewall_init);</span><br><span class="line">module_exit(nf_minifirewall_exit);</span><br></pre></td></tr></table></figure>
-
-<p>The above logic is self-explaining. I will not spend too much time here. </p>
-<p>Next, it’s time to demo how our mini-firewall works. </p>
-<h5 id="Demo-time"><a href="#Demo-time" class="headerlink" title="Demo time"></a>Demo time</h5><p>Before we load the mini-firewall module, the <code>ping</code> command can work as expected: </p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ lsmod | grep mini_firewall</span><br><span class="line">chrisbao@CN0005DOU18129:~$ ping www.google.com</span><br><span class="line">PING www.google.com (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>) <span class="number">56</span>(<span class="number">84</span>) <span class="built_in">bytes</span> of data.</span><br><span class="line"><span class="number">64</span> <span class="built_in">bytes</span> <span class="keyword">from</span> sm-<span class="keyword">in</span>-f103<span class="number">.1e100</span>.net (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>): icmp_seq=<span class="number">1</span> ttl=<span class="number">104</span> time=<span class="number">71.9</span> ms</span><br><span class="line"><span class="number">64</span> <span class="built_in">bytes</span> <span class="keyword">from</span> sm-<span class="keyword">in</span>-f103<span class="number">.1e100</span>.net (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>): icmp_seq=<span class="number">2</span> ttl=<span class="number">104</span> time=<span class="number">71.8</span> ms</span><br><span class="line"><span class="number">64</span> <span class="built_in">bytes</span> <span class="keyword">from</span> sm-<span class="keyword">in</span>-f103<span class="number">.1e100</span>.net (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>): icmp_seq=<span class="number">3</span> ttl=<span class="number">104</span> time=<span class="number">71.9</span> ms</span><br><span class="line"><span class="number">64</span> <span class="built_in">bytes</span> <span class="keyword">from</span> sm-<span class="keyword">in</span>-f103<span class="number">.1e100</span>.net (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>): icmp_seq=<span class="number">4</span> ttl=<span class="number">104</span> time=<span class="number">71.8</span> ms</span><br><span class="line">^C</span><br><span class="line">--- www.google.com ping statistics ---</span><br><span class="line"><span class="number">4</span> packets transmitted, <span class="number">4</span> received, <span class="number">0</span>% packet loss, time 3005ms</span><br><span class="line">rtt <span class="built_in">min</span>/avg/<span class="built_in">max</span>/mdev = <span class="number">71.857</span>/<span class="number">71.902</span>/<span class="number">71.961</span>/<span class="number">0.193</span> ms</span><br></pre></td></tr></table></figure>
-
-<p>In contrast, after the mini-firewall module is built and loaded (based on the commands we discussed previously): </p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ lsmod | grep mini_firewall</span><br><span class="line">mini_firewall          <span class="number">16384</span>  <span class="number">0</span></span><br><span class="line">chrisbao@CN0005DOU18129:~$ ping www.google.com</span><br><span class="line">PING www.google.com (<span class="number">142.250</span><span class="number">.4</span><span class="number">.105</span>) <span class="number">56</span>(<span class="number">84</span>) <span class="built_in">bytes</span> of data.</span><br><span class="line">^C</span><br><span class="line">--- www.google.com ping statistics ---</span><br><span class="line"><span class="number">6</span> packets transmitted, <span class="number">0</span> received, <span class="number">100</span>% packet loss, time 5097ms</span><br></pre></td></tr></table></figure>
-
-<p>You can see all the packets are lost; because it is dropped by our mini-firewall. We can verify this by running the command <code>dmesg</code>: </p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ dmesg | tail -n <span class="number">5</span></span><br><span class="line">[ <span class="number">1260.184712</span>] Drop ICMP packet</span><br><span class="line">[ <span class="number">1261.208637</span>] Drop ICMP packet</span><br><span class="line">[ <span class="number">1262.232669</span>] Drop ICMP packet</span><br><span class="line">[ <span class="number">1263.256757</span>] Drop ICMP packet</span><br><span class="line">[ <span class="number">1264.280733</span>] Drop ICMP packet</span><br></pre></td></tr></table></figure>
-
-<p>But other protocol packets can still run through the firewall. For instance, the command <code>wget 142.250.4.103</code> can return normally as follows:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ wget <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">--<span class="number">2022</span>-06-<span class="number">25</span> <span class="number">10</span>:<span class="number">12</span>:<span class="number">39</span>--  http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>/</span><br><span class="line">Connecting to <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">80.</span>.. connected.</span><br><span class="line">HTTP request sent, awaiting response... <span class="number">302</span> Moved Temporarily</span><br><span class="line">Location: http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">6080</span>/php/urlblock.php?args=AAAAfQAAABAjFEC0HSM7xhfO~a53FMMaAAAAEILI_eaKvZQ2xBfgKEgDtwsAAABNAAAATRPNhqoqFgHJ0ggbKLKcdinR4UvnlhgAR4~YyrY4tAnroOFkE_IsHsOg9~RFPc7nEoj6YdiDgqZImAmb_xw9ZuFLvF91P2HzP5tlu1WX&amp;url=http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>%2f [following]</span><br><span class="line">--<span class="number">2022</span>-06-<span class="number">25</span> <span class="number">10</span>:<span class="number">12</span>:<span class="number">39</span>--  http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">6080</span>/php/urlblock.php?args=AAAAfQAAABAjFEC0HSM7xhfO~a53FMMaAAAAEILI_eaKvZQ2xBfgKEgDtwsAAABNAAAATRPNhqoqFgHJ0ggbKLKcdinR4UvnlhgAR4~YyrY4tAnroOFkE_IsHsOg9~RFPc7nEoj6YdiDgqZImAmb_xw9ZuFLvF91P2HzP5tlu1WX&amp;url=http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>%2f</span><br><span class="line">Connecting to <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">6080.</span>.. connected.</span><br><span class="line">HTTP request sent, awaiting response... <span class="number">200</span> OK</span><br><span class="line">Length: <span class="number">3248</span> (<span class="number">3.2</span>K) [text/html]</span><br><span class="line">Saving to: ‘index.html’</span><br><span class="line"></span><br><span class="line">index.html                                           <span class="number">100</span>%[===================================================================================================================&gt;]   <span class="number">3.17</span>K  --.-KB/s    <span class="keyword">in</span> 0s</span><br><span class="line"></span><br><span class="line"><span class="number">2022</span>-06-<span class="number">25</span> <span class="number">10</span>:<span class="number">12</span>:<span class="number">39</span> (<span class="number">332</span> MB/s) - ‘index.html’ saved [<span class="number">3248</span>/<span class="number">3248</span>]</span><br></pre></td></tr></table></figure>
-
-<p>Next, let’s try to ban the traffic from this IP address. </p>
-<h5 id="Drop-packets-source-from-one-specific-IP-address"><a href="#Drop-packets-source-from-one-specific-IP-address" class="headerlink" title="Drop packets source from one specific IP address"></a>Drop packets source from one specific IP address</h5><p>As we mentioned above, multiple callback functions are allowed to be registered on the same Netfilter hook. So we will define the second hook function with a different priority. The logic of this hook function goes like this: we can get the source IP address from the IP headers and make the drop or accept decision according to it. The code goes as follows</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In mini-firewall.c </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> IPADDRESS(addr) \</span></span><br><span class="line"><span class="meta">	((unsigned char *)&amp;addr)[3], \</span></span><br><span class="line"><span class="meta">	((unsigned char *)&amp;addr)[2], \</span></span><br><span class="line"><span class="meta">	((unsigned char *)&amp;addr)[1], \</span></span><br><span class="line"><span class="meta">	((unsigned char *)&amp;addr)[0]</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">char</span> *ip_addr_rule = <span class="string">&quot;142.250.4.103&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">nf_blockipaddr_handler</span><span class="params">(<span class="type">void</span> *priv, <span class="keyword">struct</span> sk_buff *skb, <span class="type">const</span> <span class="keyword">struct</span> nf_hook_state *state)</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">if</span> (!skb) &#123;</span><br><span class="line">		<span class="keyword">return</span> NF_ACCEPT;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="type">char</span> *str = (<span class="type">char</span> *)kmalloc(<span class="number">16</span>, GFP_KERNEL);</span><br><span class="line">		u32 sip;</span><br><span class="line">		<span class="class"><span class="keyword">struct</span> <span class="title">sk_buff</span> *<span class="title">sb</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">		<span class="class"><span class="keyword">struct</span> <span class="title">iphdr</span> *<span class="title">iph</span>;</span></span><br><span class="line"></span><br><span class="line">		sb = skb;</span><br><span class="line">		iph = ip_hdr(sb);</span><br><span class="line">		sip = ntohl(iph-&gt;saddr); <span class="comment">// get source ip address; </span></span><br><span class="line">		</span><br><span class="line">		<span class="built_in">sprintf</span>(str, <span class="string">&quot;%u.%u.%u.%u&quot;</span>, IPADDRESS(sip)); <span class="comment">// convert to standard IP address format</span></span><br><span class="line">		<span class="keyword">if</span>(!<span class="built_in">strcmp</span>(str, ip_addr_rule)) &#123;</span><br><span class="line">			<span class="keyword">return</span> NF_DROP;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> NF_ACCEPT;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>This hook function uses two interesting techniques:</p>
-<ul>
-<li><p><code>ntohl</code>: is a kernel function, which is used to convert the value from <code>network byte order</code> to <code>host byte order</code>. <code>Byte order</code> is related to the computer science concept of <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Endianness"><code>Endianness</code></a>. Endianness defines the order or sequence of bytes of a word of digital data in computer memory. A <code>big-endian</code> system stores the most significant byte of a word at the smallest memory address.  A <code>little-endian</code> system, in contrast, stores the least-significant byte at the smallest address. Network protocol uses the <code>big-endian</code> system. But different OS and platforms run various Endianness system. So it may need such conversion based on the host machine.</p>
-</li>
-<li><p><code>IPADDRESS</code>: is a macro, which generates the standard IP address format(four 8-bit fields separated by periods) from a 32-bit integer. It uses the technique of <a target="_blank" rel="noopener" href="https://www.eskimo.com/~scs/cclass/notes/sx10e.html"><code>the equivalence of arrays and pointers in C</code></a>. I will write another article to examine what it is and how it works. Please keep watching my updates!</p>
-</li>
-</ul>
-<p>Next, we can register this hook function in the same way discussed above. The only remarkable point is this callback function should have a different priority as follows:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> __init <span class="title function_">nf_minifirewall_init</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">	&lt;-omit code-&gt;</span><br><span class="line">	nf_blockipaddr_ops = (<span class="keyword">struct</span> nf_hook_ops*)kcalloc(<span class="number">1</span>, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> nf_hook_ops), GFP_KERNEL);</span><br><span class="line">	<span class="keyword">if</span> (nf_blockipaddr_ops != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		nf_blockipaddr_ops-&gt;hook = (nf_hookfn*)nf_blockipaddr_handler;</span><br><span class="line">		nf_blockipaddr_ops-&gt;hooknum = NF_INET_PRE_ROUTING;  <span class="comment">// register to the same hook</span></span><br><span class="line">		nf_blockipaddr_ops-&gt;pf = NFPROTO_IPV4;</span><br><span class="line">		nf_blockipaddr_ops-&gt;priority = NF_IP_PRI_FIRST + <span class="number">1</span>; <span class="comment">// set a higher priority</span></span><br><span class="line"></span><br><span class="line">		nf_register_net_hook(&amp;init_net, nf_blockipaddr_ops);</span><br><span class="line">	&#125;</span><br><span class="line">	&lt;-omit code-&gt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Let’s see how it works with a demo. </p>
-<h5 id="Demo-time-1"><a href="#Demo-time-1" class="headerlink" title="Demo time"></a>Demo time</h5><p>After re-build and re-load the module, we can get: </p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ wget <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">--<span class="number">2022</span>-06-<span class="number">25</span> <span class="number">10</span>:<span class="number">20</span>:07--  http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>/</span><br><span class="line">Connecting to <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">80.</span>.. failed: Connection timed out.</span><br><span class="line">Retrying.</span><br></pre></td></tr></table></figure>
-
-<p>The <code>wget 142.250.4.103</code> can’t return response. Because it is dropped by our mini-firewall. Great!</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ dmesg | tail -n <span class="number">5</span></span><br><span class="line">[ <span class="number">3162.064284</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">[ <span class="number">3166.089466</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">[ <span class="number">3166.288603</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">[ <span class="number">3174.345463</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">[ <span class="number">3174.480123</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="More-space-to-expand"><a href="#More-space-to-expand" class="headerlink" title="More space to expand"></a>More space to expand</h3><p>You can find the full code implementation <a target="_blank" rel="noopener" href="https://github.com/baoqger/linux-mini-firewall-netfilter/blob/main/mini_firewall.c">here</a>. But I have to say, our mini-firewall only touches the surface of what Netfilter can provide. You can keep expanding the functionalities. For example, currently, the rules are hardcoded, why not make it possible to config the rules dynamically. There are many cool ideas worth trying. I leave it for the readers.  </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we implement the mini-firewall step by step and examined many detailed techniques. Not only code; but we also verify the behavior of the mini-firewall by running real demos.   </p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2022/06/08/how-to-write-a-netfilter-firewall-part3/" data-id="clhitcgyf003m4cmmhq0p3sh6" class="article-share-link">Share</a>
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li></ul>
 
     </footer>
   </div>
@@ -1033,7 +899,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tags</h3>
     <div class="widget">
-      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" rel="tag">Algorithm, Data structure, Tree, Red Black Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Binary-Search-Tree-delete-balanced-performance/" rel="tag">Binary Search Tree, delete, balanced, performance</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Scalability-AWS/" rel="tag">Scalability, AWS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" rel="tag">Algorithm, Data structure, Tree, Red Black Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Binary-Search-Tree-delete-balanced-performance/" rel="tag">Binary Search Tree, delete, balanced, performance</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-Foundation-Scholarship-LIFT/" rel="tag">Linux Foundation, Scholarship, LIFT</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Scalability-AWS/" rel="tag">Scalability, AWS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Service-Fabric-stateless-stateful-actor-model-scalability-reliability-partition/" rel="tag">Service Fabric, stateless, stateful, actor model, scalability, reliability,  partition</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
     </div>
   </div>
 
@@ -1043,7 +909,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Tag Cloud</h3>
     <div class="widget tagcloud">
-      <a href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" style="font-size: 10px;">Algorithm, Data structure, Tree, Red Black Tree</a> <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Binary-Search-Tree-delete-balanced-performance/" style="font-size: 10px;">Binary Search Tree, delete, balanced, performance</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/Scalability-AWS/" style="font-size: 10px;">Scalability, AWS</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/algorithm-external-disk/" style="font-size: 15px;">algorithm, external, disk</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+      <a href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" style="font-size: 10px;">Algorithm, Data structure, Tree, Red Black Tree</a> <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Binary-Search-Tree-delete-balanced-performance/" style="font-size: 10px;">Binary Search Tree, delete, balanced, performance</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-Foundation-Scholarship-LIFT/" style="font-size: 10px;">Linux Foundation, Scholarship, LIFT</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/Scalability-AWS/" style="font-size: 10px;">Scalability, AWS</a> <a href="/tags/Service-Fabric-stateless-stateful-actor-model-scalability-reliability-partition/" style="font-size: 10px;">Service Fabric, stateless, stateful, actor model, scalability, reliability,  partition</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/algorithm-external-disk/" style="font-size: 15px;">algorithm, external, disk</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
     </div>
   </div>
 
@@ -1052,7 +918,7 @@
   <div class="widget-wrap">
     <h3 class="widget-title">Archives</h3>
     <div class="widget">
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/04/">April 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/01/">January 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/12/">December 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/11/">November 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/10/">October 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/08/">August 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/06/">June 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/04/">April 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/03/">March 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/01/">January 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/12/">December 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/11/">November 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/10/">October 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/08/">August 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
     </div>
   </div>
 
@@ -1065,7 +931,15 @@
       <ul>
         
           <li>
+            <a href="/2023/06/09/lift-scholarship-program/">Linux Foundation Scholarship</a>
+          </li>
+        
+          <li>
             <a href="/2023/04/09/understand-more-aws-service-by-negative-cases/">Scalability Lessons Learned from Amazon Return to The Monolith</a>
+          </li>
+        
+          <li>
+            <a href="/2023/03/19/guide-to-service-fabric-architecture/">Build Microservices with Service Fabric: A Hands-on Approach</a>
           </li>
         
           <li>
@@ -1074,14 +948,6 @@
         
           <li>
             <a href="/2023/01/01/bst-deletion-issue/">Deletion operation in Binary Search Tree: successor or predecessor</a>
-          </li>
-        
-          <li>
-            <a href="/2022/12/06/external-sorting-two/">External Mergesort: part two</a>
-          </li>
-        
-          <li>
-            <a href="/2022/11/02/external-sorting-one/">External Mergesort: part one</a>
           </li>
         
       </ul>
