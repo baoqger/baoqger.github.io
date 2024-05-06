@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach | Chris Bao&#39;s Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="IntroductionIn this article, I will share what I learned about .NET memory management by troubleshooting a memory leak issue for a .NET service running in a real production environment. After reading">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach">
+<meta property="og:url" content="https://baoqger.github.io/2024/05/01/dotnet-gc-memory-leak-windbg/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionIn this article, I will share what I learned about .NET memory management by troubleshooting a memory leak issue for a .NET service running in a real production environment. After reading">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://baoqger.github.io/images/CLR.png">
+<meta property="og:image" content="https://baoqger.github.io/images/gcphases.png">
+<meta property="og:image" content="https://baoqger.github.io/images/reachability.png">
+<meta property="og:image" content="https://baoqger.github.io/images/procdump-windbg.png">
+<meta property="article:published_time" content="2024-05-01T02:43:54.000Z">
+<meta property="article:modified_time" content="2024-05-06T14:17:50.433Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="dotnet, GC, memory leak, WinDbg">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://baoqger.github.io/images/CLR.png">
+  
+    <link rel="alternate" href="/atom.xml" title="Chris Bao&#39;s Blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Chris Bao&#39;s Blog</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+          <a class="main-nav-link" href="/project">Project</a>
+        
+          <a class="main-nav-link" href="/book-reviews">Book Review</a>
+        
+          <a class="main-nav-link" href="/solopreneur">Solopreneur</a>
+        
+          <a class="main-nav-link" href="/about">About</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://baoqger.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-dotnet-gc-memory-leak-windbg" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2024/05/01/dotnet-gc-memory-leak-windbg/" class="article-date">
+  <time datetime="2024-05-01T02:43:54.000Z" itemprop="datePublished">2024-05-01</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In this article, I will share what I learned about <code>.NET memory management</code> by troubleshooting a memory leak issue for a .NET service running in a real production environment. After reading this post, you can understand more about the following items:</p>
+<ul>
+<li><code>.NET Memory Management</code> and <code>.NET Garbage Collection</code></li>
+<li>Diagnose memory usage with <code>WinDbg</code></li>
+</ul>
+<p>Previously I once published <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/">articles</a> about memory allocation of native applications written in C on Linux systems. I highly recommend you read both articles and compare what’s the difference, this can deepen your understanding of memory-related techniques.  </p>
+<h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>Firstly, let me explain the background: the problematic .NET service is running on the <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-azure-clusters-overview"><code>Azure Service Fabric</code></a>, which consists of a cluster of <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Windows_Server">Windows Server</a>. If you are not familiar with Service Fabric, please refer to my <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2023/03/20/guide-to-service-fabric-architecture/">previous article</a>, which explains how to develop microservices based on it. The problem is that the memory usage of this .NET service reaches roughly <code>1.5GB</code>, which is 4 times higher than the average usage. Generally speaking, on the cloud more resource usage means higher cost. Next, let’s diagnose what is happening here. But before we roll up our sleeves to debug this issue, let’s first review how .NET memory works at a theoretical level.</p>
+<h3 id="NET-Memory-Management"><a href="#NET-Memory-Management" class="headerlink" title=".NET Memory Management"></a>.NET Memory Management</h3><h5 id="NET-Runtime"><a href="#NET-Runtime" class="headerlink" title=".NET Runtime"></a>.NET Runtime</h5><p>Unlike native software written directly to the operating system’s APIs, programs written with <code>.NET</code> are called <code>managed</code> applications because they depend on a runtime and framework that manages many of their vital tasks and ensures a basic safe operating environment. In <code>.NET</code>, runtime refers to the <code>Common Language Runtime(CLR)</code> and the framework is <code>.NET Framework</code> or <code>.NET Core</code>. And the .NET application is built on top of them. </p>
+<img src="/images/CLR.png" title=".NET and CLR" width="600px" height="400px">
+
+<p><code>CLR</code> works as a virtual execution engine for .NET applications, and it is a very complex topic that is out of the scope of this article, so we can’t dive into the details. But one of the crucial functionalities it provides is just: <code>memory management</code>. </p>
+<h5 id="NET-GC"><a href="#NET-GC" class="headerlink" title=".NET GC"></a>.NET GC</h5><p>When you’re working on system programming with C or C++, you need to manage the memory by calling standard library’s APIs like <code>malloc</code> and <code>free</code> to allocate and release the memory. But on the .NET framework, your life will be easier since the .NET memory manager does this task for you. When the program creates a new object, the memory manager will allocate the memory for you. Easy, right? But that’s only a trivial part of the memory manager, the complicated task is how and when the memory manager can decide to collect the memory. Because of this, the .NET memory manager has another name: <code>.NET Garbage Collector</code>. </p>
+<p>The .NET GC uses two Win32 functions <code>VirtualAlloc</code> and <code>VirtualFree</code> for allocating a segment of memory and releasing segments back to the operating system respectively. The entire process can be divided into the following three phases: </p>
+<img src="/images/gcphases.png" title=".NET and CLR" width="600px" height="400px">
+
+
+<ul>
+<li><strong>Marking Phase</strong>: A list of <code>live</code> objects is created during the marking phase. This is done by starting from a set of references called the <code>GC roots</code>. GC marks these root objects as <code>live</code> and then looks at any object that they reference and marks these as being <code>live</code> too. And the GC continues the search iteratively. This process is also called <code>reachability analysis</code>. All of the objects that are not on the reachable list are potentially released from the memory. </li>
+</ul>
+<img src="/images/reachability.png" title="GC roots" width="600px" height="400px">
+
+<ul>
+<li><p><strong>Relocating Phase</strong>: The references of all the reachable objects are updated so that they point to the new location. The purpose of the relocating phase is to optimize memory usage by compacting the live objects closer together. This helps reduce <code>memory fragmentation</code> and improves memory allocation efficiency. </p>
+</li>
+<li><p><strong>Compacting Phase</strong>: The memory space occupied by the dead objects is released and the live objects are moved to the new location. </p>
+</li>
+</ul>
+<p>GC algorithm is a complex topic, the above description only touches the surface of it. You can explore <a target="_blank" rel="noopener" href="https://www.red-gate.com/simple-talk/development/dotnet-development/understanding-garbage-collection-in-net/">more</a> by yourself. In the following sections, I will add extra information when necessary. </p>
+<h3 id="WinDbg"><a href="#WinDbg" class="headerlink" title="WinDbg"></a>WinDbg</h3><p>To diagnose .NET applications’ memory issues, there are many modern tools, like <a target="_blank" rel="noopener" href="https://www.jetbrains.com/dotmemory/"><code>dotMemory</code></a>. But in this article, I will show you a low-level tool: <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/WinDbg"><code>WinDbg</code></a>. <code>WinDbg</code> is a multipurpose debugger for the Windows OS, which can be used to debug both user mode and kernel mode. Originally WinDbg was used to debug the native applications, but WinDbg allows the loading of extensions which can augment the debugger’s supported commands. For example, to debug .NET applications running on CLR, we need the <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/dotnet/framework/tools/sos-dll-sos-debugging-extension?redirectedfrom=MSDN"><code>SOS</code> extension</a>.  </p>
+<p>Now that we have a powerful debugger in hand, the next question is how to use it. Generally speaking, you can attach the debugger to the problematic service, but since the target service is running in the production environment, we can’t do that easily. So we need to troubleshoot this issue in the offline style as follows:</p>
+<img src="/images/procdump-windbg.png" title="GC roots" width="600px" height="400px">
+
+<p>We need to use <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/sysinternals/downloads/procdump"><code>ProcDump</code></a> to dump the memory information into a file, called <code>dump file</code>. Then use <code>WinDbg</code> to analyze the dump file. I will not cover the usage of <code>ProcDump</code> in this article and leave it to you. </p>
+<p>Next, let’s play with the dump file, all right? Let’s go! </p>
+<h3 id="Diagnose-the-memory-leak"><a href="#Diagnose-the-memory-leak" class="headerlink" title="Diagnose the memory leak"></a>Diagnose the memory leak</h3><p>First, let’s use the WinDbg <code>!address</code> extension to display information about the memory that the target process or target computer uses as follows:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; !address -summary</span><br><span class="line"></span><br><span class="line">--- Usage Summary ---------------- RgnCount ----------- Total Size -------- %ofBusy %ofTotal</span><br><span class="line">Free                                    338     7ffe`d06bb000 ( 127.995 TB)          100.00%</span><br><span class="line">&lt;unknown&gt;                              4715        0`feb0f000 (   3.980 GB)  83.90%    0.00%</span><br><span class="line">Stack                                   276        0`16880000 ( 360.500 MB)   7.42%    0.00%</span><br><span class="line">Image                                  1241        0`0e989000 ( 233.535 MB)   4.81%    0.00%</span><br><span class="line">Heap                                    519        0`0b997000 ( 185.590 MB)   3.82%    0.00%</span><br><span class="line">Other                                    15        0`001cd000 (   1.801 MB)   0.04%    0.00%</span><br><span class="line">TEB                                      92        0`000b8000 ( 736.000 kB)   0.01%    0.00%</span><br><span class="line">PEB                                       1        0`00001000 (   4.000 kB)   0.00%    0.00%</span><br><span class="line"></span><br><span class="line">--- Type Summary (for busy) ------ RgnCount ----------- Total Size -------- %ofBusy %ofTotal</span><br><span class="line">MEM_PRIVATE                            5051        1`1e9d4000 (   4.478 GB)  94.41%    0.00%</span><br><span class="line">MEM_IMAGE                              1753        0`1013b000 ( 257.230 MB)   5.30%    0.00%</span><br><span class="line">MEM_MAPPED                               55        0`00e26000 (  14.148 MB)   0.29%    0.00%</span><br><span class="line"></span><br><span class="line">--- State Summary ---------------- RgnCount ----------- Total Size -------- %ofBusy %ofTotal</span><br><span class="line">MEM_FREE                                338     7ffe`d06bb000 ( 127.995 TB)          100.00%</span><br><span class="line">MEM_RESERVE                            2503        0`cdc3c000 (   3.215 GB)  67.78%    0.00%</span><br><span class="line">MEM_COMMIT                             4356        0`61cf9000 (   1.528 GB)  32.22%    0.00%</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Let’s examine the output, which provides so much information!</p>
+<p>The <em>first</em> section shows the memory <code>Usage Summary</code>: </p>
+<ul>
+<li><strong>Free</strong>: is the entire <code>virtual memory</code> that can potentially be claimed from the operating system. This may include <code>swap space</code>, not only physical RAM. For a 64-bit process,  the virtual memory is <code>128TB</code>. </li>
+<li><strong>Heap</strong>: what you see as <code>Heap</code> is the memory that was allocated through the <code>Windows Heap Manager</code>, we generally call it the <code>native heap</code>. </li>
+<li><strong>Unknown</strong>: any other heap managers will implement their own memory management. Basically, they all work similarly: they get large blocks of memory from <code>VirtualAlloc</code> and then try to do a better management of the small block within that large block. Since WinDbg doesn’t know any of these memory managers, that memory is declared as <code>Unknown</code>. It includes but is not limited to the managed heap of <code>.NET</code>. In my case, the value is <code>3.98GB</code> which is much bigger than the <code>1.5GB</code> memory usage reported by the monitor tool. I will explain why it goes like this in the following sections. </li>
+<li><strong>Image</strong>: is the memory space allocated for the binary assemblies. </li>
+<li><strong>Stack</strong>: is straightforward. If you don’t know, please refer to my previous <a target="_blank" rel="noopener" href="https://organicprogrammer.com/2020/08/19/stack-frame/">article</a>.</li>
+</ul>
+<p>The <em>second</em> section shows the usage by memory <code>Type</code>: <code>MEM_PRIVATE</code>, <code>MEM_IMAGE</code> and <code>MEM_MAPPED</code>. <code>MEM_PRIVATE</code> is private to one process and <code>MEM_IMAGE</code> and <code>MEM_MAPPED</code> can be shared among multiple processes. </p>
+<p>The <em>third</em> section shows the usage by memory <code>State</code>.</p>
+<ul>
+<li><strong>MEM_COMMIT</strong>: committed memory refers to the portion of the virtual address space that has been allocated and backed by physical memory or the paging file. Committed memory is actively used and accessible by the process. It includes memory regions that have been allocated and are in use, such as code, data, and heap allocations. </li>
+<li><strong>MEM_RESERVE</strong>: corresponds to reserved memory. Reserved memory refers to memory that has been reserved in the virtual address space but has not yet been committed. When memory is reserved, the address space is allocated, but physical memory or paging file resources are not immediately allocated. The process reserves the address space to ensure that it will be available when needed. Reserved memory can later be committed to make it usable by the process. </li>
+<li><strong>MEM_FREE</strong>: represents free memory. This category includes all memory that has not been reserved or committed. </li>
+</ul>
+<p>In my case, the committed memory is <code>1.528GB</code>, which exactly matches the monitored memory usage. This can perfectly explain the confusing point mentioned about the <code>3.98GB</code> <code>unknown</code> memory segment. It turns out the majority of these memories are only reserved. So next step is to get the actual committed memory usage for various types. How to achieve that? </p>
+<p>Thanks for the powerful <code>address</code> extension, I can do that by adding some filters like this:</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">!address -f:MEM_COMMIT -c:&quot;.echo %1 %3 %5 %7&quot;</span><br></pre></td></tr></table></figure>
+
+<p> This command will output all the committed memory regions, and for each region prints its base address(%1), region size(%3), state(%5) and type(%7). The output goes as follows:</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">0x5f3a0000 0x1000 MEM_COMMIT Image</span><br><span class="line">0x5f3a1000 0x2ab000 MEM_COMMIT Image</span><br><span class="line">0x5f64c000 0xb000 MEM_COMMIT Image</span><br><span class="line">0x5f657000 0x1b000 MEM_COMMIT Image</span><br><span class="line">0x5f672000 0x2000 MEM_COMMIT Image</span><br><span class="line">0x5f674000 0x2d000 MEM_COMMIT Image</span><br><span class="line">0x7ffe0000 0x1000 MEM_COMMIT Other</span><br><span class="line">0x4580ca7000 0x5000 MEM_COMMIT Stack</span><br><span class="line">...thousands of lines omitted...</span><br></pre></td></tr></table></figure>
+
+<p>I wrote a simple script to parse the above output and finally got the following result: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Memory by Type:</span><br><span class="line">type Image:  233.52344MB</span><br><span class="line">type Other:  1.8007812MB</span><br><span class="line">type Stack:  3.796875MB</span><br><span class="line">type TEB  :  0.71875MB</span><br><span class="line">type PEB  :  0.00390625MB</span><br><span class="line">type Heap :  84.88281MB</span><br><span class="line">type &lt;unknown&gt; :  1240.2461MB</span><br></pre></td></tr></table></figure>
+<p>Based on this result, you can see the majority comes from the <code>unknown</code> segment. I suspect that the memory leak issue occurs in this problematic service. Various WinDbg <a target="_blank" rel="noopener" href="https://www.tessferrandez.com/blog/2005/11/25/dumpheap-stat-explained.html">commands</a> can diagnose the memory leak problem. And in this specific case, I find the command <code>!finalizequeue</code> is super helpful!</p>
+<p>Before I show you the output of the command, let’s examine what the <code>finalizer queue</code> is. In <code>C#</code>, the <code>finalizer</code>(also referred to as <code>destructor</code>)  is used to perform any necessary final clean-up when a class instance is being collected by the GC. </p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Car</span></span><br><span class="line">&#123;</span><br><span class="line">    ~Car()  <span class="comment">// finalizer</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// cleanup statements...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>When your application encapsulates <code>unmanaged resources</code>, such as windows, files and network connections, you should use the <code>finalizer</code> to free those resources. </p>
+<p>Objects of classes with finalizers can’t be removed immediately: they instead go to the <code>finalizer queue</code> and are removed from memory once the finalizer has been run. </p>
+<p>Based on this, let’s examine the output of command <code>!finalizequeue</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; !FinalizeQueue</span><br><span class="line">SyncBlocks to be cleaned up: 0</span><br><span class="line">Free-Threaded Interfaces to be released: 0</span><br><span class="line">MTA Interfaces to be released: 0</span><br><span class="line">STA Interfaces to be released: 0</span><br><span class="line">----------------------------------</span><br><span class="line">generation 0 has 66 finalizable objects (0000021c729c47b0-&gt;0000021c729c49c0)</span><br><span class="line">generation 1 has 4 finalizable objects (0000021c729c4790-&gt;0000021c729c47b0)</span><br><span class="line">generation 2 has 4372 finalizable objects (0000021c729bbef0-&gt;0000021c729c4790)</span><br><span class="line">Ready for finalization 0 objects (0000021c729c49c0-&gt;0000021c729c49c0)</span><br><span class="line">Statistics for all finalizable objects (including all objects ready for finalization):</span><br><span class="line">              MT    Count    TotalSize Class Name</span><br><span class="line">00007ffcde443f78        1           32 Microsoft.Win32.SafeHandles.SafePEFileHandle</span><br><span class="line">00007ffcde4407f8        1           32 System.Security.Cryptography.X509Certificates.SafeCertContextHandle</span><br><span class="line"></span><br><span class="line">--- many lines of output omitted ---</span><br><span class="line"></span><br><span class="line">00007ffcde447db0       97         3104 Microsoft.Win32.SafeHandles.SafeWaitHandle</span><br><span class="line">00007ffcdd272468       28         4928 System.Diagnostics.PerformanceCounter</span><br><span class="line">00007ffcde45d6a8       64         6144 System.Threading.Thread</span><br><span class="line">00007ffcde4297c0     3639       262008 System.Reflection.Emit.DynamicResolver</span><br><span class="line">Total 4442 objects</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>You can notice that there are <code>3639</code> objects of type <code>System.Reflection.Emit.DynamicResolver</code>. As we know, the objects in the <code>finalizer queue</code> can’t be removed until the finalizer runs. This also means that any object they reference and any object referenced by those, and so on has to be kept in memory.</p>
+<p>This is the potential reason for the memory leak problem. <a href="System.Reflection.Emit"><code>System.Reflection.Emit</code></a> is a low-level library used to generate the Microsoft Intermediate Language (MSIL) dynamically, my application does not rely on it. Finally, it turns out the issue is from the Service Fabric SDK and upgrading to new versions can fix it. </p>
+<h3 id="Background-1"><a href="#Background-1" class="headerlink" title="Background"></a>Background</h3><p>In this article, we examined how .NET GC works and how to diagnose the memory leak issue with WinDbg. </p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://baoqger.github.io/2024/05/01/dotnet-gc-memory-leak-windbg/" data-id="clvv1t4i3000ec8mmdydfg1gf" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/dotnet-GC-memory-leak-WinDbg/" rel="tag">dotnet, GC, memory leak, WinDbg</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2023/06/09/lift-scholarship-program/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Linux Foundation Scholarship</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tags</h3>
+    <div class="widget">
+      <ul class="tag-list" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" rel="tag">Algorithm, Data structure, Tree, Red Black Tree</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/BPF-JIT-virtual-machine/" rel="tag">BPF, JIT, virtual machine</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Best-practice/" rel="tag">Best practice,</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Binary-Search-Tree-delete-balanced-performance/" rel="tag">Binary Search Tree, delete, balanced, performance</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Fabio-Golang-Source-code/" rel="tag">Fabio, Golang, Source code</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-bufio-bytes-buffer/" rel="tag">Golang, bufio, bytes, buffer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Golang-package-workspace-vendor/" rel="tag">Golang, package, workspace, vendor</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-protocol-Golang-TCP-socket/" rel="tag">HTTP protocol, Golang, TCP, socket</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-system-call-Linux-Golang/" rel="tag">HTTP, system call, Linux, Golang</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-concurrent/" rel="tag">HTTP/1.1, concurrent</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/HTTPS-TLS-handshake-SSL-TLS/" rel="tag">HTTPS, TLS handshake, SSL/TLS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-Foundation-Scholarship-LIFT/" rel="tag">Linux Foundation, Scholarship, LIFT</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-module-Netfilter-firewall/" rel="tag">Linux module, Netfilter, firewall</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-gdb/" rel="tag">Linux, memory layout, heap, gdb</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-memory-layout-heap-stack/" rel="tag">Linux, memory layout, heap, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag">Linux, system programming, Windows Subsystem for Linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Scalability-AWS/" rel="tag">Scalability, AWS</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Service-Fabric-stateless-stateful-actor-model-scalability-reliability-partition/" rel="tag">Service Fabric, stateless, stateful, actor model, scalability, reliability,  partition</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/TCP-IP/" rel="tag">TCP, IP</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/algorithm-external-disk/" rel="tag">algorithm, external, disk</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/apt-Ubuntu-Linux-package-management/" rel="tag">apt, Ubuntu, Linux, package management</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/certificate-digital-signature-hashing/" rel="tag">certificate, digital signature, hashing</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/digital-signature-hash-function/" rel="tag">digital signature, hash function</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/docker-c-linux/" rel="tag">docker, c++, linux</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/dotnet-GC-memory-leak-WinDbg/" rel="tag">dotnet, GC, memory leak, WinDbg</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag">golang, concurrent, shared memory, message pass</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/memory-management-stack/" rel="tag">memory management, stack</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" rel="tag">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" rel="tag">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" rel="tag">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/operating-system-xv6-Unix/" rel="tag">operating system, xv6, Unix</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/packet-sniffer-socket-PF-PACKET/" rel="tag">packet sniffer, socket, PF_PACKET</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" rel="tag">priority queue, data structure, algorithm, time complexity, Big O notation</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/programming-c-array-pointer/" rel="tag">programming c, array, pointer</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/public-key-man-in-the-middle-certificate/" rel="tag">public key, man-in-the-middle, certificate</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Tag Cloud</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/" style="font-size: 10px;">Algorithm, Data structure, Tree, Red Black Tree</a> <a href="/tags/BPF-JIT-virtual-machine/" style="font-size: 10px;">BPF, JIT, virtual machine</a> <a href="/tags/Best-practice/" style="font-size: 10px;">Best practice,</a> <a href="/tags/Binary-Search-Tree-delete-balanced-performance/" style="font-size: 10px;">Binary Search Tree, delete, balanced, performance</a> <a href="/tags/Fabio-Golang-Source-code/" style="font-size: 10px;">Fabio, Golang, Source code</a> <a href="/tags/Golang-bufio-bytes-buffer/" style="font-size: 10px;">Golang, bufio, bytes, buffer</a> <a href="/tags/Golang-package-workspace-vendor/" style="font-size: 10px;">Golang, package, workspace, vendor</a> <a href="/tags/HTTP-protocol-Golang-TCP-socket/" style="font-size: 10px;">HTTP protocol, Golang, TCP, socket</a> <a href="/tags/HTTP-system-call-Linux-Golang/" style="font-size: 10px;">HTTP, system call, Linux, Golang</a> <a href="/tags/HTTP-1-1-concurrent/" style="font-size: 10px;">HTTP/1.1, concurrent</a> <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" style="font-size: 10px;">HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a> <a href="/tags/HTTPS-TLS-handshake-SSL-TLS/" style="font-size: 10px;">HTTPS, TLS handshake, SSL/TLS</a> <a href="/tags/Linux-Foundation-Scholarship-LIFT/" style="font-size: 10px;">Linux Foundation, Scholarship, LIFT</a> <a href="/tags/Linux-module-Netfilter-firewall/" style="font-size: 20px;">Linux module, Netfilter, firewall</a> <a href="/tags/Linux-memory-layout-heap-gdb/" style="font-size: 15px;">Linux, memory layout, heap, gdb</a> <a href="/tags/Linux-memory-layout-heap-stack/" style="font-size: 10px;">Linux, memory layout, heap, stack</a> <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" style="font-size: 10px;">Linux, system programming, Windows Subsystem for Linux</a> <a href="/tags/Scalability-AWS/" style="font-size: 10px;">Scalability, AWS</a> <a href="/tags/Service-Fabric-stateless-stateful-actor-model-scalability-reliability-partition/" style="font-size: 10px;">Service Fabric, stateless, stateful, actor model, scalability, reliability,  partition</a> <a href="/tags/TCP-IP/" style="font-size: 10px;">TCP, IP</a> <a href="/tags/algorithm-external-disk/" style="font-size: 15px;">algorithm, external, disk</a> <a href="/tags/apt-Ubuntu-Linux-package-management/" style="font-size: 10px;">apt, Ubuntu, Linux, package management</a> <a href="/tags/certificate-digital-signature-hashing/" style="font-size: 10px;">certificate, digital signature, hashing</a> <a href="/tags/digital-signature-hash-function/" style="font-size: 15px;">digital signature, hash function</a> <a href="/tags/docker-c-linux/" style="font-size: 10px;">docker, c++, linux</a> <a href="/tags/dotnet-GC-memory-leak-WinDbg/" style="font-size: 10px;">dotnet, GC, memory leak, WinDbg</a> <a href="/tags/golang-concurrent-shared-memory-message-pass/" style="font-size: 10px;">golang, concurrent, shared memory, message pass</a> <a href="/tags/memory-management-stack/" style="font-size: 10px;">memory management, stack</a> <a href="/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, Load balancing, Consul, Fabio Golang, Cloud-Native, Docker</a> <a href="/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/" style="font-size: 10px;">microservice, service registration, service discovery, Consul, Golang, Cloud-Native, Docker</a> <a href="/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/" style="font-size: 10px;">network packet capture, libpcap, analyze and track network traffics, detect network security attacks, Linux system programming</a> <a href="/tags/operating-system-xv6-Unix/" style="font-size: 10px;">operating system, xv6, Unix</a> <a href="/tags/packet-sniffer-socket-PF-PACKET/" style="font-size: 10px;">packet sniffer, socket, PF_PACKET</a> <a href="/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/" style="font-size: 10px;">priority queue, data structure, algorithm, time complexity, Big O notation</a> <a href="/tags/programming-c-array-pointer/" style="font-size: 10px;">programming c, array, pointer</a> <a href="/tags/public-key-man-in-the-middle-certificate/" style="font-size: 10px;">public key, man-in-the-middle, certificate</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/06/">June 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/04/">April 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/03/">March 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/01/">January 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/12/">December 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/11/">November 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/10/">October 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/09/">September 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/08/">August 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/07/">July 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/06/">June 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">February 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/01/">January 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/12/">December 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/10/">October 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/08/">August 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/07/">July 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/06/">June 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/05/">May 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/04/">April 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/03/">March 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/02/">February 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">January 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/12/">December 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/11/">November 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/10/">October 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/08/">August 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/07/">July 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/09/">September 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/08/">August 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/02/">February 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/12/">December 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/11/">November 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2024/05/01/dotnet-gc-memory-leak-windbg/">Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach</a>
+          </li>
+        
+          <li>
+            <a href="/2023/06/09/lift-scholarship-program/">Linux Foundation Scholarship</a>
+          </li>
+        
+          <li>
+            <a href="/2023/04/09/understand-more-aws-service-by-negative-cases/">Scalability Lessons Learned from Amazon Return to The Monolith</a>
+          </li>
+        
+          <li>
+            <a href="/2023/03/20/guide-to-service-fabric-architecture/">Build Microservices with Service Fabric: A Hands-on Approach</a>
+          </li>
+        
+          <li>
+            <a href="/2023/02/13/note-on-red-black-tree/">Understand Red Black Tree: part one - background</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2024 Chris Bao<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+    <a href="/project" class="mobile-nav-link">Project</a>
+  
+    <a href="/book-reviews" class="mobile-nav-link">Book Review</a>
+  
+    <a href="/solopreneur" class="mobile-nav-link">Solopreneur</a>
+  
+    <a href="/about" class="mobile-nav-link">About</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
