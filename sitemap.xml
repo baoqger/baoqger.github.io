@@ -240,6 +240,13 @@
   </url>
   
   <url>
+    <loc>https://baoqger.github.io/2021/10/12/why-only-13-dns-root-server/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/2018/12/14/why-tcp-four-way-handshake/</loc>
     
     <lastmod>2021-12-23</lastmod>
@@ -248,13 +255,6 @@
   
   <url>
     <loc>https://baoqger.github.io/2021/08/06/win-wsl/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/2021/10/12/why-only-13-dns-root-server/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -394,6 +394,13 @@
   </url>
   
   <url>
+    <loc>https://baoqger.github.io/2021/05/11/golang-sync-once/</loc>
+    
+    <lastmod>2021-12-23</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/2021/10/08/how-to-build-packet-sniffer/</loc>
     
     <lastmod>2021-12-23</lastmod>
@@ -402,13 +409,6 @@
   
   <url>
     <loc>https://baoqger.github.io/2021/07/14/how-to-collect-metrics-k8s/</loc>
-    
-    <lastmod>2021-12-23</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/2021/05/11/golang-sync-once/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -443,14 +443,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2021/05/14/golang-sync-cond/</loc>
+    <loc>https://baoqger.github.io/2020/11/16/golang-service-discovery-consul/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/2020/11/16/golang-service-discovery-consul/</loc>
+    <loc>https://baoqger.github.io/2021/05/14/golang-sync-cond/</loc>
     
     <lastmod>2021-12-23</lastmod>
     
@@ -585,14 +585,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/</loc>
+    <loc>https://baoqger.github.io/tags/golang-concurrent-shared-memory-message-pass/</loc>
     <lastmod>2024-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/golang-concurrent-shared-memory-message-pass/</loc>
+    <loc>https://baoqger.github.io/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/</loc>
     <lastmod>2024-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -676,14 +676,14 @@
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/operating-system-xv6-Unix/</loc>
+    <loc>https://baoqger.github.io/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/</loc>
     <lastmod>2024-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://baoqger.github.io/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/</loc>
+    <loc>https://baoqger.github.io/tags/operating-system-xv6-Unix/</loc>
     <lastmod>2024-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
@@ -718,6 +718,13 @@
   </url>
   
   <url>
+    <loc>https://baoqger.github.io/tags/Linux-memory-layout-heap-gdb/</loc>
+    <lastmod>2024-05-06</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://baoqger.github.io/tags/Linux-memory-layout-heap-stack/</loc>
     <lastmod>2024-05-06</lastmod>
     <changefreq>daily</changefreq>
@@ -726,13 +733,6 @@
   
   <url>
     <loc>https://baoqger.github.io/tags/apt-Ubuntu-Linux-package-management/</loc>
-    <lastmod>2024-05-06</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://baoqger.github.io/tags/Linux-memory-layout-heap-gdb/</loc>
     <lastmod>2024-05-06</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>

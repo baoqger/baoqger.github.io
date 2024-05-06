@@ -19,7 +19,7 @@
 <meta property="og:image" content="https://baoqger.github.io/images/reachability.png">
 <meta property="og:image" content="https://baoqger.github.io/images/procdump-windbg.png">
 <meta property="article:published_time" content="2024-05-01T02:43:54.000Z">
-<meta property="article:modified_time" content="2024-05-06T14:17:50.433Z">
+<meta property="article:modified_time" content="2024-05-06T14:27:05.324Z">
 <meta property="article:author" content="Chris Bao">
 <meta property="article:tag" content="dotnet, GC, memory leak, WinDbg">
 <meta name="twitter:card" content="summary">
@@ -179,12 +179,12 @@
 
 <p>You can notice that there are <code>3639</code> objects of type <code>System.Reflection.Emit.DynamicResolver</code>. As we know, the objects in the <code>finalizer queue</code> can’t be removed until the finalizer runs. This also means that any object they reference and any object referenced by those, and so on has to be kept in memory.</p>
 <p>This is the potential reason for the memory leak problem. <a href="System.Reflection.Emit"><code>System.Reflection.Emit</code></a> is a low-level library used to generate the Microsoft Intermediate Language (MSIL) dynamically, my application does not rely on it. Finally, it turns out the issue is from the Service Fabric SDK and upgrading to new versions can fix it. </p>
-<h3 id="Background-1"><a href="#Background-1" class="headerlink" title="Background"></a>Background</h3><p>In this article, we examined how .NET GC works and how to diagnose the memory leak issue with WinDbg. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined how .NET GC works and how to diagnose the memory leak issue with WinDbg. </p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://baoqger.github.io/2024/05/01/dotnet-gc-memory-leak-windbg/" data-id="clvv1t4i3000ec8mmdydfg1gf" class="article-share-link">Share</a>
+      <a data-url="https://baoqger.github.io/2024/05/01/dotnet-gc-memory-leak-windbg/" data-id="clvv2764d000f4wmmdzn47jig" class="article-share-link">Share</a>
       
       
   <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/dotnet-GC-memory-leak-WinDbg/" rel="tag">dotnet, GC, memory leak, WinDbg</a></li></ul>
