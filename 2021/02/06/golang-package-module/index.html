@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIn this post, I’ll talk about Golang package based on my learning and use experience.  You’ll learn the following topics in this post:  Basics about Go package How to use and import a Go pac">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang package">
+<meta property="og:url" content="https://organicprogrammer.com/2021/02/06/golang-package-module/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn this post, I’ll talk about Golang package based on my learning and use experience.  You’ll learn the following topics in this post:  Basics about Go package How to use and import a Go pac">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/go-package-std.png">
+<meta property="article:published_time" content="2021-02-05T22:55:52.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Golang, package, workspace, vendor">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/go-package-std.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2021/02/06/golang-package-module/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2021/02/06/golang-package-module/","path":"2021/02/06/golang-package-module/","title":"Golang package"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Golang package | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Basics-about-Go-package"><span class="nav-number">2.</span> <span class="nav-text">Basics about Go package</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#What%E2%80%99s-Go-package"><span class="nav-number">2.1.</span> <span class="nav-text">What’s Go package</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Types-of-Go-package"><span class="nav-number">2.2.</span> <span class="nav-text">Types of Go package</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Member-visibility-of-Go-package"><span class="nav-number">2.3.</span> <span class="nav-text">Member visibility of Go package</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Lifecycle-of-package"><span class="nav-number">2.4.</span> <span class="nav-text">Lifecycle of package</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Use-and-Import-Go-package"><span class="nav-number">3.</span> <span class="nav-text">Use and Import Go package</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Go-workspace"><span class="nav-number">3.1.</span> <span class="nav-text">Go workspace</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Ways-to-import-Golang-package"><span class="nav-number">3.2.</span> <span class="nav-text">Ways to import Golang package</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/02/06/golang-package-module/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Golang package | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Golang package
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-02-06 06:55:52" itemprop="dateCreated datePublished" datetime="2021-02-06T06:55:52+08:00">2021-02-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In this post, I’ll talk about Golang package based on my learning and use experience. </p>
+<p>You’ll learn the following topics in this post:</p>
+<ul>
+<li>Basics about Go package</li>
+<li>How to use and import a Go package</li>
+<li>Demo with real-world Go package</li>
+</ul>
+<h2 id="Basics-about-Go-package"><a href="#Basics-about-Go-package" class="headerlink" title="Basics about Go package"></a>Basics about Go package</h2><h4 id="What’s-Go-package"><a href="#What’s-Go-package" class="headerlink" title="What’s Go package"></a>What’s Go package</h4><p>Simply speaking, <code>Go package</code> provides a solution to the requirement of <code>code reuse</code>, which is an important part of software engineering. </p>
+<p>In Golang’s official document, the definition of packages goes as following: </p>
+<blockquote>
+<p>Go programs are organized into packages. A package is a collection of source files in the same directory that are compiled together. Functions, types, variables, and constants defined in one source file are visible to all other source files within the same package.</p>
+</blockquote>
+<p>There are several critical points in the definition let’s review them one by one. </p>
+<ul>
+<li><p>First, one package can contain <code>more than one</code> source files. This is different from other languages, for example in <code>Javascript</code> , each source file is an independent module that exports variables to other files to import.</p>
+</li>
+<li><p>Second, all the source files for a package are organized inside a directory. The package name must be the same as the directory name. </p>
+</li>
+<li><p>Third, the files inside the subdirectories should be excluded. Each subdirectory is another package.</p>
+</li>
+</ul>
+<p>To have a better understanding about these three points, let’s check the structure of the <code>net</code> package in the Go standard library. </p>
+<p><img src="/images/go-package-std.png" alt="net-package"></p>
+<p>All the <code>.go</code> source files directly under the <code>net</code> directory contain the following pacakge declaration on the top of the file: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> net</span><br></pre></td></tr></table></figure>
+
+<p>This means that it is part of the net package. </p>
+<p>There are several subdirectories under <code>net</code> directoy, and each of these subdirectory is an independant package. For example, the <code>net/http</code> package consists of all the files inside the <code>http</code> subdirectory. If you open the files inside <code>http</code> directory, the package declaration is:  </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> http</span><br></pre></td></tr></table></figure>
+<h4 id="Types-of-Go-package"><a href="#Types-of-Go-package" class="headerlink" title="Types of Go package"></a>Types of Go package</h4><p>Generally speaking, there are two types of packages: <code>library package</code> and <code>main package</code>. After build, the main package will be compiled into an executable file. While a library package is not self-executable, instead, it provides the utility functions.</p>
+<h4 id="Member-visibility-of-Go-package"><a href="#Member-visibility-of-Go-package" class="headerlink" title="Member visibility of Go package"></a>Member visibility of Go package</h4><p>Different from other language like Javascript, Golang package doesn’t provide keyword such as <code>export</code>, <code>public</code>, <code>private</code> and so on to explicitly export members to the outside world. </p>
+<p>Instead, the visibility of member inside one package is determined by the casing of the first letter. If the first letter is upper case then it can be impoted by other packages. </p>
+<h4 id="Lifecycle-of-package"><a href="#Lifecycle-of-package" class="headerlink" title="Lifecycle of package"></a>Lifecycle of package</h4><p>For the library package we mentioned above, when it’s imported the <code>init</code> method will be called automatically. You can do some package initialization work inside it. </p>
+<p>For the main pacakge, it must provide the <code>main</code> method as the entry point when it’s running. </p>
+<h2 id="Use-and-Import-Go-package"><a href="#Use-and-Import-Go-package" class="headerlink" title="Use and Import Go package"></a>Use and Import Go package</h2><p>Before <code>Go Module</code> was introduced, the development of Golang application is based on the <code>Go workspace</code>. In this post, I’ll focus on the solutions based on <code>Go workspace</code>. Go module is another topic I will talk about in a future post. </p>
+<h4 id="Go-workspace"><a href="#Go-workspace" class="headerlink" title="Go workspace"></a>Go workspace</h4><p>By convention, all your Go code and the code(or the packages) you import, must reside in a single workspace. A workspace is nothing but a directory in your file system whose path is stored in the environment variable <code>GOPATH</code>.</p>
+<p>As a new comer into the Golang world, at the beginning the <code>GOPATH</code> workspace configuration confused me a lot. </p>
+<p>For example, you want to use third-party library Consol in your application. After you run </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get github.com/hashicorp/consul</span><br></pre></td></tr></table></figure>
+
+<p>The library is installed on your local machine. The code would be cloned on disk at <code>$GOPATH/src/github.com/hashicorp/consul</code></p>
+<p>In your application, you will import this library in the following way:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;github.com/hashicorp/consul&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>Thanks to the GOPATH mechanics, this import can be resolved on disk and Go tool can locate, build and test the code. Simply speaking, the package name maps to the real location of the package on your local machine. </p>
+<p>But of course, this mechanics has many limitation such as package version control, workspace constrains an so on. That’s the motivation why we need Go module. </p>
+<h4 id="Ways-to-import-Golang-package"><a href="#Ways-to-import-Golang-package" class="headerlink" title="Ways to import Golang package"></a>Ways to import Golang package</h4><p>Beside the default way, there are several ways to import a package based on your usage. </p>
+<p><strong>Import as alias</strong>: this is useful when two packages have the same name. You can give any alias for an imported package as below:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	consulapi <span class="string">&quot;github.com/hashicorp/consul/api&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p><strong>Import for side effect</strong>: when reading source code of popular open source projects, you can see many package import in the following way:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;database/sql&quot;</span></span><br><span class="line"></span><br><span class="line">	_ <span class="string">&quot;github.com/lib/pq&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>It’s widely used when all you need from the imported package is running the <code>init</code> method.</p>
+<p>For example in the above case, library <code>pq</code> is imported in this way. You can check the source code for <code>pq</code> library and its <code>init</code> method call <code>sql.Register</code> method for registration as below:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line">	sql.Register(<span class="string">&quot;postgres&quot;</span>, &amp;Driver&#123;&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>Internal package</strong>: this is an interesting feature to learn. <code>Internal</code> is a special directory name recognized by the Go tool which will prevent the package from being imported by any other packages unless both share the same ancestor directory. The packages in an <code>internal</code> directory are said to be internal packages. In detail you can refer to <a target="_blank" rel="noopener" href="https://dave.cheney.net/2019/10/06/use-internal-packages-to-reduce-your-public-api-surface">this artical</a>.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Golang-package-workspace-vendor/" rel="tag"># Golang, package, workspace, vendor</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/01/29/fabio-source-code-study/" rel="prev" title="Fabio source code study part 1">
+                  <i class="fa fa-angle-left"></i> Fabio source code study part 1
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/02/20/fabio-golang-best-practise/" rel="next" title="Fabio source code study part 2">
+                  Fabio source code study part 2 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

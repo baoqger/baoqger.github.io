@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="IntroductionToday, in this article I want to examine one concrete topic: how to delete a node from a binary search tree. This question is important for understanding other tree data structures, like t">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Deletion operation in Binary Search Tree: successor or predecessor">
+<meta property="og:url" content="https://organicprogrammer.com/2023/01/01/bst-deletion-issue/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionToday, in this article I want to examine one concrete topic: how to delete a node from a binary search tree. This question is important for understanding other tree data structures, like t">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/left-node-deletion.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/onechild-node-deletion.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/twochildren-delete-origin.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/twochildren-delete-after.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/bst-unbalanced.png">
+<meta property="article:published_time" content="2023-01-01T04:10:04.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Binary Search Tree, delete, balanced, performance">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/left-node-deletion.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2023/01/01/bst-deletion-issue/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2023/01/01/bst-deletion-issue/","path":"2023/01/01/bst-deletion-issue/","title":"Deletion operation in Binary Search Tree: successor or predecessor"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Deletion operation in Binary Search Tree: successor or predecessor | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Deletion-of-the-binary-search-tree"><span class="nav-number">2.</span> <span class="nav-text">Deletion of the binary search tree</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Code-implementation"><span class="nav-number">3.</span> <span class="nav-text">Code implementation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Open-discussion"><span class="nav-number">4.</span> <span class="nav-text">Open discussion</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#successor-vs-predecessor"><span class="nav-number">4.1.</span> <span class="nav-text">successor vs predecessor</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#balanced-vs-unbalanced"><span class="nav-number">4.2.</span> <span class="nav-text">balanced vs unbalanced</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">5.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2023/01/01/bst-deletion-issue/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Deletion operation in Binary Search Tree: successor or predecessor | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Deletion operation in Binary Search Tree: successor or predecessor
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-01-01 12:10:04" itemprop="dateCreated datePublished" datetime="2023-01-01T12:10:04+08:00">2023-01-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:13" itemprop="dateModified" datetime="2026-09-24T08:11:13+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>Today, in this article I want to examine one concrete topic: how to delete a node from a <code>binary search tree</code>. This question is important for understanding other tree data structures, like the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/AVL_tree">AVL tree</a>, and the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Red%E2%80%93black_tree">Red-Black tree</a>. </p>
+<p>As is common with many data structures, <code>deletion</code> is always the hardest operation. For example, to delete a specific element from the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Array">array</a>, we need to shift all the elements after it by one index. And to delete one node from the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Linked_list">linked list</a>, we need to reset the pointer of the previous node (if it’s a doubled linked list, we need to reset more points, which is a more complex case). This is the same for the binary search tree as well. Let’s see in the following section. </p>
+<p>Note: the idea of this article is inspired by the book <em><strong>Data Structures and Algorithm Analysis in C</strong></em> written by <a target="_blank" rel="noopener" href="http://users.cs.fiu.edu/~weiss/">Mark Allen Weiss</a>. The demo code shown in the following section is from this book. And I made some changes based on it. I highly recommend this great book to readers.  </p>
+<h3 id="Deletion-of-the-binary-search-tree"><a href="#Deletion-of-the-binary-search-tree" class="headerlink" title="Deletion of the binary search tree"></a>Deletion of the binary search tree</h3><p>Before we can examine the deletion operation in depth, let’s quickly review the concept of the binary search tree as follows:</p>
+<ul>
+<li>Binary search tree: is a binary tree holding the following property that for every node, X, in the tree, the values of all the keys in its left subtree are smaller than the key value in X, and the values of all the keys in its right subtree are larger than the key value in X.</li>
+</ul>
+<p>Simply speaking, the binary search tree is a binary tree satisfying the <code>binary search</code> property. So each node of a binary search tree can have two children subtrees at most. When we need to delete one node from the binary search tree, then it’s necessary to consider the following 3 cases. </p>
+<p>If the node is a <code>leaf</code>, then it can be deleted immediately. For example, to delete node <code>1</code> from the following binary search tree: </p>
+<img src="/images/left-node-deletion.png" title="Delete leaf node from binary search tree" width="400px" height="500px">
+
+<p>I will show you how to implement it at the code level later, which summarizes all the cases. </p>
+<p>If the node has only <code>one child subtree</code>, the node can be deleted after we reset its parent’s pointer to bypass the node and point to its child node. For example, to delete node <code>4</code> as follows: </p>
+<img src="/images/onechild-node-deletion.png" title="Delete leaf node from binary search tree" width="400px" height="500px">
+
+<p>In the above example, node <code>4</code> has only one left child node <code>3</code>. Let’s consider the symmetric scenario, imagine what will happen when it has only one right child node. The answer is it doesn’t influence how we handle the deleted node here and the result is the same. I will not draw the diagram here and leave it for you to explore. </p>
+<p>The complicated case is how to deal with a node with <code>two children</code>. Before we introduce the solution, let’s clarify one concept about the binary search tree: <code>successor</code>: </p>
+<ul>
+<li>Successor: is the node with the <code>minimum</code> value in the <code>right</code> subtree of any node.</li>
+</ul>
+<img src="/images/twochildren-delete-origin.png" title="Delete leaf node from binary search tree" width="200px" height="300px">
+
+<p>Let’s take node <code>16</code> in the above binary search tree as an example, the <code>successor</code> is node <code>17</code>. All right! Based on this concept, the solution to delete a node with two children is straightforward:</p>
+<ul>
+<li>Replace the data of the deleted node with the value of the <code>successor</code> and recursively delete the <code>successor</code> from the <code>right</code> subtree.</li>
+</ul>
+<p>Let’s try to analyze this solution. Firstly, replacing the data of the node with the value of the <code>successor</code> can keep the <code>binary search</code> property after the deletion operation. Secondly, since the <code>successor</code> has the minimum value of the subtree, which means it cannot have a left child. So the <code>successor</code> is either a leaf node without any child node or a node with only one right child node. So recursively deleting the <code>successor</code> can be resolved by the two simple cases we discussed above, it’s perfect, right?  For instance, the deletion of node <code>16</code> goes as follows: </p>
+<img src="/images/twochildren-delete-after.png" title="Delete leaf node from binary search tree" width="500px" height="600px">
+
+<p>As we mentioned above, node <code>16</code>‘s <code>successor</code> is node <code>17</code>. So replace the value with 17 and delete node <code>17</code> from the right subtree, where node <code>17</code> is just a leaf node. Next, let’s implement the node deletion operation. </p>
+<h3 id="Code-implementation"><a href="#Code-implementation" class="headerlink" title="Code implementation"></a>Code implementation</h3><p>In this article, I will only show the codes related to the deletion operation rather than the complete implementation of a binary search tree. If you want to know how to write a BST from scratch, please refer to this GitHub <a target="_blank" rel="noopener" href="https://github.com/baoqger/data-structures-and-algorithm-analysis-in-c-practice/tree/main/trees/BinarySearchTree">repo</a>.</p>
+<p>Firstly, let’s examine the header file, which contains the data type definitions and function declarations. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;utility.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> _BST_H</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> _BST_H</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="type">int</span> ET;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">TreeNode</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">TreeNode</span> *<span class="title">Position</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> Position BST;</span><br><span class="line"></span><br><span class="line">BST <span class="title function_">delete</span><span class="params">(ET, BST)</span>;</span><br><span class="line">Position <span class="title function_">findMinBST</span><span class="params">(BST)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// code omitted here</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+<p>You can notice that besides the <code>delete</code> function, we also define a helper function <code>findMinBST</code> which is used to find the <code>successor</code> node. </p>
+<p>Next, let’s examine the function definitions as follows: </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">BST</span><br><span class="line"><span class="title function_">delete</span><span class="params">(ET elem, BST T)</span></span><br><span class="line">&#123;</span><br><span class="line">    Position tmpCell;</span><br><span class="line">  </span><br><span class="line">    <span class="keyword">if</span> (T == <span class="literal">NULL</span>)</span><br><span class="line">        fatal(<span class="string">&quot;Element not found&quot;</span>);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (elem &lt; T-&gt;Element)</span><br><span class="line">        T-&gt;Left = delete(elem, T-&gt;Left);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (elem &gt; T-&gt;Element)</span><br><span class="line">        T-&gt;Right = delete(elem, T-&gt;Right);</span><br><span class="line">    <span class="keyword">else</span> <span class="comment">// we found the element to be deleted</span></span><br><span class="line">    <span class="keyword">if</span> (T-&gt;Left != <span class="literal">NULL</span> &amp;&amp; T-&gt;Right != <span class="literal">NULL</span>) <span class="comment">// two children</span></span><br><span class="line">    &#123;</span><br><span class="line">        tmpCell = findMinBST(T-&gt;Right);</span><br><span class="line">        T-&gt;Element = tmpCell-&gt;Element;</span><br><span class="line">        T-&gt;Right = delete(T-&gt;Element, T-&gt;Right);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="comment">// one or zero children, change the pointer T pointing to new address(NULl or the child node)</span></span><br><span class="line">    &#123;</span><br><span class="line">        tmpCell = T;</span><br><span class="line">        <span class="comment">// for leaf node, T will be reset to null</span></span><br><span class="line">        <span class="keyword">if</span> (T-&gt;Right == <span class="literal">NULL</span>)</span><br><span class="line">            T = T-&gt;Left;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (T-&gt;Left == <span class="literal">NULL</span>)</span><br><span class="line">            T = T-&gt;Right;</span><br><span class="line">        <span class="built_in">free</span>(tmpCell);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> T;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Position</span><br><span class="line"><span class="title function_">findMinBST</span><span class="params">(BST T)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> (T == <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (T-&gt;Left == <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">return</span> T;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    <span class="keyword">return</span> findMinBST(T-&gt;Left);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>I add some comments in the above code block which can help your understanding of this recursive algorithm. Please go ahead and think hard about it. </p>
+<p>In the next section, we’ll have some open discussions about this solution. Let’s see whether there is any other solution. And what’re the potential issues of the current solution? </p>
+<h3 id="Open-discussion"><a href="#Open-discussion" class="headerlink" title="Open discussion"></a>Open discussion</h3><h4 id="successor-vs-predecessor"><a href="#successor-vs-predecessor" class="headerlink" title="successor vs predecessor"></a>successor vs predecessor</h4><p>Firstly, in the above solution, we delete the node with two children based on the <code>successor</code>. And there is the other concept called <code>predecessor</code>: </p>
+<ul>
+<li>Predecessor: is the node with the <code>maximum</code> value in the left subtree of any node.</li>
+</ul>
+<p>So similarly, the alternative solution to delete the node with two children is: </p>
+<ul>
+<li>Replace the data of the deleted node with the value of the <code>predecessor</code> and recursively delete the <code>predecessor</code> from the <code>left</code> subtree.</li>
+</ul>
+<p>We can do this by writing another helper function <code>findMaxBST</code> as follows: </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Position</span><br><span class="line"><span class="title function_">findMaxBST</span><span class="params">(BST T)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> (T != <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">while</span> (T-&gt;Right != <span class="literal">NULL</span>)</span><br><span class="line">      T = T-&gt;Right;</span><br><span class="line">  <span class="keyword">return</span> T;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Does it work? The answer is yes. But the performance of the solution based on the <code>predecessor</code> is worse than the one based on the <code>successor</code>. Because the <code>predecessor</code> has the maximum value of the left subtree, it means that the <code>predecessor</code> can have two children. Then when we delete the <code>predecessor</code> recursively, the worst-case time complexity can reach <code>O(logN)</code> while the solution based on the <code>successor</code> only requires constant(<code>O(1)</code>) time. That’s the difference. </p>
+<h4 id="balanced-vs-unbalanced"><a href="#balanced-vs-unbalanced" class="headerlink" title="balanced vs unbalanced"></a>balanced vs unbalanced</h4><p>Although the above solution can work, it exposes a serious performance issue. The reason why people invent binary search tree data structures is that we can get <code>O(logN)</code> level performance for searching operations. But imagine what will happen if we keep inserting and deleting nodes in the binary search tree in the way we mentioned here. The depth of the tree will become <code>unbalanced</code>. The left subtree grows deeper than the right subtree because we are always replacing a deleted node with the <code>successor</code>(which is from the right subtree, right?) </p>
+<p>The following image is borrowed from Mark’s great book I mentioned above, which clearly shows that the tree becomes <code>unbalanced</code> after many rounds of insertion and deletion. If you want to know about it in theory, please refer to the book.  </p>
+<img src="/images/bst-unbalanced.png" title="Unbalanced binary search tree" width="800px" height="1000px">
+
+<p>For an unbalanced BST, the worst-case time complexity can be degraded to <code>O(n)</code>. To keep the desired performance, people invent a more advanced data structure <code>self-balancing binary search tree</code>, like the <code>AVL tree</code> and <code>Red-black tree</code>. I will share about them in the coming articles, please keep watching my blog. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined various solutions to delete a node from the binary search tree and evaluated their performance. We also discussed some open questions about BST, which prove why we need more advanced data structures like the red-black tree. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Binary-Search-Tree-delete-balanced-performance/" rel="tag"># Binary Search Tree, delete, balanced, performance</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/12/06/external-sorting-two/" rel="prev" title="External Mergesort: part two">
+                  <i class="fa fa-angle-left"></i> External Mergesort: part two
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/02/13/note-on-red-black-tree/" rel="next" title="Understand Red Black Tree: part one - background">
+                  Understand Red Black Tree: part one - background <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

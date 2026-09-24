@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundI like system programming which can allow you to touch more software development skills in the bottom level.   Linux is the perfect platform when you want to do system programming. But if yo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="New way to set up Linux development environment in Windows with WSL">
+<meta property="og:url" content="https://organicprogrammer.com/2021/08/06/win-wsl/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundI like system programming which can allow you to touch more software development skills in the bottom level.   Linux is the perfect platform when you want to do system programming. But if yo">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/linux-gcc.png">
+<meta property="article:published_time" content="2021-08-06T01:19:41.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Linux, system programming, Windows Subsystem for Linux">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/linux-gcc.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2021/08/06/win-wsl/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2021/08/06/win-wsl/","path":"2021/08/06/win-wsl/","title":"New way to set up Linux development environment in Windows with WSL"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>New way to set up Linux development environment in Windows with WSL | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Windows-Subsystem-for-Linux"><span class="nav-number">2.</span> <span class="nav-text">Windows Subsystem for Linux</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Install-WSL"><span class="nav-number">3.</span> <span class="nav-text">Install WSL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#File-mount"><span class="nav-number">4.</span> <span class="nav-text">File mount</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Network"><span class="nav-number">5.</span> <span class="nav-text">Network</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Set-up-the-development-environment"><span class="nav-number">6.</span> <span class="nav-text">Set up the development environment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">7.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/08/06/win-wsl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="New way to set up Linux development environment in Windows with WSL | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          New way to set up Linux development environment in Windows with WSL
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-08-06 09:19:41" itemprop="dateCreated datePublished" datetime="2021-08-06T09:19:41+08:00">2021-08-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>I like system programming which can allow you to touch more software development skills in the bottom level.  </p>
+<p>Linux is the perfect platform when you want to do system programming. But if you’re using a computer running Windows on it, then you have to spend some time to set up the Linux development environment. Generally speaking there are two traditional ways to do that: <code>virtual machine</code> and <code>dualboot</code>, both need some effort. Or you can try to do that with <code>container</code> technology, for example, I once shared one <a target="_blank" rel="noopener" href="https://baoqger.github.io/2020/07/28/linux-cpp-docker/">article</a> about how to do it with <code>Docker</code>. </p>
+<p>In this article, I will introduce a new and easier way to do this without too much overhead. </p>
+<h3 id="Windows-Subsystem-for-Linux"><a href="#Windows-Subsystem-for-Linux" class="headerlink" title="Windows Subsystem for Linux"></a>Windows Subsystem for Linux</h3><p>The new way is <code>Windows Subsystem for Linux (WSL)</code>. I have to admit that the operating system is complex and difficult so for now I don’t know how Microsoft make <code>WSL</code> works. In details, you can refer to this <a target="_blank" rel="noopener" href="https://devblogs.microsoft.com/commandline/a-deep-dive-into-how-wsl-allows-windows-to-access-linux-files/">article</a> to learn how <code>WSL</code> allows Windows to access Linux files. In this article let’s focus on how to set it up and what kind of benefits it can provide to developers.</p>
+<p>Based on the <a target="_blank" rel="noopener" href="https://docs.microsoft.com/en-us/windows/wsl/about">official document</a>, with <code>WSL</code> you can</p>
+<ul>
+<li>Run common command-line tools such as <code>grep</code>, <code>sed</code>, <code>awk</code>.</li>
+<li>Run Bash shell scripts and GNU&#x2F;Linux command-line applications including:<ul>
+<li>Tools: vim, emacs, tmux.</li>
+<li>Languages: NodeJS, Javascript, Python, Ruby, C&#x2F;C++, C# &amp; F#, Rust, Go, etc.</li>
+<li>Services: SSHD, MySQL, Apache, lighttpd, MongoDB, PostgreSQL.</li>
+</ul>
+</li>
+<li>Install additional software using your own GNU&#x2F;Linux distribution package manager.</li>
+</ul>
+<p>With these conditions, you can set up a completed Linux development environment. </p>
+<h3 id="Install-WSL"><a href="#Install-WSL" class="headerlink" title="Install WSL"></a>Install WSL</h3><p>For detail steps to install <code>WSL</code>, you can find it on the official document. Based on my experience, I follow the document to download and install Linux Ubuntu distribution smoothly, which is much easier than settig the virtual machine.</p>
+<h3 id="File-mount"><a href="#File-mount" class="headerlink" title="File mount"></a>File mount</h3><p>By default, you can also access your local machine’s file system from within the Linux Bash shell. Since your local drives are mounted under the <strong>&#x2F;mnt</strong> folder of the subsystem. </p>
+<p>In this way, you can develop the code with the productivity tools in Windows and build it in Linux environment.</p>
+<h3 id="Network"><a href="#Network" class="headerlink" title="Network"></a>Network</h3><p>This is another convenient point. <code>WSL</code> shares the IP address of Windows, as it is running on Windows.<br>As such you can access any ports on localhost e.g. if you had a web server running on port 8080, you could access it just by visiting <strong><a target="_blank" rel="noopener" href="http://localhost:8080/">http://localhost:8080</a></strong> into your Windows browser.</p>
+<h3 id="Set-up-the-development-environment"><a href="#Set-up-the-development-environment" class="headerlink" title="Set up the development environment"></a>Set up the development environment</h3><p>After install the Ubuntu system, I also install tools to prepare the development environment. For example, <code>GCC</code> to develop C language program as below. </p>
+<img src="/images/linux-gcc.png" title="gcc in Linux" width="800px" height="600px">
+
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>Based on my testing and experience, <code>WSL</code> can save developers’ time to set up Linux environment.  </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux-system-programming-Windows-Subsystem-for-Linux/" rel="tag"># Linux, system programming, Windows Subsystem for Linux</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/07/31/how-to-implement-simple-http-server-golang/" rel="prev" title="How to write a Golang HTTP server with Linux system calls">
+                  <i class="fa fa-angle-left"></i> How to write a Golang HTTP server with Linux system calls
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/08/25/cgo-golang/" rel="next" title="cgo-golang">
+                  cgo-golang <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

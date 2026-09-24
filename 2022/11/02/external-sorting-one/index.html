@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="IntroductionThis article will examine one interesting question which I came across when reading the book Programming Pearls. This question simply goes like this: How to sort a large disk file? The dis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="External Mergesort: part one">
+<meta property="og:url" content="https://organicprogrammer.com/2022/11/02/external-sorting-one/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionThis article will examine one interesting question which I came across when reading the book Programming Pearls. This question simply goes like this: How to sort a large disk file? The dis">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/RAM-Model.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/external-model.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/external-mergesort.png">
+<meta property="article:published_time" content="2022-11-02T08:44:29.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="algorithm, external, disk">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/RAM-Model.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2022/11/02/external-sorting-one/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2022/11/02/external-sorting-one/","path":"2022/11/02/external-sorting-one/","title":"External Mergesort: part one"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>External Mergesort: part one | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Background-of-External-Algorithm"><span class="nav-number">2.</span> <span class="nav-text">Background of External Algorithm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#External-Mergesort"><span class="nav-number">3.</span> <span class="nav-text">External Mergesort</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/11/02/external-sorting-one/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="External Mergesort: part one | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          External Mergesort: part one
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-11-02 16:44:29" itemprop="dateCreated datePublished" datetime="2022-11-02T16:44:29+08:00">2022-11-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:13" itemprop="dateModified" datetime="2026-09-24T08:11:13+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>This article will examine one interesting question which I came across when reading the book <em><strong>Programming Pearls</strong></em>. This question simply goes like this: <code>How to sort a large disk file? The disk file has so much data that it cannot all fit into the main memory.</code> I considered this <code>algorithm</code> question for a while; but noticed that all the classic sorting algorithms, like <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Quicksort"><code>Quick sort</code></a> and <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Merge_sort"><code>merge sort</code></a>, can’t solve it easily. Then I did some research about it, and I will share what I learned in this article. I believe you can solve this problem as well, after reading this article.</p>
+<h3 id="Background-of-External-Algorithm"><a href="#Background-of-External-Algorithm" class="headerlink" title="Background of External Algorithm"></a>Background of External Algorithm</h3><p>Traditionally, computer scientists analyze the running time of an algorithm by counting the number of executed instructions, which is usually expressed as a function of the input size n, like the well-known <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Big_O_notation"><code>Big O notation</code></a>. This kind of algorithm complexity analysis is based on the <code>Random access machine(RAM)</code> model, which defines the following assumptions:</p>
+<ul>
+<li>A machine with an unbounded amount of available memory;</li>
+<li>Any desired memory location can be accessed in unit time;</li>
+<li>Every instruction takes the same amount of time.</li>
+</ul>
+<img src="/images/RAM-Model.png" title="Random access machine model" width="300px" height="200px">
+
+<p>This model works well when the amount of memory that the algorithm needs to use is smaller than the amount of memory in the computer running the code. </p>
+<p>But in the real world, some applications need to process data that are too large to fit into a computer’s main memory at once. And the algorithms used to solve such problems are called <code>external memory algorithms</code> or <code>disk-based algorithms</code>; since the input data are stored on an <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/External_storage"><code>external memory</code> storage device</a>.</p>
+<p>Instead of the <code>RAM</code> model, the <code>external memory algorithm</code> is analyzed based on the <code>external memory model</code>. The model consists of a CPU processor with an internal memory of bounded size, connected to an unbounded external memory. One I&#x2F;O operation consists of moving a block of contiguous elements from external to internal memory(this is called <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Page_cache"><code>page cache</code></a> and is managed by the kernel.). </p>
+<img src="/images/external-model.png" title="external memory model" width="400px" height="300px">
+
+<p>Compared with the main memory, the access speed of external memory is slower by <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Memory_hierarchy">several orders of magnitude</a>, even though modern storage techniques such as <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Solid-state_drive"><code>SSD</code></a> are already adopted. Thus, for external algorithms, the bottleneck of the performance is <code>disk IO</code> speed instead of the CPU cycles. </p>
+<p>In this section, we examined the computational model of the external memory algorithms. Next, let’s review one typical type of external memory algorithm: external sorting. </p>
+<h3 id="External-Mergesort"><a href="#External-Mergesort" class="headerlink" title="External Mergesort"></a>External Mergesort</h3><p>Similar to the traditional internal sorting algorithms, several different solutions are available for external sorting. In this article, I will focus on <code>external mergesort</code>.</p>
+<p>External mergesort is a straightforward generalization of internal mergesort. The algorithm starts by repeatedly loading M input items into the memory(since the memory buffer size is limited, can only store M input items at once), sorting them, and writing them back out to disk. This step divides the input file into some(or many, if the input file is very large) sorted runs, each with M items sorted. Then the algorithm repeatedly merges multiple sorted runs, until only a single sorted run containing all the input data remains. </p>
+<p>Let’s use the following example model to analyze this algorithm. First of all, assume the memory buffer is limited, and the size is one <code>page</code>. And the input file size is 8 <code>pages</code>. External mergesort can be divided into two phases: <code>sort phase</code> and <code>merge phase</code>.  </p>
+<img src="/images/external-mergesort.png" title="external mergesort" width="800px" height="600px">
+
+<p><em><strong>Sort phase</strong></em>:</p>
+<ul>
+<li>Divide the entire input file into 8 groups, each group size is one page(memory buffer capacity).</li>
+<li>Load each page into the memory, sort the items in the memory buffer(with an internal sorting algorithm), and save the sorted items in a temporary sub-file. Each sub-file is called a <code>run</code>.</li>
+</ul>
+<p>At the end of the sort phase, 8 temporary sorted 1-page runs will be created. This step can be marked as <em><strong>pass 0</strong></em>.</p>
+<p><em><strong>Merge phase</strong></em>: </p>
+<p>The 8 sorted runs in pass 0 will be merged into a single sorted file with 3 more passes.</p>
+<ul>
+<li>pass 1: Perform 4 runs for the merge. <ul>
+<li>Run 1: Merge the first two small 1-page runs into a big 2-page run. This merging step goes as follows: <ul>
+<li>Read the first two sorted sub-files (one item from each file).</li>
+<li>Find the smaller item, output it in the new sub-file, and the appropriate input sub-file is advanced. Repeat this cycle until the input sub-file is completed. <strong>This routine’s logic is the same as the internal mergesort algorithm.</strong></li>
+</ul>
+</li>
+<li>Run 2: Merge the next two 1-page runs into a 2-page run. </li>
+<li>Run 3 and 4: follow the same process.   </li>
+<li>At the end of <em><strong>pass 1</strong></em>, 4 temporary sorted 2-page runs will be created.</li>
+</ul>
+</li>
+<li>pass 2: Perform 2 runs for the merge. <ul>
+<li>At the end of <em><strong>pass 2</strong></em>, 2 temporary sorted 4-page runs will be created.</li>
+</ul>
+</li>
+<li>pass 3: Perform 1 run for the merge. <ul>
+<li>At the end of <em><strong>pass 3</strong></em>, the final 8-page run containing all the sorted items will be created.</li>
+</ul>
+</li>
+</ul>
+<p>Note: the above process may seem complicated at the first sight, but the logic is nearly the same as the internal merge sort. The only difference is internal merging is based on memory buffers, while external merging is based on disk files, and needs reading the item from disk to memory.</p>
+<p>Since we keep merging two small sub-files into a big one with doubled size, the above algorithm can be called <code>two-way</code> external merge sorting. We can generalize the idea to <code>multi-way</code> external merge sorting, which merges M runs into one.  </p>
+<p>Next, let’s analyze its complexity. Suppose the input file has <code>N</code> items and each page consists of <code>B</code> items. And <code>M</code> denotes the number of ways used in the merge phase, thus the number of passes should be: <b>log<sub>M</sub>(N&#x2F;B) + 1</b>, where plus one means the first pass in the sort phase. And each pass, each item is read and written once from and to the disk file. So the total number of disk I&#x2F;O is: <b>2N*(log<sub>M</sub>(N&#x2F;B) + 1)</b></p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined the abstract computational model of the external memory algorithm and analyzed the details of the external mergesort algorithm. Next article, let’s implement the code and evaluate the performance. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/algorithm-external-disk/" rel="tag"># algorithm, external, disk</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/10/10/userland-memory-allocation-three/" rel="prev" title="Understand userland heap memory allocation: part three - free chunk">
+                  <i class="fa fa-angle-left"></i> Understand userland heap memory allocation: part three - free chunk
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/12/06/external-sorting-two/" rel="next" title="External Mergesort: part two">
+                  External Mergesort: part two <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

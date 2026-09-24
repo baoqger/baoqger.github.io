@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundInitially, HTTP was a single request-and-response model. An HTTP client opens the TCP connection, requests a resource, gets the response, and the connection is closed. And establishing and t">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Understand how HTTP&#x2F;1.1 persistent connection works based on Golang: part one - sequential requests">
+<meta property="og:url" content="https://organicprogrammer.com/2021/10/25/understand-http1-1-persistent-connection-golang/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundInitially, HTTP was a single request-and-response model. An HTTP client opens the TCP connection, requests a resource, gets the response, and the connection is closed. And establishing and t">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/short-lived-connection.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/persistent-http.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/sequential-request.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/sequential-request-netstat.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/state-tcp-connection.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/tcpdump-non-persistent.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/netstat-persistent.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/tcpdump-persistent.png">
+<meta property="article:published_time" content="2021-10-25T03:11:28.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="HTTP&#x2F;1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/short-lived-connection.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2021/10/25/understand-http1-1-persistent-connection-golang/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2021/10/25/understand-http1-1-persistent-connection-golang/","path":"2021/10/25/understand-http1-1-persistent-connection-golang/","title":"Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Sequential-requests"><span class="nav-number">2.</span> <span class="nav-text">Sequential requests</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">3.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/10/25/understand-http1-1-persistent-connection-golang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Understand how HTTP&#x2F;1.1 persistent connection works based on Golang: part one - sequential requests | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Understand how HTTP/1.1 persistent connection works based on Golang: part one - sequential requests
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-10-25 11:11:28" itemprop="dateCreated datePublished" datetime="2021-10-25T11:11:28+08:00">2021-10-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>Initially, <code>HTTP</code> was a single request-and-response model. An <code>HTTP</code> client opens the <code>TCP</code> connection, requests a resource, gets the response, and the connection is closed. And establishing and terminating each <code>TCP</code> connection is a resource-consuming operation (in detail, you can refer to my previous <a target="_blank" rel="noopener" href="https://baoqger.github.io/2019/07/14/why-tcp-four-way-handshake/">article</a>). As the web application becomes more and more complex, displaying a single page may require several HTTP requests, too many TCP connection operations will have a bad impact on the performance. </p>
+<img src="/images/short-lived-connection.png" title="tcp termination" width="400px" height="300px">
+
+<p>So <code>persistent-connection</code> (which is also called <code>keep-alive</code>) model is created in <code>HTTP/1.1</code> protocol. In this model, TCP connections keep open between several successive requests, and in this way, the time needed to open new connections will be reduced. </p>
+<img src="/images/persistent-http.png" title="tcp termination" width="400px" height="300px">
+
+<p>In this article, I will show you how <code>persistent connection</code> works based on a Golang application. We will do some experiments based on the demo app, and verify the TCP connection behavior with some popular network packet analysis tools. In short, After reading this article, you will learn:</p>
+<ul>
+<li>Golang <code>http.Client</code> usage (and a little bit source code analysis)</li>
+<li>network analysis with <code>netstat</code> and <code>tcpdump</code></li>
+</ul>
+<p>You can find the demo Golang application in this Github <a target="_blank" rel="noopener" href="https://github.com/baoqger/http-persistent-connection-golang">repo</a>.</p>
+<h3 id="Sequential-requests"><a href="#Sequential-requests" class="headerlink" title="Sequential requests"></a>Sequential requests</h3><p>Let’s start from the simple case where the client keeps sending <code>sequential</code> requests to the server. The <a target="_blank" rel="noopener" href="https://github.com/baoqger/http-persistent-connection-golang/blob/master/sequence/non-persistent-connection/non-persistent-connection.go">code</a> goes as follows: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;log&quot;</span></span><br><span class="line">	<span class="string">&quot;net/http&quot;</span></span><br><span class="line">	<span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startHTTPserver</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	http.HandleFunc(<span class="string">&quot;/&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">		time.Sleep(time.Duration(<span class="number">50</span>) * time.Microsecond)</span><br><span class="line">		fmt.Fprintf(w, <span class="string">&quot;Hello world&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		http.ListenAndServe(<span class="string">&quot;:8080&quot;</span>, <span class="literal">nil</span>)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startHTTPRequest</span><span class="params">()</span></span> &#123;</span><br><span class="line">	counter := <span class="number">0</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		_, err := http.Get(<span class="string">&quot;http://localhost:8080/&quot;</span>)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(fmt.Sprintf(<span class="string">&quot;Error: %v&quot;</span>, err))</span><br><span class="line">		&#125;</span><br><span class="line">		log.Printf(<span class="string">&quot;HTTP request #%v&quot;</span>, counter)</span><br><span class="line">		counter += <span class="number">1</span></span><br><span class="line">		time.Sleep(time.Duration(<span class="number">1</span>) * time.Second)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	startHTTPserver()</span><br><span class="line"></span><br><span class="line">	startHTTPRequest()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>We start an HTTP server in a Goroutine, and keep sending ten sequential requests to it. Right? Let’s run the application and check the numbers and status of TCP connections.</p>
+<p>After running the above code, you can see the following output: </p>
+<img src="/images/sequential-request.png" title="tcp termination" width="800px" height="600px">
+
+<p>When the application stops running, we can run the following <code>netstat</code> command: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -n  | grep 8080</span><br></pre></td></tr></table></figure>
+
+<p>The TCP connections are listed as follows:</p>
+<img src="/images/sequential-request-netstat.png" title="tcp termination" width="800px" height="600px">
+
+<p>Obviously, the 10 HTTP requests are not persistent since 10 TCP connections are opened. </p>
+<p><strong>Note</strong>: the last column of <code>netstat</code> shows the state of TCP connection. The state of TCP connection termination process can be explained with the following image: </p>
+<img src="/images/state-tcp-connection.png" title="state tcp termination" width="600px" height="400px">
+
+<p>I will not cover the details in this article. But we need to understand the meaning of <code>TIME-WAIT</code>. </p>
+<p>In the <code>four-way handshake</code> process, the client will send the <code>ACK</code> packet to terminate the connection, but the state of TCP can’t immediately go to <code>CLOSED</code>. The client has to wait for some time and the state in this waiting process is called <code>TIME-WAIT</code>. The TCP connection needs this <code>TIME-WAIT</code> state for two main reasons. </p>
+<ul>
+<li>The first is to provide enough time that the <code>ACK</code> is received by the other peer. </li>
+<li>The second is to provide a buffer period between the end of current connection and any subsequent ones. If not for this period, it’s possible that packets from different connections could be mixed. In detail, you can refer to this <a target="_blank" rel="noopener" href="http://www.tcpipguide.com/free/t_TCPConnectionTermination-3.htm">book</a>.</li>
+</ul>
+<p>In our demo application case, if you wait for a while after the program stops, and run the <code>netstat</code> command again then no TCP connection will be listed in the output since they’re all closed. </p>
+<p>Another tool to verify the TCP connections is <code>tcpdump</code>, which can capture every network packet send to your machine. In our case, you can run the following <code>tcpdump</code> command: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo tcpdump -i any -n host localhost</span><br></pre></td></tr></table></figure>
+
+<p>It will capture all the network packets send from or to the localhost (we’re running the server in localhost, right?). <code>tcpdump</code> is a great tool to help you understand the network, you can refer to its <a target="_blank" rel="noopener" href="https://www.tcpdump.org/">document</a> for more help.</p>
+<p><strong>Note</strong>: in our demo code above, we send 10 HTTP requests in sequence, which will make the capture result from <code>tcpdump</code> too long. So I modified the for loop to only send 2 sequential requests, which is enough to verify the behavior of <code>persistent connection</code>. The result goes as follows: </p>
+<img src="/images/tcpdump-non-persistent.png" title="tcpdump" width="1200px" height="1000px">
+
+<p>In <code>tcpdump</code> output, the <code>Flag [S]</code> represents <code>SYN</code> flag, which is used to establish the TCP connection. The above snapshot contains two <code>Flag [S]</code> packets. The first <code>Flag [S]</code> is triggered by the first HTTP call, and the following packets are HTTP request and response. Then you can see the second <code>Flag [S]</code> packet to open a new TCP connection, which means the second HTTP request is not <code>persistent connection</code> as we hope. </p>
+<p>Next step, let’s see how to make HTTP work as a persistent connection in Golang. </p>
+<p>In fact,this is a well known issue in Golang ecosystem, you can find the information in the <a target="_blank" rel="noopener" href="https://pkg.go.dev/net/http#Client">official document</a>:</p>
+<ul>
+<li>If the returned error is nil, the Response will contain a non-nil Body which the user is expected to close. If the Body is not both read to EOF and closed, the Client’s underlying RoundTripper (typically Transport) may not be able to re-use a persistent TCP connection to the server for a subsequent “keep-alive” request.</li>
+</ul>
+<p>The fix will be straightforward by just adding two more lines of code as follows: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;io&quot;</span></span><br><span class="line">	<span class="string">&quot;io/ioutil&quot;</span></span><br><span class="line">	<span class="string">&quot;log&quot;</span></span><br><span class="line">	<span class="string">&quot;net/http&quot;</span></span><br><span class="line">	<span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startHTTPServer</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">	http.HandleFunc(<span class="string">&quot;/&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">		time.Sleep(time.Duration(<span class="number">50</span>) * time.Microsecond)</span><br><span class="line">		fmt.Fprintf(w, <span class="string">&quot;Hello world&quot;</span>)</span><br><span class="line">	&#125;)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		http.ListenAndServe(<span class="string">&quot;:8080&quot;</span>, <span class="literal">nil</span>)</span><br><span class="line">	&#125;()</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">startHTTPRequest</span><span class="params">()</span></span> &#123;</span><br><span class="line">	counter := <span class="number">0</span></span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; <span class="number">10</span>; i++ &#123;</span><br><span class="line">		resp, err := http.Get(<span class="string">&quot;http://localhost:8080/&quot;</span>)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(fmt.Sprintf(<span class="string">&quot;Error: %v&quot;</span>, err))</span><br><span class="line">		&#125;</span><br><span class="line">		io.Copy(ioutil.Discard, resp.Body) <span class="comment">// read the response body</span></span><br><span class="line">		resp.Body.Close() <span class="comment">// close the response body</span></span><br><span class="line">		log.Printf(<span class="string">&quot;HTTP request #%v&quot;</span>, counter)</span><br><span class="line">		counter += <span class="number">1</span></span><br><span class="line">		time.Sleep(time.Duration(<span class="number">1</span>) * time.Second)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	startHTTPServer()</span><br><span class="line"></span><br><span class="line">	startHTTPRequest()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>let’s verify by running <code>netstat</code> command, the result goes as follows: </p>
+<img src="/images/netstat-persistent.png" title="tcpdump" width="800px" height="600px">
+
+<p>This time 10 sequential HTTP requests establish only one TCP connection. This behavior is just what we hope: <code>persistent connection</code>.  </p>
+<p>We can double verify it by doing the same experiment as above: run two HTTP requests in sequence and capture packets with <code>tcpdump</code>: </p>
+<img src="/images/tcpdump-persistent.png" title="tcpdump" width="1200px" height="1000px">
+
+<p>This time, only one <code>Flag [S]</code> packet is there! The two sequential HTTP request re-use the same underlying TCP connection. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we showed how HTTP <code>persistent connection</code> works in the case of sequential requests. In the next article, we can show you the case of concurrent requests. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/" rel="tag"># HTTP/1.1, persistent connection, keep-alive, TCP, netstat, tcpdump, Golang, connection pool</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/10/12/why-only-13-dns-root-server/" rel="prev" title="why-only-13-dns-root-server">
+                  <i class="fa fa-angle-left"></i> why-only-13-dns-root-server
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/10/27/understand-http1-1-persitent-connection-golang-part2/" rel="next" title="Understand how HTTP&#x2F;1.1 persistent connection works based on Golang: part two - concurrent requests">
+                  Understand how HTTP/1.1 persistent connection works based on Golang: part two - concurrent requests <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

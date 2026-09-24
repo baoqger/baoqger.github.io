@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="IntroductionIn this last article, we examined how external mergesort works in theory, let’s implement it now.  First, you can find all the source codes of this implementation in this Github repo. In t">
+<meta property="og:type" content="article">
+<meta property="og:title" content="External Mergesort: part two">
+<meta property="og:url" content="https://organicprogrammer.com/2022/12/06/external-sorting-two/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionIn this last article, we examined how external mergesort works in theory, let’s implement it now.  First, you can find all the source codes of this implementation in this Github repo. In t">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/pass0.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/two-way-merge.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/multi-way-merge.png">
+<meta property="article:published_time" content="2022-12-06T03:11:06.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="algorithm, external, disk">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/pass0.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2022/12/06/external-sorting-two/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2022/12/06/external-sorting-two/","path":"2022/12/06/external-sorting-two/","title":"External Mergesort: part two"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>External Mergesort: part two | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Data-Preparation"><span class="nav-number">2.</span> <span class="nav-text">Data Preparation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Implementation"><span class="nav-number">3.</span> <span class="nav-text">Implementation</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Sort-phase"><span class="nav-number">3.1.</span> <span class="nav-text">Sort phase</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Merge-phase"><span class="nav-number">3.2.</span> <span class="nav-text">Merge phase</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Performance-Evaluation"><span class="nav-number">4.</span> <span class="nav-text">Performance Evaluation</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/12/06/external-sorting-two/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="External Mergesort: part two | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          External Mergesort: part two
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-12-06 11:11:06" itemprop="dateCreated datePublished" datetime="2022-12-06T11:11:06+08:00">2022-12-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:13" itemprop="dateModified" datetime="2026-09-24T08:11:13+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In this last <a href="https://organicprogrammer.com/2022/11/02/external-sorting-one/">article</a>, we examined how <code>external mergesort</code> works in theory, let’s implement it now. </p>
+<p>First, you can find all the source codes of this implementation in this Github <a target="_blank" rel="noopener" href="https://github.com/baoqger/external-merge-sort">repo</a>. In this repo, I implemented both <code>two-way</code> and <code>multi-way</code> solutions, which are tracked in different branches, please be aware of this. But for the sake of simplicity, I will focus on the generalized <code>multi-way</code> mergesort solution in this article. </p>
+<h3 id="Data-Preparation"><a href="#Data-Preparation" class="headerlink" title="Data Preparation"></a>Data Preparation</h3><p>Before diving into the code, let’s define the problem we need to solve here. I will generate an input file containing several millions of seven digits random numbers, from 1,000,000 to 9,999,999. The random numbers can be duplicated, and each number is stored in one new line of the input file. The input file can be prepared with the following Bash script which calls GNU <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Shuf">shuf</a> : </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/bash </span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Author: Chris Bao</span></span><br><span class="line"><span class="comment"># Generate millions of seven digits random integers</span></span><br><span class="line"><span class="comment"># based on shuf utility</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">shuf</span> -i 1000000-9999999 -n 7777777 &gt; ./input.txt</span><br></pre></td></tr></table></figure>
+
+<p>The generated input file is roughly <code>60 MB</code> in size. For modern computers, it can be loaded to memory easily. But since we are working external memory algorithm, so let’s assume we are running the algorithm on an old computer, which has only <code>100000 Byte</code> memory. Based on this assumed restriction, we need to sort the numbers in the input file and save the result in a new file. </p>
+<h3 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h3><p>Let’s define some global constants in this algorithm:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">ifndef</span> CONSTANT_H</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CONSTANT_H</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MEMORY_LIMIT 100000</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RECORD_SIZE 4</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MULTI_WAY_NUMBER 2</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span> </span></span><br></pre></td></tr></table></figure>
+
+<p><code>MEMORY_LIMIT</code> denotes the <code>100000 bytes</code> memory limit; In C, we can use the type <code>unsigned int</code> to store an integer in the range from 1,000,000 to 9,999,999. So <code>RECORD_SIZE</code> means each record(or integer) will take up 4 bytes of memory.</p>
+<p>And by default, the algorithm will use the <code>two-way</code> merge, but the user can pass an argument to run a <code>multi-way</code> merge too. </p>
+<h5 id="Sort-phase"><a href="#Sort-phase" class="headerlink" title="Sort phase"></a>Sort phase</h5><p>The sort phase is implemented inside the <code>separationSort</code> function as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Goes through a given file and separates that file into sorted 1MB files using (internal) mergeSort algorithm</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">separationSort</span><span class="params">(FILE *input)</span> &#123;</span><br><span class="line">    FILE *fp;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> *buffer = <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="type">unsigned</span> <span class="type">int</span>)*(MEMORY_LIMIT/RECORD_SIZE));</span><br><span class="line">    <span class="type">char</span> *line = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">size_t</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="type">ssize_t</span> nread;</span><br><span class="line">    <span class="type">int</span> count = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Sort phase start.\n&quot;</span>);</span><br><span class="line">    <span class="keyword">while</span>((nread = getline(&amp;line, &amp;len, input)) != <span class="number">-1</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (count &lt; MEMORY_LIMIT/RECORD_SIZE) &#123;</span><br><span class="line">            buffer[count++] = (<span class="type">unsigned</span> <span class="type">int</span>)strtoul(line, <span class="literal">NULL</span>, <span class="number">10</span>); </span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            mergeSort(buffer, count); <span class="comment">// sort records</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment">// output sorted to file</span></span><br><span class="line">            <span class="keyword">if</span> (fileNum == <span class="number">1</span>) &#123; <span class="comment">// create the dir</span></span><br><span class="line">                <span class="type">int</span> status;</span><br><span class="line">                <span class="comment">// create tmp directory</span></span><br><span class="line">                <span class="keyword">if</span> ((status = mkdir(<span class="string">&quot;./tmp&quot;</span>, S_IRWXU | S_IRWXU | S_IROTH | S_IXOTH)) == <span class="number">-1</span>) &#123;</span><br><span class="line">                    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create tmp directory.\n&quot;</span>);</span><br><span class="line">                    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// create pass0 directory for sort phase</span></span><br><span class="line">                <span class="keyword">if</span> ((status = mkdir(<span class="string">&quot;./tmp/pass0&quot;</span>, S_IRWXU | S_IRWXU | S_IROTH | S_IXOTH)) == <span class="number">-1</span>) &#123;</span><br><span class="line">                    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create pass0 directory.\n&quot;</span>);</span><br><span class="line">                    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">                &#125;</span><br><span class="line"> </span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="type">char</span> fileName[<span class="number">20</span>];</span><br><span class="line">            <span class="built_in">sprintf</span>(fileName, <span class="string">&quot;./tmp/pass0/%d.txt&quot;</span>, fileNum);</span><br><span class="line">            <span class="keyword">if</span> ((fp = fopen(fileName, <span class="string">&quot;w+&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create file: %s.\n&quot;</span>, fileName);</span><br><span class="line">                <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            outputToFile(buffer, count, fp);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Reset memory buffer(zero-out the entire array)</span></span><br><span class="line">            <span class="built_in">memset</span>(buffer, <span class="number">0</span>, <span class="keyword">sizeof</span>(<span class="type">unsigned</span> <span class="type">int</span>)*(MEMORY_LIMIT/RECORD_SIZE));</span><br><span class="line">            count = <span class="number">0</span>;</span><br><span class="line">            fileNum++;</span><br><span class="line">            buffer[count++] = (<span class="type">unsigned</span> <span class="type">int</span>)strtoul(line, <span class="literal">NULL</span>, <span class="number">10</span>); <span class="comment">// add the current record into new buffer&#x27;s as first element</span></span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// sort the last and final file</span></span><br><span class="line">    mergeSort(buffer, count);</span><br><span class="line">    <span class="type">char</span> fileName[<span class="number">20</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(fileName, <span class="string">&quot;./tmp/pass0/%d.txt&quot;</span>, fileNum);</span><br><span class="line">    <span class="keyword">if</span> ((fp = fopen(fileName, <span class="string">&quot;w+&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create file: %s.\n&quot;</span>, fileName);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line">    outputToFile(buffer, count, fp);</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">free</span>(buffer);</span><br><span class="line">    <span class="built_in">free</span>(line);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Sort phase done. %d tmp sorted files are produced.\n&quot;</span>, fileNum);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The logic is not difficult. The function takes the input file descriptor as a parameter and reads each line(via the <code>getline</code> method) in a loop until reaches the end of the file. The numbers will be read into the memory buffer before hitting the memory limit. When the memory buffer is full(100000 bytes), the numbers are sorted with the function <code>mergeSort</code>. </p>
+<p>The function <code>mergeSort</code> is defined inside the file <a target="_blank" rel="noopener" href="https://github.com/baoqger/external-merge-sort/blob/multi-way-with-pass/internal_sort.c"><code>internal_sort.c</code></a>, which implements the classic internal <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Merge_sort"><code>merge sorting</code></a> algorithm. I will not cover it in this article, since you can find many documents about it online. If you don’t know about it, please spend some time learning about it. Of course, you can replace it with other sorting algorithms like <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Quicksort"><code>quick sort</code></a> too. I leave this for the readers. </p>
+<p>After sorting, the numbers are saved in the temporary files in the directory of <code>./tmp/pass0</code>. The filename is just the run number. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Output sorted record to given file(of)</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">outputToFile</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> *buffer, <span class="type">int</span> size, FILE *of)</span> &#123;</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(of, <span class="string">&quot;%u\n&quot;</span>, buffer[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    fclose(of);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>We can verify the result of the sort phase as follows: </p>
+<img src="/images/pass0.png" title="Random access machine model" width="600px" height="400px">
+
+<p>You can see each file contains up to <code>25000</code> (equal to <code>MEMORY_LIMIT/RECORD_SIZE</code>) numbers and 312 files are created in pass0. </p>
+<p>Note that I will not examine the details about how to make a new directory and how to open a new file to read or write. You can learn such Linux file I&#x2F;O concepts by yourself. </p>
+<h5 id="Merge-phase"><a href="#Merge-phase" class="headerlink" title="Merge phase"></a>Merge phase</h5><p>The <code>exMerge</code> function controls the passes in the merge phase starting from <code>pass1</code>. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">exMerge</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">/* some code omitted ... */</span></span><br><span class="line">    <span class="type">int</span> pass = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">while</span> (fileNum &gt; <span class="number">1</span>) &#123;</span><br><span class="line">        exMergeSort(pass, fileNum);</span><br><span class="line">        <span class="type">int</span> remainer = fileNum % ways;</span><br><span class="line">        fileNum = fileNum / ways;</span><br><span class="line">        <span class="keyword">if</span> (remainer &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            fileNum++;</span><br><span class="line">        &#125; </span><br><span class="line">        pass++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* some code omitted ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The variable <code>fileNum</code> stores the <code>run</code> number in each pass. And the variable <code>ways</code> denotes the number of multi-way. Thus, the <code>run</code> number of the next pass should be calculated as <code>fileNum / ways</code>.</p>
+<p>The detailed merging logic is inside the function <code>exMergeSort</code>, which takes two parameters. <code>pass</code> means the current pass number(starting from 1), while <code>nums</code> means how many runs(or sub-files) in the last pass need to be merged. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">exMergeSort</span><span class="params">(<span class="type">int</span> pass, <span class="type">int</span> nums)</span> &#123;</span><br><span class="line">    <span class="comment">/* some code omitted ... */</span></span><br><span class="line">    <span class="type">int</span> inputFileNum = <span class="number">0</span>; </span><br><span class="line">    <span class="type">int</span> run = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (; inputFileNum &lt; nums;) &#123; </span><br><span class="line">        </span><br><span class="line">        <span class="comment">// create the dir for current pass</span></span><br><span class="line">        <span class="keyword">if</span> (inputFileNum == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="type">int</span> status;</span><br><span class="line">            <span class="type">char</span> dirName[<span class="number">20</span>];</span><br><span class="line">            <span class="built_in">sprintf</span>(dirName, <span class="string">&quot;./tmp/pass%d&quot;</span>, pass);</span><br><span class="line">            <span class="keyword">if</span> ((status = mkdir(dirName, S_IRWXU | S_IRWXU | S_IROTH | S_IXOTH)) == <span class="number">-1</span>) &#123;</span><br><span class="line">                <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create tmp directory %s.\n&quot;</span>, dirName);</span><br><span class="line">                <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// open new file to merge in each run</span></span><br><span class="line">        FILE *fm; </span><br><span class="line">        <span class="type">char</span> mergedFileName[<span class="number">20</span>];</span><br><span class="line">        <span class="built_in">sprintf</span>(mergedFileName, <span class="string">&quot;./tmp/pass%d/%d.txt&quot;</span>, pass, run);</span><br><span class="line">        <span class="keyword">if</span> ((fm = fopen(mergedFileName, <span class="string">&quot;w+&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, strerror(errno));</span><br><span class="line">            <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;merged file %s: can&#x27;t create or open.\n&quot;</span>, mergedFileName);</span><br><span class="line">        &#125;</span><br><span class="line">        run++;</span><br><span class="line">        <span class="comment">/* some code omitted ... */</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The above code creates a temp directory for each pass and a temp file for each run. </p>
+<p>Next, we create an array of the input files for each run. And the input file is inside the temp directory of the last pass. Each run merges multiple files in the <code>for</code> loop. The only trick logic here is that the remaining files in the last run may be less than the number of ways declared, we need to handle that properly (line 5 of the below code block).  </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Rewind the sorted files in previous pass, each run merge way_numbers numbers of files</span></span><br><span class="line"><span class="comment">// Merge the sorted files with multi ways in N runs. </span></span><br><span class="line"><span class="comment">// In the first N - 1 runs, each run merge ways numbers of files</span></span><br><span class="line"><span class="comment">// In the last run, merge the remaining files. </span></span><br><span class="line"><span class="type">int</span> way_numbers = run * ways &lt;= nums ? ways : nums - inputFileNum;</span><br><span class="line">FILE *fiarr[way_numbers];</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; way_numbers; i++) &#123;</span><br><span class="line">   <span class="type">char</span> inputFileName[<span class="number">20</span>];</span><br><span class="line">   inputFileNum++; <span class="comment">// start from 0 to nums</span></span><br><span class="line">   <span class="built_in">sprintf</span>(inputFileName, <span class="string">&quot;./tmp/pass%d/%d.txt&quot;</span>, pass - <span class="number">1</span>, inputFileNum);</span><br><span class="line">   <span class="keyword">if</span> ((fiarr[i] = fopen(inputFileName, <span class="string">&quot;r&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, strerror(errno));</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;input file %s: can&#x27;t create or open.\n&quot;</span>, inputFileName);</span><br><span class="line">   &#125;</span><br><span class="line">   rewind(fiarr[i]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Next, we need to read one number from every input file until only one file is not run out. Find the smallest one and save it in the temp output run file. And for the last remaining file, remember to put the rest numbers into the output file too.  </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// get and compare records until files runs out of records</span></span><br><span class="line"><span class="type">char</span> *records[way_numbers]; </span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; way_numbers; i++) &#123;</span><br><span class="line">    records[i] = getRecord(fiarr[i]);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// loop until only one file is not run-out</span></span><br><span class="line"><span class="keyword">while</span>(validateRecords(records, way_numbers )) &#123;</span><br><span class="line">    <span class="type">int</span> index = getMinRecordIndex(records, way_numbers);</span><br><span class="line">    <span class="built_in">fprintf</span>(fm, <span class="string">&quot;%s&quot;</span>, records[index]); <span class="comment">// print record to new merged file</span></span><br><span class="line">    <span class="built_in">free</span>(records[index]); <span class="comment">// free the memory allocated by getline in getRecord function</span></span><br><span class="line">    records[index] = getRecord(fiarr[index]); <span class="comment">// Get new record from the file</span></span><br><span class="line">&#125;</span><br><span class="line">       </span><br><span class="line"><span class="comment">// put the rest record in the last remaining file into new file </span></span><br><span class="line"><span class="type">int</span> lastIndex = getLastRemainRecordIndex(records, way_numbers);</span><br><span class="line"><span class="keyword">while</span>(records[lastIndex]) &#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(fm, <span class="string">&quot;%s&quot;</span>, records[lastIndex]);</span><br><span class="line">    <span class="built_in">free</span>(records[lastIndex]);</span><br><span class="line">    records[lastIndex] = getRecord(fiarr[lastIndex]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The above code bock utilizes several methods like <code>getRecord</code>, <code>validateRecords</code>, <code>getMinRecordIndex</code> and <code>getLastRemainRecordIndex</code> as follows, and these functions are easy to understand. </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Returns a copy of the record</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">char</span>* <span class="title function_">getRecord</span><span class="params">(FILE *ifp)</span> &#123;</span><br><span class="line">    <span class="type">char</span> *line = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">size_t</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="type">ssize_t</span> nread;</span><br><span class="line">    <span class="keyword">while</span> ((nread = getline(&amp;line, &amp;len, ifp)) != <span class="number">-1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> line;       </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Validate whether at least two records are non-zero</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">bool</span> <span class="title function_">validateRecords</span><span class="params">(<span class="type">char</span> **records, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="type">int</span> count = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (records[i] != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            count++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> count &gt;= <span class="number">2</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Get the min valid record&#x27;s index</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">getMinRecordIndex</span><span class="params">(<span class="type">char</span> **records, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="type">int</span> index = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> min = (<span class="type">int</span>)INFINITY;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (records[i] == <span class="literal">NULL</span>) &#123; <span class="comment">// pass invalid run-out record files</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">if</span> (strtoul(records[i], <span class="literal">NULL</span>, <span class="number">10</span>) &lt; min) &#123;</span><br><span class="line">            min = strtoul(records[i], <span class="literal">NULL</span>, <span class="number">10</span>);</span><br><span class="line">            index = i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> index;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Get the last remainer of the records</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">getLastRemainRecordIndex</span><span class="params">(<span class="type">char</span> **records, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (records[i] != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In detail, you can refer to the source code of this <a target="_blank" rel="noopener" href="https://github.com/baoqger/external-merge-sort/blob/multi-way-with-pass/main.c">github repo</a>. Next, let’s evaluate the performance of this algorithm by tuning the number of ways for merging. </p>
+<h3 id="Performance-Evaluation"><a href="#Performance-Evaluation" class="headerlink" title="Performance Evaluation"></a>Performance Evaluation</h3><p>We’ll use the Linux <code>time</code> utility to measure the running time of this algorithm. </p>
+<p>The result of two-way mergesort is: </p>
+<img src="/images/two-way-merge.png" title="two way merge sort" width="600px" height="400px">
+
+<p>while six-way mergesort can complete with a shorter runtime. </p>
+<img src="/images/multi-way-merge.png" title="two way merge sort" width="600px" height="400px">
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/algorithm-external-disk/" rel="tag"># algorithm, external, disk</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/11/02/external-sorting-one/" rel="prev" title="External Mergesort: part one">
+                  <i class="fa fa-angle-left"></i> External Mergesort: part one
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/01/01/bst-deletion-issue/" rel="next" title="Deletion operation in Binary Search Tree: successor or predecessor">
+                  Deletion operation in Binary Search Tree: successor or predecessor <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

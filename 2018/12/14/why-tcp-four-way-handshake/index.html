@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIn TCP&#x2F;IP protocol stack, the three way handshake for connection establishment and four way handshake for connection termination are some concepts you must understand. But after I learned TC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Why TCP connection termination needs four-way handshake">
+<meta property="og:url" content="https://organicprogrammer.com/2018/12/14/why-tcp-four-way-handshake/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn TCP&#x2F;IP protocol stack, the three way handshake for connection establishment and four way handshake for connection termination are some concepts you must understand. But after I learned TC">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/tcp-establishment-4-packets.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/tcp-establishment-3-packets.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/tcp_termination.png">
+<meta property="article:published_time" content="2018-12-14T08:34:58.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="TCP, IP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/tcp-establishment-4-packets.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2018/12/14/why-tcp-four-way-handshake/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2018/12/14/why-tcp-four-way-handshake/","path":"2018/12/14/why-tcp-four-way-handshake/","title":"Why TCP connection termination needs four-way handshake"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Why TCP connection termination needs four-way handshake | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP-connection-establishment"><span class="nav-number">2.</span> <span class="nav-text">TCP connection establishment</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP-connection-termination"><span class="nav-number">3.</span> <span class="nav-text">TCP connection termination</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2018/12/14/why-tcp-four-way-handshake/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Why TCP connection termination needs four-way handshake | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Why TCP connection termination needs four-way handshake
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-12-14 16:34:58" itemprop="dateCreated datePublished" datetime="2018-12-14T16:34:58+08:00">2018-12-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In <code>TCP/IP</code> protocol stack, the <code>three way handshake</code> for connection establishment and <code>four way handshake</code> for connection termination are some concepts you must understand.</p>
+<p>But after I learned <code>TCP/IP</code> stack, one question coming to my mind is why the connection termination needs four-way handshake. In this article, I will focus on this topic. To understand the answer to this question, we need to first explain the details of these two processes and compare them to find the difference. </p>
+<h3 id="TCP-connection-establishment"><a href="#TCP-connection-establishment" class="headerlink" title="TCP connection establishment"></a>TCP connection establishment</h3><p>In contrast to <code>UDP</code>, TCP is a <code>connection-oriented</code> and <code>reliable full duplex</code> protocol, which requires a logical connection to be established between the two processes before data is exchanged. The connection must be maintained during the entire process that communication is taking place. And in TCP both sides can send data to its peer. </p>
+<p>So four things need to happen for fully establishing a TCP connection:</p>
+<ul>
+<li>Each node has send a <code>SYN</code> flag to its peer (that’s two things, one <code>SYN</code> in each direction)</li>
+<li>Each node has received a <code>ACK</code> flag of its own <code>SYN</code> flag from its peer  (that’s two things)</li>
+</ul>
+<p>Both <code>SYN</code> and <code>ACK</code> are properties in <code>TCP</code> header, where <code>SYN</code> means <code>synchronization</code> and <code>ACK</code> means <code>acknowledgement</code>. In detail the process goes as follows:</p>
+<p>Firstly, the client sends the <code>SYN: 1</code> packet to server to start the connection. When the server receives the packet, it will send the <code>ACK: 1</code> packet to client to confirm that. Since in the TCP protocol, the server can also send data to the client. So the server needs to send the <code>SYN: 1</code> packet to the client as well. Finally, when the client sends the <code>ACK: 1</code> packet to the server. The establishment process is done, which goes as follows: </p>
+<img src="/images/tcp-establishment-4-packets.png" title="tcp establishment with four packets" width="600px" height="400px">
+
+<p>Note that the server sends two packets: <code>ACK: 1</code> and <code>SYN: 1</code> in sequence. Why not combine these two packets into one to have a better network performance? So the common implementation of TCP protocol  goes as follows:</p>
+<img src="/images/tcp-establishment-3-packets.png" title="tcp establishment with three packets" width="600px" height="400px">
+
+<p><strong>Note</strong>: besides <code>SYN</code> and <code>ACK</code> flag, in the establishment stage there are other fields need to be set in TCP header such as: <code>sequence number</code> and <code>window</code>. I will discuss these important TCP header fields in other articles.</p>
+<h3 id="TCP-connection-termination"><a href="#TCP-connection-termination" class="headerlink" title="TCP connection termination"></a>TCP connection termination</h3><p>When the data stream transportation (I will not cover this part in this article) is over, we need to terminate the TCP connection. </p>
+<p>Same as above, four things need to happen for fully terminating a TCP connection:</p>
+<ul>
+<li>Each node has send a <code>FIN</code> flag to its peer (that’s two things, one <code>FIN</code> in each direction)</li>
+<li>Each node has received a <code>ACK</code> flag of its own <code>FIN</code> flag from its peer  (that’s two things)</li>
+</ul>
+<img src="/images/tcp_termination.png" title="tcp termination" width="600px" height="400px">
+
+<p>But the difference is that in most TCP implementation, four packets are used to terminate the connection. We didn’t combine the <code>ACK: 1</code> packet (marked as ②) and the <code>FIN: 1</code> packet (marked as ③) into one packet. </p>
+<p>The reason is <code>ACK: 1</code> packet (marked as ②) is send by TCP stack automatically. And the next <code>FIN: 1</code> packet (marked as ③) is controlled in application level by calling <code>close</code> socket API. Application has the control to terminate the connection. So in common case, we didn’t merge this two packets into one. </p>
+<p>It’s flexible for the application to control this process, for example, in this way the application can reuse existing TCP connection to reduce the overhead and improve the performance. In next article, I will talk about this topic.  </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/TCP-IP/" rel="tag"># TCP, IP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/11/12/array-pointer-similarities-c/" rel="prev" title="array-pointer-similaries-c">
+                  <i class="fa fa-angle-left"></i> array-pointer-similaries-c
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/02/22/https-handshake/" rel="next" title="How HTTPS works: part one - TLS handshake">
+                  How HTTPS works: part one - TLS handshake <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

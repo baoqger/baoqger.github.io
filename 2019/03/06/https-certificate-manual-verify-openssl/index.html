@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIn the previous articles of this series, we examined how digital signatures and certificates make the TLS handshake process work. Generally speaking, this process is handled by platforms lik">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How HTTPS works: part five - manual verification of SSL&#x2F;TLS certificates">
+<meta property="og:url" content="https://organicprogrammer.com/2019/03/06/https-certificate-manual-verify-openssl/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn the previous articles of this series, we examined how digital signatures and certificates make the TLS handshake process work. Generally speaking, this process is handled by platforms lik">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/https-certificates-chain.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/https-manual-verification.png">
+<meta property="article:published_time" content="2019-03-06T08:00:47.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="digital signature, hash function">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/https-certificates-chain.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2019/03/06/https-certificate-manual-verify-openssl/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2019/03/06/https-certificate-manual-verify-openssl/","path":"2019/03/06/https-certificate-manual-verify-openssl/","title":"How HTTPS works: part five - manual verification of SSL/TLS certificates"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>How HTTPS works: part five - manual verification of SSL/TLS certificates | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Certificate-chain"><span class="nav-number">2.</span> <span class="nav-text">Certificate chain</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Manual-verification-of-SSL-TLS-certificates"><span class="nav-number">3.</span> <span class="nav-text">Manual verification of SSL&#x2F;TLS certificates</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Extract-the-public-key-of-intermediate-CA"><span class="nav-number">3.1.</span> <span class="nav-text">Extract the public key of intermediate CA</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Extract-the-signature"><span class="nav-number">3.2.</span> <span class="nav-text">Extract the signature</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Decrypt-the-signature"><span class="nav-number">3.3.</span> <span class="nav-text">Decrypt the signature</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Re-compute-the-hash"><span class="nav-number">3.4.</span> <span class="nav-text">Re-compute the hash</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Reference"><span class="nav-number">5.</span> <span class="nav-text">Reference</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2019/03/06/https-certificate-manual-verify-openssl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="How HTTPS works: part five - manual verification of SSL&#x2F;TLS certificates | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          How HTTPS works: part five - manual verification of SSL/TLS certificates
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-03-06 16:00:47" itemprop="dateCreated datePublished" datetime="2019-03-06T16:00:47+08:00">2019-03-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the previous articles of this series, we examined how digital signatures and certificates make the <code>TLS handshake</code> process work. Generally speaking, this process is handled by platforms like web browsers. In this article, I want to <strong>demystify the process of TLS handshake by manual verification of SSL&#x2F;TLS certificates step by step</strong>. </p>
+<h3 id="Certificate-chain"><a href="#Certificate-chain" class="headerlink" title="Certificate chain"></a>Certificate chain</h3><p>In this previous <a target="_blank" rel="noopener" href="http://localhost:4000/2019/03/02/https-certificate-anatomy/">article</a>, we mentioned that <strong>the server returns not one, but multiple certificates. These associated certificates form a certificate chain</strong> as follows: </p>
+<img src="/images/https-certificates-chain.png" title="certificates chain" width="800px" height="600px">
+
+<p>The intermediate CA signs the server certificate, and Root CA signs the certificate of the intermediate CA (There can be multiple intermediate CAs). Pay attention to the <code>subject</code> and <code>issuer</code> names of each certificate, and you can notice that one certificate’s issue name is another certificate’s subject name. Certificates can find their CA’s certificate in the chain with this information. </p>
+<p>For example, the following <code>openssl</code> command prints the certificate chain of google.com: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl s_client -showcerts -connect google.com:443</span><br></pre></td></tr></table></figure>
+
+<p>The previous <a target="_blank" rel="noopener" href="http://localhost:4000/2019/03/02/https-certificate-anatomy/">article</a> explained that the chain contains three certificates. Let us extract the google.com server certificate into file <a target="_blank" rel="noopener" href="https://gist.github.com/baoqger/8c854336118737db2cb55997ca7888c9"><strong>google_com.pem</strong></a> and the intermediate CA certificate into file <a target="_blank" rel="noopener" href="https://gist.github.com/baoqger/59cd171e2114030a9f70790e99bd86d0"><strong>intermediate_ca.pem</strong></a>. These two files are the input data for this manual verification experiment. </p>
+<h3 id="Manual-verification-of-SSL-TLS-certificates"><a href="#Manual-verification-of-SSL-TLS-certificates" class="headerlink" title="Manual verification of SSL&#x2F;TLS certificates"></a>Manual verification of SSL&#x2F;TLS certificates</h3><p>The entire process can be illustrated as follows: </p>
+<img src="/images/https-manual-verification.png" title="certificates chain" width="800px" height="600px">
+
+<p>Let us go through it step by step. </p>
+<h4 id="Extract-the-public-key-of-intermediate-CA"><a href="#Extract-the-public-key-of-intermediate-CA" class="headerlink" title="Extract the public key of intermediate CA"></a>Extract the public key of intermediate CA</h4><p>Since the certificate of the google.com server is signed with intermediate CA’s private key. The first step is to extract the public key of intermediate CA from its certificate. </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -in ./intermediate_ca.pem -noout -pubkey &gt; ./intermediate_ca_pub.pem</span><br></pre></td></tr></table></figure>
+
+<p>The content of file <strong>intermediate_ca_pub.pem</strong> goes as follows:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">-----BEGIN PUBLIC KEY-----</span><br><span class="line">MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA9Yjf52KMHjf4N0KQf2yH</span><br><span class="line">0PtlgiX96MtrpP9t6Voj4pn2HOmSA5kTfAkKivpC1l5WJKp6M4Qf0elpu7l07FdM</span><br><span class="line">ZmiTdzdVU/45EE23NLtfJXc3OxeU6jzlndW8w7RD6y6nR++wRBFj2LRBhd1BMEiT</span><br><span class="line">G7+39uBFAiHglkIXz9krZVY0ByYEDaj9fcou7+pIfDdNPwCfg9/vdYQueVdc/Fdu</span><br><span class="line">Gpb//Iyappm+Jdl/liwG9xEqAoCA62MYPFBJh+WKyl8ZK1mWgQCg+1HbyncLC8mW</span><br><span class="line">T+9wScdcbSD9mbS04soud/0t3Au2axMMjBkrF5aYufCL9qAnu7bjjVGPva7Hm7GJ</span><br><span class="line">nQIDAQAB</span><br><span class="line">-----END PUBLIC KEY-----</span><br></pre></td></tr></table></figure>
+<p>You can look at the public key in PEM format (which is not readable to humans). </p>
+<h4 id="Extract-the-signature"><a href="#Extract-the-signature" class="headerlink" title="Extract the signature"></a>Extract the signature</h4><p>Next, let us extract the digital signature of the google.com server’s certificate. This task is a little bit complex, and we need several Linux commands to form a data stream pipeline as follows: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -in ./google_com.pem -text -noout -certopt ca_default,no_validity,no_serial,no_subject,no_extensions,no_signame \</span><br><span class="line">| grep -v &#x27;Signature Algorithm&#x27; \</span><br><span class="line">| tr -d &#x27;[:space:]:&#x27; \</span><br><span class="line">| xxd -r -p &gt; ./certificate-signature.bin</span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>openssl x509</code>: extract the digital signature. <code>openssl</code> command supports <code>certopt</code> option, which allows multiple arguments separated by commas. The output of the first command should be:</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Signature Algorithm: sha256WithRSAEncryption</span><br><span class="line">        76:6a:8a:d8:44:ac:14:40:92:36:f3:4a:b5:cb:54:36:67:c7:</span><br><span class="line">        &lt;... content omitted ...&gt;</span><br><span class="line">        14:22:3f:2a:90:a5:e4:9b:26:df:33:15:4b:d2:5c:f7:89:8e:</span><br><span class="line">        f7:6a:c4:a6</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>grep -v</code>: invert the sense of matching and select non-matching lines (because of -v option).<code>Signature Algorithm: sha256WithRSAEncryption</code> is matched, but only the Hex code lines are selected based on the invert-match rule. The data stream after filtering should be:</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">76:6a:8a:d8:44:ac:14:40:92:36:f3:4a:b5:cb:54:36:67:c7:</span><br><span class="line">&lt;... content omitted ...&gt;</span><br><span class="line">14:22:3f:2a:90:a5:e4:9b:26:df:33:15:4b:d2:5c:f7:89:8e:</span><br><span class="line">f7:6a:c4:a6</span><br></pre></td></tr></table></figure>
+
+<p>Note <strong>Signature Algorithm: sha256WithRSAEncryption</strong> means that the signature is signed with <code>SHA-256</code> hash function and <code>RSA</code> encryption algorithm. When we need to re-compute the hash again, we must use the same hash function: <code>SHA-256</code>. </p>
+<ul>
+<li><p><code>tr -d</code>: delete the colons. The colons are to make it more readable. After removing the formatting colons, the output only contains Hex code. </p>
+</li>
+<li><p><code>xxd -r -p</code>: convert the Hex code into binary format and redirect to file <strong>certificate-signature.bin</strong></p>
+</li>
+</ul>
+<h4 id="Decrypt-the-signature"><a href="#Decrypt-the-signature" class="headerlink" title="Decrypt the signature"></a>Decrypt the signature</h4><p>Now that we have both the digital signature and the public key of the intermediate CA. We can decrypt the signature as follows:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl rsautl -verify -inkey ./intermediate_ca_pub.pem -in ./certificate-signature.bin -pubin &gt; ./certificate-signature-decrypted.bin</span><br></pre></td></tr></table></figure>
+
+<p>Store the decrypted signature in file <strong>certificate-signature-decrypted.bin</strong>. We can view the hash with openssl like so:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl asn1parse -inform der -in ./certificate-signature-decrypted.bin</span><br></pre></td></tr></table></figure>
+<p>The output is: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0:d=0  hl=2 l=  49 cons: SEQUENCE</span><br><span class="line">2:d=1  hl=2 l=  13 cons: SEQUENCE</span><br><span class="line">4:d=2  hl=2 l=   9 prim: OBJECT            :sha256</span><br><span class="line">15:d=2  hl=2 l=   0 prim: NULL</span><br><span class="line">17:d=1  hl=2 l=  32 prim: OCTET STRING      [HEX DUMP]:66EFBE4CEA76272C76CEE8FA297C1BF70C41F8E049C7E0E4D23C965CBE8F1B84</span><br></pre></td></tr></table></figure>
+<p>The hash is in the last line: <code>66EFBE4CEA76272C76CEE8FA297C1BF70C41F8E049C7E0E4D23C965CBE8F1B84</code>. </p>
+<h4 id="Re-compute-the-hash"><a href="#Re-compute-the-hash" class="headerlink" title="Re-compute the hash"></a>Re-compute the hash</h4><p>Now that we got the original hash of the certificate, we need to verify whether we can re-compute the same hash using the same hashing function (as mentioned above SHA-256 in this case).</p>
+<p>The previous <a href="https://organicprogrammer.com/2019/03/05/https-certificate-signature/">article</a> explained that <strong>the digital signature is signed based on all of the information instead of only public key</strong>. We need to extract everything but the signature from the certificate. </p>
+<p>We can extract the data and output it to file <strong>google_com_cert_body.bin</strong> as follows: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl asn1parse -i -in ./google_com.pem -strparse 4 -out ./google_com_cert_body.bin  -noout</span><br></pre></td></tr></table></figure>
+
+<p>Note: you can refer to this openssl <a target="_blank" rel="noopener" href="https://linux.die.net/man/1/asn1parse">document</a> to have a deeper understanding about the behavior of this command. </p>
+<p>Finally, let us re-compute the hash with SHA256 as follows: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">openssl dgst -sha256 ./google_com_cert_body.bin</span><br><span class="line"></span><br><span class="line">SHA256(./google_com_cert_body.bin)= 66efbe4cea76272c76cee8fa297c1bf70c41f8e049c7e0e4d23c965cbe8f1b84</span><br></pre></td></tr></table></figure>
+
+<p>The re-computed hash is <code>66efbe4cea76272c76cee8fa297c1bf70c41f8e049c7e0e4d23c965cbe8f1b84</code>, which matches with the original hash. So we can get the conclusion that: <strong>the intermediate CA signs the goole.com server certificate</strong>. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we go through the verification process of SSL&#x2F;TLS certificates step by step manually. I have to admit that the concepts of digital signatures and certificates are too abstract to understand, especially in the details. I hope the experiment, which carries out with certificates from the real world, can help you do that.  </p>
+<h3 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h3><p><a target="_blank" rel="noopener" href="https://linuxctl.com/2017/02/x509-certificate-manual-signature-verification/">x509 Certificate Manual Signature Verification</a> written by George Bolo.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/digital-signature-hash-function/" rel="tag"># digital signature, hash function</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/03/05/https-certificate-signature/" rel="prev" title="How HTTPS works: part four - digital signature">
+                  <i class="fa fa-angle-left"></i> How HTTPS works: part four - digital signature
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/08/25/how-to-write-linux-c-program-with-external-library/" rel="next" title="How to use libraries in Linux C program">
+                  How to use libraries in Linux C program <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

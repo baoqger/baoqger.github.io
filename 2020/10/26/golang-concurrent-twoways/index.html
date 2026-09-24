@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="IntroductionThis post will demonstrate how to do inter-thread communication in Golang concurrent programming. Generally speaking, there are two ways for this fundamental question: shared memory and me">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang inter Goroutine communication - shared memory or channels">
+<meta property="og:url" content="https://organicprogrammer.com/2020/10/26/golang-concurrent-twoways/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionThis post will demonstrate how to do inter-thread communication in Golang concurrent programming. Generally speaking, there are two ways for this fundamental question: shared memory and me">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-10-26T02:29:32.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="golang, concurrent, shared memory, message pass">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2020/10/26/golang-concurrent-twoways/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2020/10/26/golang-concurrent-twoways/","path":"2020/10/26/golang-concurrent-twoways/","title":"Golang inter Goroutine communication - shared memory or channels"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Golang inter Goroutine communication - shared memory or channels | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">2.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Case-study"><span class="nav-number">3.</span> <span class="nav-text">Case study</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Shared-Memory"><span class="nav-number">3.1.</span> <span class="nav-text">Shared Memory</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Message-Passing"><span class="nav-number">3.2.</span> <span class="nav-text">Message Passing</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Hit-the-Deadlock"><span class="nav-number">3.2.1.</span> <span class="nav-text">Hit the Deadlock</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Fix-the-Deadlock"><span class="nav-number">3.2.2.</span> <span class="nav-text">Fix the Deadlock</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2020/10/26/golang-concurrent-twoways/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Golang inter Goroutine communication - shared memory or channels | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Golang inter Goroutine communication - shared memory or channels
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-10-26 10:29:32" itemprop="dateCreated datePublished" datetime="2020-10-26T10:29:32+08:00">2020-10-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>This post will demonstrate how to do inter-thread communication in Golang concurrent programming. Generally speaking, there are two ways for this fundamental question: <code>shared memory</code> and <code>message passing</code>. You’ll see how to do these in Golang based on a case study and some tricky problems around it.</p>
+<h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p><code>Golang</code> is a new popular and powerful programming language that aims to provide a simple, efficient, and safe way to build multi-threaded software. </p>
+<p>Concurrent programming is one of Go’s main selling points. <code>Go</code> uses a concept called <em>goroutine</em> as its concurrency unit. Goroutine is a complex but interesting topic, you can find many articles about it online, This post will not cover concepts about it in detail. Simply speaking, goroutine is a user-space  level thread which is lightweight and easy to create. </p>
+<p>As mentioned above, one of the complicated problems when we do concurrent programming is that inter-thread (or inter-goroutine) communication is very error-prone. In Golang, it provides frameworks for both <code>shared memory</code> and <code>message passing</code>. However, it encourages the use of <em>channels</em> over shared memory. </p>
+<p>You’ll see how both of these methods in Golang based on the following case. </p>
+<h2 id="Case-study"><a href="#Case-study" class="headerlink" title="Case study"></a>Case study</h2><p>The example is very simple: sums a collection (10 million) of integers. In fact this example is based on this good <a target="_blank" rel="noopener" href="https://www.ardanlabs.com/blog/2018/12/scheduling-in-go-part3.html">article</a>. It used the <code>shared memory</code> way to realize the communication between goroutines. I expand this example and implemented the <code>message passing</code> way to show the difference.</p>
+<h3 id="Shared-Memory"><a href="#Shared-Memory" class="headerlink" title="Shared Memory"></a>Shared Memory</h3><p>Go supports traditional shared memory accesses among goroutines. You can use various traditional synchronization primitives such as <em>lock&#x2F;unlock</em> (Mutex), <em>condition variable</em> (Cond) and <em>atomic</em> read&#x2F;write operations(atomic).  </p>
+<p>In the following implementation, you can see Go uses <code>WaitGroup</code> to allow multiple goroutines to do their tasks before a waiting goroutine. This usage is very similar to <code>pthread_join</code> in C. </p>
+<p>Goroutines are added to a WaitGroup by calling <code>Add</code> method. And the goroutines in a WaitGroup call <code>Done</code> method to notify their completion, while a goroutine make a call to <code>Wait</code> method to wait for all goroutines’ completion. </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;math/rand&quot;</span></span><br><span class="line">	<span class="string">&quot;runtime&quot;</span></span><br><span class="line">	<span class="string">&quot;sync&quot;</span></span><br><span class="line">	<span class="string">&quot;sync/atomic&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	numbers := generateList(<span class="number">1e7</span>)</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;add: &quot;</span>, add(numbers))</span><br><span class="line">	fmt.Println(<span class="string">&quot;add concurrent: &quot;</span>, addConcurrent(runtime.NumCPU(), numbers))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateList</span><span class="params">(totalNumbers <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line">	numbers := <span class="built_in">make</span>([]<span class="type">int</span>, totalNumbers)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; totalNumbers; i++ &#123;</span><br><span class="line">		numbers[i] = rand.Intn(totalNumbers)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> numbers</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(numbers []<span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers &#123;</span><br><span class="line">		v += n</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> v</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">addConcurrent</span><span class="params">(goroutines <span class="type">int</span>, numbers []<span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int64</span></span><br><span class="line">	totalNumbers := <span class="built_in">len</span>(numbers)</span><br><span class="line">	lastGoroutine := goroutines - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	strid := totalNumbers / goroutines</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> wg sync.WaitGroup</span><br><span class="line">	wg.Add(goroutines)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> g := <span class="number">0</span>; g &lt; goroutines; g++ &#123;</span><br><span class="line">		<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(g <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">			start := g * strid</span><br><span class="line">			end := start + strid</span><br><span class="line">			<span class="keyword">if</span> g == lastGoroutine &#123;</span><br><span class="line">				end = totalNumbers</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">var</span> lv <span class="type">int</span></span><br><span class="line">			<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers[start:end] &#123;</span><br><span class="line">				lv += n</span><br><span class="line">			&#125;</span><br><span class="line">			atomic.AddInt64(&amp;v, <span class="type">int64</span>(lv))</span><br><span class="line">			wg.Done()</span><br><span class="line">		&#125;(g)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	wg.Wait()</span><br><span class="line">	<span class="keyword">return</span> <span class="type">int</span>(v)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>In the example above the <code>int64</code> variable <code>v</code> is shared across goroutines. When this variable needs to be updated, an atomic operation was done by calling <code>atomic.AddInt64()</code> method to avoid race condition and nondeterministic result. </p>
+<p>That’s how shared memory across goroutines works in Golang. Let’s go to message passing way in next section. </p>
+<h3 id="Message-Passing"><a href="#Message-Passing" class="headerlink" title="Message Passing"></a>Message Passing</h3><p>In Golang world, there is one sentence is famous:</p>
+<blockquote>
+<p>Don’t communicate by sharing memory; share memory by communicating</p>
+</blockquote>
+<p>For that, <code>Channel</code>(chan) is introduced in Go as a new concurrency primitive to send data across goroutines. This is also the way Golang recommended you to follow.</p>
+<p>So the concurrent program to sum 10 million integers  based on <code>Channel</code> goes as below: </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;math/rand&quot;</span></span><br><span class="line">	<span class="string">&quot;runtime&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> result <span class="type">int64</span></span><br><span class="line">	numbers := generateList(<span class="number">1e7</span>)</span><br><span class="line"></span><br><span class="line">	goroutines := runtime.NumCPU()</span><br><span class="line">	lastGoroutine := goroutines - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	totalNumbers := <span class="built_in">len</span>(numbers)</span><br><span class="line">	strid := totalNumbers / goroutines</span><br><span class="line"></span><br><span class="line">	c := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">int</span>)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> g := <span class="number">0</span>; g &lt; goroutines; g++ &#123;</span><br><span class="line">		start := g * strid</span><br><span class="line">		end := start + strid</span><br><span class="line">		<span class="keyword">if</span> g == lastGoroutine &#123;</span><br><span class="line">			end = totalNumbers</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">go</span> add(numbers[start:end], c)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> l := <span class="keyword">range</span> c &#123;</span><br><span class="line">		result += <span class="type">int64</span>(l)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;add concurrent: &quot;</span>, result)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateList</span><span class="params">(totalNumbers <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line">	numbers := <span class="built_in">make</span>([]<span class="type">int</span>, totalNumbers)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; totalNumbers; i++ &#123;</span><br><span class="line">		numbers[i] = rand.Intn(totalNumbers)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> numbers</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(numbers []<span class="type">int</span>, c <span class="keyword">chan</span> <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers &#123;</span><br><span class="line">		v += n</span><br><span class="line">	&#125;</span><br><span class="line">	c &lt;- v</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>To create a typed channel, you can call <code>make</code> method. In this case, since the value we need to pass is an integer, so we create an int type channel with <code>c := make(chan int)</code>. To read and write data to that channel, you can use <code>&lt;-</code> operator. For example, in the <code>add</code> goroutine, when we get the sum of integers, we use <code>c &lt;- v</code> to send data to the channel. </p>
+<p>To read data from the channel in the main goroutine, we use a build-in method <code>range</code> in Golang which can iterate through data structure like slice, map and channel. </p>
+<p>That’s it. Simple and beautiful. </p>
+<h4 id="Hit-the-Deadlock"><a href="#Hit-the-Deadlock" class="headerlink" title="Hit the Deadlock"></a>Hit the Deadlock</h4><p>Let’s build and run the above solution. You’ll get an error message as following:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fatal error: all goroutines are asleep - deadlock!</span><br></pre></td></tr></table></figure>
+
+<p>The <code>deadlock</code> issue occurs because of these two reasons. Firstly by default sends and receives to a channel are blocking. When a data is send to a channel, the control in that goroutine is blocked at the send statement until some other Goroutine reads from the channel. Similarly when data is read from a channel, the read is blocked until some Goroutine writes data to that channel. Secondly, <code>range</code> only stops when the channel is closed. In this case, each <code>add</code> Goroutine send only one value to the channel but didn’t close the channel. And the main Goroutine keeps waiting for something to be written (in fact, it can read 4 values, but after that it doesn’t stop and keep waiting for more data). So all of the Goroutines are blocked and none of them can continue the execution. Then hit a deadlock. </p>
+<h4 id="Fix-the-Deadlock"><a href="#Fix-the-Deadlock" class="headerlink" title="Fix the Deadlock"></a>Fix the Deadlock</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;math/rand&quot;</span></span><br><span class="line">	<span class="string">&quot;runtime&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> result <span class="type">int64</span></span><br><span class="line">	numbers := generateList(<span class="number">1e7</span>)</span><br><span class="line"></span><br><span class="line">	goroutines := runtime.NumCPU()</span><br><span class="line">	lastGoroutine := goroutines - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	totalNumbers := <span class="built_in">len</span>(numbers)</span><br><span class="line">	strid := totalNumbers / goroutines</span><br><span class="line"></span><br><span class="line">	c := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">int</span>)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> g := <span class="number">0</span>; g &lt; goroutines; g++ &#123;</span><br><span class="line">		start := g * strid</span><br><span class="line">		end := start + strid</span><br><span class="line">		<span class="keyword">if</span> g == lastGoroutine &#123;</span><br><span class="line">			end = totalNumbers</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">go</span> add(numbers[start:end], c)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; goroutines; j++ &#123;</span><br><span class="line">		result += <span class="type">int64</span>(&lt;-c)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;add concurrent: &quot;</span>, result)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateList</span><span class="params">(totalNumbers <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line">	numbers := <span class="built_in">make</span>([]<span class="type">int</span>, totalNumbers)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; totalNumbers; i++ &#123;</span><br><span class="line">		numbers[i] = rand.Intn(totalNumbers)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> numbers</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(numbers []<span class="type">int</span>, c <span class="keyword">chan</span> <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers &#123;</span><br><span class="line">		v += n</span><br><span class="line">	&#125;</span><br><span class="line">	c &lt;- v</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Let use the manual <code>for</code> loop, in each iteration we read the value from the channel and sum together. Run it again. The deadlock is resolved. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/golang-concurrent-shared-memory-message-pass/" rel="tag"># golang, concurrent, shared memory, message pass</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/09/22/os-xv6-1/" rel="prev" title="Hack operating system by xv6 project">
+                  <i class="fa fa-angle-left"></i> Hack operating system by xv6 project
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/11/16/golang-service-discovery-consul/" rel="next" title="Service registry and discovery in Golang Cloud-Native microservice with Consul and Docker">
+                  Service registry and discovery in Golang Cloud-Native microservice with Consul and Docker <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

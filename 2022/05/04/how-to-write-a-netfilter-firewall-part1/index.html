@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundFirewalls are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting aga">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules">
+<meta property="og:url" content="https://organicprogrammer.com/2022/05/04/how-to-write-a-netfilter-firewall-part1/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundFirewalls are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting aga">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/netfilter-arch.png">
+<meta property="article:published_time" content="2022-05-04T10:06:50.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Linux module, Netfilter, firewall">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/netfilter-arch.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2022/05/04/how-to-write-a-netfilter-firewall-part1/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2022/05/04/how-to-write-a-netfilter-firewall-part1/","path":"2022/05/04/how-to-write-a-netfilter-firewall-part1/","title":"Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Netfilter-and-Kernel-modules"><span class="nav-number">2.</span> <span class="nav-text">Netfilter and Kernel modules</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Basics-of-Netfilter"><span class="nav-number">2.1.</span> <span class="nav-text">Basics of Netfilter</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Basics-of-Linux-Kernel-modules"><span class="nav-number">2.2.</span> <span class="nav-text">Basics of Linux Kernel modules</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">3.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/05/04/how-to-write-a-netfilter-firewall-part1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-05-04 18:06:50" itemprop="dateCreated datePublished" datetime="2022-05-04T18:06:50+08:00">2022-05-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p><code>Firewalls</code> are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting against network attacks. There are both hardware-based firewalls and software-based firewalls. I will not discuss too much about the background here, since you can find many online documents about <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Firewall_(computing)">it</a>.</p>
+<p>Have you ever thought of implementing a simple firewall from scratch? Sounds crazy? But with the power of Linux, you can do that. After you read this series of articles, you will find that actually, it is quite simple. </p>
+<p>You may once use various firewalls on Linux such as <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Iptables">iptables</a>, <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Nftables">nftables</a>, <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Uncomplicated_Firewall">UFW</a>, etc. All of these firewall tools are user-space utility programs, and they are all relying on <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Netfilter"><code>Netfilter</code></a>. <code>Netfilter</code> is the Linux kernel subsystem that allows various networking-related operations to be implemented. <code>Netfilter</code> allows you to develop your firewall using the <code>Linux Kernel Module</code>.  If you don’t know the techniques such as the Linux Kernel module and Netfilter, don’t worry. In this article, let’s write a Linux firewall from scratch based on Netfilter. You can learn the following interesting points:</p>
+<ul>
+<li>Linux kernel module development.</li>
+<li>Linux kernel network programming. </li>
+<li>Netfilter module development.</li>
+</ul>
+<h3 id="Netfilter-and-Kernel-modules"><a href="#Netfilter-and-Kernel-modules" class="headerlink" title="Netfilter and Kernel modules"></a>Netfilter and Kernel modules</h3><h4 id="Basics-of-Netfilter"><a href="#Basics-of-Netfilter" class="headerlink" title="Basics of Netfilter"></a>Basics of Netfilter</h4><p><code>Netfilter</code> can be considered to be the third generation of <code>firewall</code> on Linux. Before <code>Netfilter</code>was introduced in Linux Kernel 2.4, there are two older generations of firewalls on Linux as follows: </p>
+<ul>
+<li>The first generation was a port of an early version of BSD UNIX’s <code>ipfw</code> to Linux 1.1. </li>
+<li>The second generation was <code>ipchains</code> developed in the 2.2 series of Linux Kernel.</li>
+</ul>
+<p>As we mentioned above, <code>Netfilter</code> was designed to provide the infrastructure inside the Linux kernel for various networking operations. So <code>firewall</code> is just one of the multiple functionalities provided by <code>Netfilter</code> as follows:</p>
+<img src="/images/netfilter-arch.png" title="Netfilter architecture" width="600px" height="400px">
+
+<ul>
+<li><strong>Packet filtering</strong>: is in charge of filtering the packets based on the rules. It is also the topic of this article. </li>
+<li><strong>NAT (Network address translation)</strong>: is in charge of translating the IP address of network packets. <code>NAT</code> is an important protocol, which has become a popular and essential tool in <code>conserving global address space in the face of IPv4 address exhaustion</code>. If you don’t know <code>NAT</code> protocol, you can refer to other <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Network_address_translation">documents</a>. I will examine it in other future articles. </li>
+<li><strong>Packet mangling</strong>: is in charge of modifying the packet content(In fact, <code>NAT</code> is one kind of packet mangling, which modifies the source or destination IP address). For example, <code>MSS (Maximum Segment Size)</code> value of TCP SYN packets can be altered to allow large-size packets transported over the network.</li>
+</ul>
+<p>Note: this article will focus on building a simple firewall to filter packets based on Netfilter. So the <code>NAT</code> and <code>Packet Mangling</code> parts are not in the scope of this article. </p>
+<p>Packet filtering can only be done inside the Linux kernel (Netfilter’s code is in the kernel as well), if we want to write a mini firewall, it has to run in the kernel space. Right? Does it mean we need to add our code into the kernel and recompile the kernel? Imagine you have to recompile the kernel each time you want to add a new packet filtering rule. That’s a bad idea. The good news is that <code>Netfilter</code> allows you to add extensions using the <a target="_blank" rel="noopener" href="https://wiki.archlinux.org/title/Kernel_module"><code>Linux kernel modules</code></a>. </p>
+<h4 id="Basics-of-Linux-Kernel-modules"><a href="#Basics-of-Linux-Kernel-modules" class="headerlink" title="Basics of Linux Kernel modules"></a>Basics of Linux Kernel modules</h4><p>Although Linux is a <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Monolithic_kernel"><code>monolithic kernel</code></a>, it can be extended using kernel modules. Modules can be inserted into the kernel and removed on demand. Linux isolates the kernel but allows you to add specific functionality on the fly through modules. In this way, Linux keeps a balance between stability and usability. </p>
+<p>I want to examine one confusing point about the kernel module here: what is the difference between <code>driver</code> and <code>module</code>:</p>
+<ul>
+<li>A driver is a bit of code that runs in the kernel to talk to some hardware device. It drives the hardware. Standard practice is to build drivers as kernel modules where possible, rather than link them statically to the kernel since that gives more flexibility. </li>
+<li>A kernel module may not be a device driver at all.</li>
+</ul>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In the first post of this series, we examine the basics of Netfilter and Linux kernel modules. In the next post, let’s start implementing the mini firewall. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux-module-Netfilter-firewall/" rel="tag"># Linux module, Netfilter, firewall</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/" rel="prev" title="Write a Linux packet sniffer from scratch: part two- BPF">
+                  <i class="fa fa-angle-left"></i> Write a Linux packet sniffer from scratch: part two- BPF
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/05/05/how-to-write-a-netfilter-firewall-part2/" rel="next" title="Write a Linux firewall from scratch based on Netfilter: part two - hello world module">
+                  Write a Linux firewall from scratch based on Netfilter: part two - hello world module <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Table of ContentsFirst I have to admit that memory management is a big( and important) topic in operating system. This post can’t cover everything related to it.  In this post, I want to share somethi">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Understand stack memory management">
+<meta property="og:url" content="https://organicprogrammer.com/2020/08/19/stack-frame/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="Table of ContentsFirst I have to admit that memory management is a big( and important) topic in operating system. This post can’t cover everything related to it.  In this post, I want to share somethi">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/stack_frames.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/stack_contents.png">
+<meta property="article:published_time" content="2020-08-18T20:54:00.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="memory management, stack">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/stack_frames.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2020/08/19/stack-frame/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2020/08/19/stack-frame/","path":"2020/08/19/stack-frame/","title":"Understand stack memory management"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Understand stack memory management | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Table-of-Contents"><span class="nav-number">1.</span> <span class="nav-text">Table of Contents</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Stack-Memory-Management-Basic"><span class="nav-number">2.</span> <span class="nav-text">Stack Memory Management Basic</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Memory-Layout-of-Process"><span class="nav-number">2.1.</span> <span class="nav-text">Memory Layout of Process</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Stack-Memory-Basics"><span class="nav-number">2.2.</span> <span class="nav-text">Stack Memory Basics</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Stack-memory-contents"><span class="nav-number">2.3.</span> <span class="nav-text">Stack memory contents</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#CPU-register"><span class="nav-number">2.4.</span> <span class="nav-text">CPU register</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Mechanism-of-function-call-and-return"><span class="nav-number">3.</span> <span class="nav-text">Mechanism of function call and return</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#function-call"><span class="nav-number">3.1.</span> <span class="nav-text">function call</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#function-return"><span class="nav-number">3.2.</span> <span class="nav-text">function return</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2020/08/19/stack-frame/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Understand stack memory management | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Understand stack memory management
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-08-19 04:54:00" itemprop="dateCreated datePublished" datetime="2020-08-19T04:54:00+08:00">2020-08-19</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Table-of-Contents"><a href="#Table-of-Contents" class="headerlink" title="Table of Contents"></a>Table of Contents</h3><p>First I have to admit that memory management is a big( and important) topic in operating system. This post can’t cover everything related to it. </p>
+<p>In this post, I want to share something interesting I learned about stack memory management. Especially understand how the stack frame of function call works, which’s the most important part of stack memory. I will explain the mechanism in detail with examples and diagrams.</p>
+<p>Briefly speaking, the contents of this post is:</p>
+<ul>
+<li>Memory layout of a process</li>
+<li>Stack memory contents</li>
+<li>CPU register related to stack memory management</li>
+<li>Stack frame of function call and return mechanism</li>
+</ul>
+<p>To understand the concepts and machanisms deeply, a few assembly code will be shown in this post, you don’t have to know assembly lauguage as an expert for reading this post, I will add comments for these assembly codes to make explain what’s their functionalities.</p>
+<h3 id="Stack-Memory-Management-Basic"><a href="#Stack-Memory-Management-Basic" class="headerlink" title="Stack Memory Management Basic"></a>Stack Memory Management Basic</h3><h4 id="Memory-Layout-of-Process"><a href="#Memory-Layout-of-Process" class="headerlink" title="Memory Layout of Process"></a>Memory Layout of Process</h4><p>Before we talk about Stack memory management, it’s necessary to understand <code>memory layout</code> of a process.</p>
+<p>When you create a program, it is just some Bytes of data which is stored in the disk. When a program executes then it starts loading into memory and become a live entity. In a more specify way, some memory (virtual memory) is allocated to each process in execution for its usage by operating system. The memory assigned to a process is called process’s <code>virtual address space</code>( short for VAS). And memory layout use diagrams to help you understand the concept of process virtual address space easily.</p>
+<p>There are some awesome posts on the internet about <a target="_blank" rel="noopener" href="https://www.includehelp.com/operating-systems/memory-layout-of-a-process.aspx">memory layout</a>. And the most two critical sections are: Stack and Heap. Simply speaking, <code>Stack</code> is the memory area which is used by each process to store the local variables, passed arguments and other information when a function is called. This is the topic of this post, you’ll know more detailed in the following sections. While <code>Heap</code> segment is the one which is used for dynamic memory allocation, this is another more complex topic out of this post’s scope. </p>
+<h4 id="Stack-Memory-Basics"><a href="#Stack-Memory-Basics" class="headerlink" title="Stack Memory Basics"></a>Stack Memory Basics</h4><p>Stack Memory is just memory region in each process’s virtual address space where <code>stack</code> data structure (Last in, first out) is used to store the data. As we mentioned above, when a new function call is invoked, then a frame of data is pushed to stack memory and when the function call returns then the frame is removed from the stack memory. This is <strong>Stack Frame</strong> which represent a function call and its argument data. And every function has its own stack frame.</p>
+<p>Let’s say in your program there are multiple functions call each other in order. For example, <code>main() -&gt; f1() -&gt; f2() -&gt; f3()</code>, <code>main</code> function calls function one <code>f1()</code>, then function one calls function two <code>f2()</code>, finally function two calls function three <code>f3()</code>. So based on the Last in first out rule, the stack memory will be like as below: </p>
+<p><img src="/images/stack_frames.png" alt="stack-frame"></p>
+<p><strong>Note</strong>: the top of the stack is the bottom part of the image. Don’t feel confused for that. </p>
+<h4 id="Stack-memory-contents"><a href="#Stack-memory-contents" class="headerlink" title="Stack memory contents"></a>Stack memory contents</h4><p>After understand stack frames, now let’s dive deep into each stack frame to discover its contents.</p>
+<p>Each stack frame contains 4 parts:</p>
+<ul>
+<li>Parameter passed to the callee function</li>
+<li>Return address of the caller function</li>
+<li>Base pointer</li>
+<li>Local variables of the callee function</li>
+</ul>
+<p><img src="/images/stack_contents.png" alt="stack-contents"></p>
+<p>Caller and callee is very easy to understand. Let’s say <code>main() -&gt; f1()</code>, then caller function is <code>main()</code> while callee function is <code>f1()</code>. Right? </p>
+<p>For the above 4 four parts, there are something need to emphasis. Firstly the size of <code>return address of the caller function</code> is fixed, for example, in 32 bits system the size is 4B. And <code>Base pointer</code> size is fixed as well, it’s also 4B in a 32 bits system. This fixed size is important, you’ll see the reason in following sections. </p>
+<p>Next, in the above diagram you see two kinds of pointers: <strong>base pointer</strong> and <strong>stack pointer</strong>. Let’s check them one by one.</p>
+<p><em><strong>Stack pointer</strong></em>: pointer to the top of the stack. When stack adds or removes data then stack pointer will change correspondingly. Stack pointer is straight forward and not difficult to understand, right?<br><em><strong>Base pointer</strong></em>: is also called <code>frame pointer</code> which points to the current active  frame. And the current active frame is the topmost frame of the stack. </p>
+<p>The base pointer is conventionlly used to mark the start of a function’s stack frame, and the area of the stack managed by that function. As we mentioned above, since the size of return address and base pointer is fixed, so based on the address of base pointer you can get all the data in that stack frame. Local variables can be accessed with positive offset and passed parameters can be got with negative offset. That’s the reason why it is called <strong>base</strong> pointer. Great design, right? </p>
+<p>The other thing need to discuss is what’t the content of base pointer part in each stack frame? In the above diagram you see that a 4 bytes data is pushed into the stack, we call it base pointer. But what’s the data? In fact, base pointer is designed to <code>store the caller&#39;s base pointer address</code>. This is also a smart design to make function return works well. We’ll discuss more about it later.</p>
+<h4 id="CPU-register"><a href="#CPU-register" class="headerlink" title="CPU register"></a>CPU register</h4><p>To understand stack memory management, you’ll need to know 3 interesting CPU register:</p>
+<ul>
+<li><strong>eip</strong>: Instruction pointer register which stores the address of the next instruction to be run. </li>
+<li><strong>esp</strong>: Stack pointer register which stores the address of the top of the stack at any time.</li>
+<li><strong>ebp</strong>: Base pointer register which stores base pointer address of callee’s stack frame.  And the content at this address is the caller’s base pointer value (we already mentioned this point above).</li>
+</ul>
+<p>Until now, you see all the necessary stuff: stack frame, stack frame content and CPU registers. Let’s see how they play together to make stack frames of function call and return works. You’ll see how this simple but beautiful design realizes such a complex task.  </p>
+<h3 id="Mechanism-of-function-call-and-return"><a href="#Mechanism-of-function-call-and-return" class="headerlink" title="Mechanism of function call and return"></a>Mechanism of function call and return</h3><p>In this section, you’ll understand how function call and return works by reading a few assembly codes (which are not difficult to understand).</p>
+<h4 id="function-call"><a href="#function-call" class="headerlink" title="function call"></a>function call</h4><p><strong>Step one</strong>: as you already see in the above diagram the first part of each stack frame is the passed parameters to the callee. So all the arguments are pushed on the stack as the following codes shows:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">push arg2;</span><br><span class="line">push arg1;</span><br></pre></td></tr></table></figure>
+
+<p><code>push</code> is the assembly instruction to push data onto the stack. And usually the arguments are pushed to the stack in the reverse order that they’re declared in function.</p>
+<p><strong>Step two</strong>: the second part is the <code>Return address of the caller fn</code>, so we need to push the address of next instruction in caller function as <code>Return address</code> in callee’s stack frame. As we introduced in the last section, the address of next instruction will be stored in <code>EIP</code> register, right? The assembly code goes as following: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">push eip;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Step three</strong>: upon entrying to the callee function, the old <code>EBP</code> value (the caller function’s base pointer address) is pushed onto the stack and then <code>EBP</code> is set to the value of <code>ESP</code>. Then the <code>ESP</code> is decremented (since the stack grows downward in stack memory) to allocate space for the local variables. And the codes goes as following:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">push ebp;</span><br><span class="line">mov ebp esp;</span><br></pre></td></tr></table></figure>
+<p><code>mov</code> - the mov instruction copies the data item referred to by its second operand into the location referred to by its first operand. </p>
+<p>So <code>mov %ebp %esp</code> just means set <code>EBP</code> a new value of <code>ESP</code>. Please note that, <code>ESP</code> value changes when data is pushed or popped onto&#x2F;from the stack. But it’s always points to the top of the stack. Before this <code>mov %ebp %esp</code> instruction, <code>ESP</code> is pointing to the address just after the <code>return address of the caller</code>, and it should be the address of callee’s base pointer and just what <code>EBP</code> should store, this instruction makes sense, right?</p>
+<p>From that on, during the execution of the callee function, the passed arguments to the function are located at the positive offsets from <code>EBP</code>, and the local variables are located at the negative offsets from <code>EBP</code>, you already see this conclusion above.</p>
+<p>Inside a function, the stack would look like this: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">| &lt;argument 2&gt;       |</span><br><span class="line">| &lt;argument 1&gt;       |</span><br><span class="line">| &lt;return address&gt;   |</span><br><span class="line">| &lt;old ebp&gt;          | &lt;= %ebp</span><br><span class="line">| &lt;local var 1&gt;      |</span><br><span class="line">| &lt;local var 2&gt;      | &lt;= %esp</span><br></pre></td></tr></table></figure>
+
+<h4 id="function-return"><a href="#function-return" class="headerlink" title="function return"></a>function return</h4><p><strong>Step one</strong>: upon exit from the callee function, all the function has to do is set <code>ESP</code> to the value of <code>EBP</code>. In this way can simply deallocates&#x2F;releases the local variables from the stack. And then it can also expose callee’s base pointer on the top of the stack for next step operation.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mov esp, ebp;</span><br></pre></td></tr></table></figure>
+
+<p>This instruction is restoring the saved value of <code>ESP</code> upon entering the function, at that point what we did is <code>mov ebp esp</code>. Smart design, right?</p>
+<p><strong>Step two</strong>: since <code>ESP</code> already reset to the address of base pointer, next step we can simply pop the old <code>EBP</code> value from the top of stack as following: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pop ebp;</span><br></pre></td></tr></table></figure>
+
+<p><code>pop</code> instruction retrieves the topmost value from the stack and puts the value into the second operand, in this case is <code>EBP</code>. Remember the <code>callee</code> function’s base pointer stores the <code>caller</code> function’s base pointer, so this simple <code>pop ebp</code> instruction realize EBP register restore perfactly. Great design, right?</p>
+<p><strong>Step three</strong>: next is straight forward, we need to pop the caller function return address to <code>EIP</code>.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pop eip;</span><br></pre></td></tr></table></figure>
+
+<p>Similar to step two, right? Now the system knows the next instruction (pointing to the return address in the caller function) need to run. The execution context is giving back to the caller function. </p>
+<p>Upon returning back to the caller function, it can then increase <code>ESP</code> register again to remove the passed function arguments it pushed onto the stack. At this point, the stack frames becomes the same as it was in prior to invoking the callee function. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/memory-management-stack/" rel="tag"># memory management, stack</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/07/28/linux-cpp-docker/" rel="prev" title="Use Docker container for local C++ development">
+                  <i class="fa fa-angle-left"></i> Use Docker container for local C++ development
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/09/22/os-xv6-1/" rel="next" title="Hack operating system by xv6 project">
+                  Hack operating system by xv6 project <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

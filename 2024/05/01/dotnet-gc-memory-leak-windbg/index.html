@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="IntroductionIn this article, I will share what I learned about .NET memory management by troubleshooting a memory leak issue for a .NET service running in a real production environment. After reading">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach">
+<meta property="og:url" content="https://organicprogrammer.com/2024/05/01/dotnet-gc-memory-leak-windbg/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionIn this article, I will share what I learned about .NET memory management by troubleshooting a memory leak issue for a .NET service running in a real production environment. After reading">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/CLR.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/gcphases.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/reachability.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/procdump-windbg.png">
+<meta property="article:published_time" content="2024-05-01T02:43:54.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="dotnet, GC, memory leak, WinDbg">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/CLR.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2024/05/01/dotnet-gc-memory-leak-windbg/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2024/05/01/dotnet-gc-memory-leak-windbg/","path":"2024/05/01/dotnet-gc-memory-leak-windbg/","title":"Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">2.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NET-Memory-Management"><span class="nav-number">3.</span> <span class="nav-text">.NET Memory Management</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#NET-Runtime"><span class="nav-number">3.1.</span> <span class="nav-text">.NET Runtime</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#NET-GC"><span class="nav-number">3.2.</span> <span class="nav-text">.NET GC</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WinDbg"><span class="nav-number">4.</span> <span class="nav-text">WinDbg</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Diagnose-the-memory-leak"><span class="nav-number">5.</span> <span class="nav-text">Diagnose the memory leak</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">6.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2024/05/01/dotnet-gc-memory-leak-windbg/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2024-05-01 10:43:54" itemprop="dateCreated datePublished" datetime="2024-05-01T10:43:54+08:00">2024-05-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:13" itemprop="dateModified" datetime="2026-09-24T08:11:13+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In this article, I will share what I learned about <code>.NET memory management</code> by troubleshooting a memory leak issue for a .NET service running in a real production environment. After reading this post, you can understand more about the following items:</p>
+<ul>
+<li><code>.NET Memory Management</code> and <code>.NET Garbage Collection</code></li>
+<li>Diagnose memory usage with <code>WinDbg</code></li>
+</ul>
+<p>Previously I once published <a href="https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/">articles</a> about memory allocation of native applications written in C on Linux systems. I highly recommend you read both articles and compare what’s the difference, this can deepen your understanding of memory-related techniques.  </p>
+<h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>Firstly, let me explain the background: the problematic .NET service is running on the <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-azure-clusters-overview"><code>Azure Service Fabric</code></a>, which consists of a cluster of <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Windows_Server">Windows Server</a>. If you are not familiar with Service Fabric, please refer to my <a href="https://organicprogrammer.com/2023/03/20/guide-to-service-fabric-architecture/">previous article</a>, which explains how to develop microservices based on it. The problem is that the memory usage of this .NET service reaches roughly <code>1.5GB</code>, which is 4 times higher than the average usage. Generally speaking, on the cloud more resource usage means higher cost. Next, let’s diagnose what is happening here. But before we roll up our sleeves to debug this issue, let’s first review how .NET memory works at a theoretical level.</p>
+<h3 id="NET-Memory-Management"><a href="#NET-Memory-Management" class="headerlink" title=".NET Memory Management"></a>.NET Memory Management</h3><h5 id="NET-Runtime"><a href="#NET-Runtime" class="headerlink" title=".NET Runtime"></a>.NET Runtime</h5><p>Unlike native software written directly to the operating system’s APIs, programs written with <code>.NET</code> are called <code>managed</code> applications because they depend on a runtime and framework that manages many of their vital tasks and ensures a basic safe operating environment. In <code>.NET</code>, runtime refers to the <code>Common Language Runtime(CLR)</code> and the framework is <code>.NET Framework</code> or <code>.NET Core</code>. And the .NET application is built on top of them. </p>
+<img src="/images/CLR.png" title=".NET and CLR" width="600px" height="400px">
+
+<p><code>CLR</code> works as a virtual execution engine for .NET applications, and it is a very complex topic that is out of the scope of this article, so we can’t dive into the details. But one of the crucial functionalities it provides is just: <code>memory management</code>. </p>
+<h5 id="NET-GC"><a href="#NET-GC" class="headerlink" title=".NET GC"></a>.NET GC</h5><p>When you’re working on system programming with C or C++, you need to manage the memory by calling standard library’s APIs like <code>malloc</code> and <code>free</code> to allocate and release the memory. But on the .NET framework, your life will be easier since the .NET memory manager does this task for you. When the program creates a new object, the memory manager will allocate the memory for you. Easy, right? But that’s only a trivial part of the memory manager, the complicated task is how and when the memory manager can decide to collect the memory. Because of this, the .NET memory manager has another name: <code>.NET Garbage Collector</code>. </p>
+<p>The .NET GC uses two Win32 functions <code>VirtualAlloc</code> and <code>VirtualFree</code> for allocating a segment of memory and releasing segments back to the operating system respectively. The entire process can be divided into the following three phases: </p>
+<img src="/images/gcphases.png" title=".NET and CLR" width="600px" height="400px">
+
+
+<ul>
+<li><strong>Marking Phase</strong>: A list of <code>live</code> objects is created during the marking phase. This is done by starting from a set of references called the <code>GC roots</code>. GC marks these root objects as <code>live</code> and then looks at any object that they reference and marks these as being <code>live</code> too. And the GC continues the search iteratively. This process is also called <code>reachability analysis</code>. All of the objects that are not on the reachable list are potentially released from the memory.</li>
+</ul>
+<img src="/images/reachability.png" title="GC roots" width="600px" height="400px">
+
+<ul>
+<li><p><strong>Relocating Phase</strong>: The references of all the reachable objects are updated so that they point to the new location. The purpose of the relocating phase is to optimize memory usage by compacting the live objects closer together. This helps reduce <code>memory fragmentation</code> and improves memory allocation efficiency. </p>
+</li>
+<li><p><strong>Compacting Phase</strong>: The memory space occupied by the dead objects is released and the live objects are moved to the new location.</p>
+</li>
+</ul>
+<p>GC algorithm is a complex topic, the above description only touches the surface of it. You can explore <a target="_blank" rel="noopener" href="https://www.red-gate.com/simple-talk/development/dotnet-development/understanding-garbage-collection-in-net/">more</a> by yourself. In the following sections, I will add extra information when necessary. </p>
+<h3 id="WinDbg"><a href="#WinDbg" class="headerlink" title="WinDbg"></a>WinDbg</h3><p>To diagnose .NET applications’ memory issues, there are many modern tools, like <a target="_blank" rel="noopener" href="https://www.jetbrains.com/dotmemory/"><code>dotMemory</code></a>. But in this article, I will show you a low-level tool: <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/WinDbg"><code>WinDbg</code></a>. <code>WinDbg</code> is a multipurpose debugger for the Windows OS, which can be used to debug both user mode and kernel mode. Originally WinDbg was used to debug the native applications, but WinDbg allows the loading of extensions which can augment the debugger’s supported commands. For example, to debug .NET applications running on CLR, we need the <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/dotnet/framework/tools/sos-dll-sos-debugging-extension?redirectedfrom=MSDN"><code>SOS</code> extension</a>.  </p>
+<p>Now that we have a powerful debugger in hand, the next question is how to use it. Generally speaking, you can attach the debugger to the problematic service, but since the target service is running in the production environment, we can’t do that easily. So we need to troubleshoot this issue in the offline style as follows:</p>
+<img src="/images/procdump-windbg.png" title="GC roots" width="600px" height="400px">
+
+<p>We need to use <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/sysinternals/downloads/procdump"><code>ProcDump</code></a> to dump the memory information into a file, called <code>dump file</code>. Then use <code>WinDbg</code> to analyze the dump file. I will not cover the usage of <code>ProcDump</code> in this article and leave it to you. </p>
+<p>Next, let’s play with the dump file, all right? Let’s go! </p>
+<h3 id="Diagnose-the-memory-leak"><a href="#Diagnose-the-memory-leak" class="headerlink" title="Diagnose the memory leak"></a>Diagnose the memory leak</h3><p>First, let’s use the WinDbg <code>!address</code> extension to display information about the memory that the target process or target computer uses as follows:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; !address -summary</span><br><span class="line"></span><br><span class="line">--- Usage Summary ---------------- RgnCount ----------- Total Size -------- %ofBusy %ofTotal</span><br><span class="line">Free                                    338     7ffe`d06bb000 ( 127.995 TB)          100.00%</span><br><span class="line">&lt;unknown&gt;                              4715        0`feb0f000 (   3.980 GB)  83.90%    0.00%</span><br><span class="line">Stack                                   276        0`16880000 ( 360.500 MB)   7.42%    0.00%</span><br><span class="line">Image                                  1241        0`0e989000 ( 233.535 MB)   4.81%    0.00%</span><br><span class="line">Heap                                    519        0`0b997000 ( 185.590 MB)   3.82%    0.00%</span><br><span class="line">Other                                    15        0`001cd000 (   1.801 MB)   0.04%    0.00%</span><br><span class="line">TEB                                      92        0`000b8000 ( 736.000 kB)   0.01%    0.00%</span><br><span class="line">PEB                                       1        0`00001000 (   4.000 kB)   0.00%    0.00%</span><br><span class="line"></span><br><span class="line">--- Type Summary (for busy) ------ RgnCount ----------- Total Size -------- %ofBusy %ofTotal</span><br><span class="line">MEM_PRIVATE                            5051        1`1e9d4000 (   4.478 GB)  94.41%    0.00%</span><br><span class="line">MEM_IMAGE                              1753        0`1013b000 ( 257.230 MB)   5.30%    0.00%</span><br><span class="line">MEM_MAPPED                               55        0`00e26000 (  14.148 MB)   0.29%    0.00%</span><br><span class="line"></span><br><span class="line">--- State Summary ---------------- RgnCount ----------- Total Size -------- %ofBusy %ofTotal</span><br><span class="line">MEM_FREE                                338     7ffe`d06bb000 ( 127.995 TB)          100.00%</span><br><span class="line">MEM_RESERVE                            2503        0`cdc3c000 (   3.215 GB)  67.78%    0.00%</span><br><span class="line">MEM_COMMIT                             4356        0`61cf9000 (   1.528 GB)  32.22%    0.00%</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Let’s examine the output, which provides so much information!</p>
+<p>The <em>first</em> section shows the memory <code>Usage Summary</code>: </p>
+<ul>
+<li><strong>Free</strong>: is the entire <code>virtual memory</code> that can potentially be claimed from the operating system. This may include <code>swap space</code>, not only physical RAM. For a 64-bit process,  the virtual memory is <code>128TB</code>. </li>
+<li><strong>Heap</strong>: what you see as <code>Heap</code> is the memory that was allocated through the <code>Windows Heap Manager</code>, we generally call it the <code>native heap</code>. </li>
+<li><strong>Unknown</strong>: any other heap managers will implement their own memory management. Basically, they all work similarly: they get large blocks of memory from <code>VirtualAlloc</code> and then try to do a better management of the small block within that large block. Since WinDbg doesn’t know any of these memory managers, that memory is declared as <code>Unknown</code>. It includes but is not limited to the managed heap of <code>.NET</code>. In my case, the value is <code>3.98GB</code> which is much bigger than the <code>1.5GB</code> memory usage reported by the monitor tool. I will explain why it goes like this in the following sections. </li>
+<li><strong>Image</strong>: is the memory space allocated for the binary assemblies. </li>
+<li><strong>Stack</strong>: is straightforward. If you don’t know, please refer to my previous <a href="https://organicprogrammer.com/2020/08/19/stack-frame/">article</a>.</li>
+</ul>
+<p>The <em>second</em> section shows the usage by memory <code>Type</code>: <code>MEM_PRIVATE</code>, <code>MEM_IMAGE</code> and <code>MEM_MAPPED</code>. <code>MEM_PRIVATE</code> is private to one process and <code>MEM_IMAGE</code> and <code>MEM_MAPPED</code> can be shared among multiple processes. </p>
+<p>The <em>third</em> section shows the usage by memory <code>State</code>.</p>
+<ul>
+<li><strong>MEM_COMMIT</strong>: committed memory refers to the portion of the virtual address space that has been allocated and backed by physical memory or the paging file. Committed memory is actively used and accessible by the process. It includes memory regions that have been allocated and are in use, such as code, data, and heap allocations. </li>
+<li><strong>MEM_RESERVE</strong>: corresponds to reserved memory. Reserved memory refers to memory that has been reserved in the virtual address space but has not yet been committed. When memory is reserved, the address space is allocated, but physical memory or paging file resources are not immediately allocated. The process reserves the address space to ensure that it will be available when needed. Reserved memory can later be committed to make it usable by the process. </li>
+<li><strong>MEM_FREE</strong>: represents free memory. This category includes all memory that has not been reserved or committed.</li>
+</ul>
+<p>In my case, the committed memory is <code>1.528GB</code>, which exactly matches the monitored memory usage. This can perfectly explain the confusing point mentioned about the <code>3.98GB</code> <code>unknown</code> memory segment. It turns out the majority of these memories are only reserved. So next step is to get the actual committed memory usage for various types. How to achieve that? </p>
+<p>Thanks for the powerful <code>address</code> extension, I can do that by adding some filters like this:</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">!address -f:MEM_COMMIT -c:&quot;.echo %1 %3 %5 %7&quot;</span><br></pre></td></tr></table></figure>
+
+<p> This command will output all the committed memory regions, and for each region prints its base address(%1), region size(%3), state(%5) and type(%7). The output goes as follows:</p>
+ <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">0x5f3a0000 0x1000 MEM_COMMIT Image</span><br><span class="line">0x5f3a1000 0x2ab000 MEM_COMMIT Image</span><br><span class="line">0x5f64c000 0xb000 MEM_COMMIT Image</span><br><span class="line">0x5f657000 0x1b000 MEM_COMMIT Image</span><br><span class="line">0x5f672000 0x2000 MEM_COMMIT Image</span><br><span class="line">0x5f674000 0x2d000 MEM_COMMIT Image</span><br><span class="line">0x7ffe0000 0x1000 MEM_COMMIT Other</span><br><span class="line">0x4580ca7000 0x5000 MEM_COMMIT Stack</span><br><span class="line">...thousands of lines omitted...</span><br></pre></td></tr></table></figure>
+
+<p>I wrote a simple script to parse the above output and finally got the following result: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Memory by Type:</span><br><span class="line">type Image:  233.52344MB</span><br><span class="line">type Other:  1.8007812MB</span><br><span class="line">type Stack:  3.796875MB</span><br><span class="line">type TEB  :  0.71875MB</span><br><span class="line">type PEB  :  0.00390625MB</span><br><span class="line">type Heap :  84.88281MB</span><br><span class="line">type &lt;unknown&gt; :  1240.2461MB</span><br></pre></td></tr></table></figure>
+<p>Based on this result, you can see the majority comes from the <code>unknown</code> segment. I suspect that the memory leak issue occurs in this problematic service. Various WinDbg <a target="_blank" rel="noopener" href="https://www.tessferrandez.com/blog/2005/11/25/dumpheap-stat-explained.html">commands</a> can diagnose the memory leak problem. And in this specific case, I find the command <code>!finalizequeue</code> is super helpful!</p>
+<p>Before I show you the output of the command, let’s examine what the <code>finalizer queue</code> is. In <code>C#</code>, the <code>finalizer</code>(also referred to as <code>destructor</code>)  is used to perform any necessary final clean-up when a class instance is being collected by the GC. </p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Car</span></span><br><span class="line">&#123;</span><br><span class="line">    ~Car()  <span class="comment">// finalizer</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// cleanup statements...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>When your application encapsulates <code>unmanaged resources</code>, such as windows, files and network connections, you should use the <code>finalizer</code> to free those resources. </p>
+<p>Objects of classes with finalizers can’t be removed immediately: they instead go to the <code>finalizer queue</code> and are removed from memory once the finalizer has been run. </p>
+<p>Based on this, let’s examine the output of command <code>!finalizequeue</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; !FinalizeQueue</span><br><span class="line">SyncBlocks to be cleaned up: 0</span><br><span class="line">Free-Threaded Interfaces to be released: 0</span><br><span class="line">MTA Interfaces to be released: 0</span><br><span class="line">STA Interfaces to be released: 0</span><br><span class="line">----------------------------------</span><br><span class="line">generation 0 has 66 finalizable objects (0000021c729c47b0-&gt;0000021c729c49c0)</span><br><span class="line">generation 1 has 4 finalizable objects (0000021c729c4790-&gt;0000021c729c47b0)</span><br><span class="line">generation 2 has 4372 finalizable objects (0000021c729bbef0-&gt;0000021c729c4790)</span><br><span class="line">Ready for finalization 0 objects (0000021c729c49c0-&gt;0000021c729c49c0)</span><br><span class="line">Statistics for all finalizable objects (including all objects ready for finalization):</span><br><span class="line">              MT    Count    TotalSize Class Name</span><br><span class="line">00007ffcde443f78        1           32 Microsoft.Win32.SafeHandles.SafePEFileHandle</span><br><span class="line">00007ffcde4407f8        1           32 System.Security.Cryptography.X509Certificates.SafeCertContextHandle</span><br><span class="line"></span><br><span class="line">--- many lines of output omitted ---</span><br><span class="line"></span><br><span class="line">00007ffcde447db0       97         3104 Microsoft.Win32.SafeHandles.SafeWaitHandle</span><br><span class="line">00007ffcdd272468       28         4928 System.Diagnostics.PerformanceCounter</span><br><span class="line">00007ffcde45d6a8       64         6144 System.Threading.Thread</span><br><span class="line">00007ffcde4297c0     3639       262008 System.Reflection.Emit.DynamicResolver</span><br><span class="line">Total 4442 objects</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>You can notice that there are <code>3639</code> objects of type <code>System.Reflection.Emit.DynamicResolver</code>. As we know, the objects in the <code>finalizer queue</code> can’t be removed until the finalizer runs. This also means that any object they reference and any object referenced by those, and so on has to be kept in memory.</p>
+<p>This is the potential reason for the memory leak problem. <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/dotnet/api/system.reflection.emit?view=net-8.0"><code>System.Reflection.Emit</code></a> is a low-level library used to generate the Microsoft Intermediate Language (MSIL) dynamically, my application does not rely on it. Finally, it turns out the issue is from the Service Fabric SDK and upgrading to new versions can fix it. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined how .NET GC works and how to diagnose the memory leak issue with WinDbg. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/dotnet-GC-memory-leak-WinDbg/" rel="tag"># dotnet, GC, memory leak, WinDbg</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/06/09/lift-scholarship-program/" rel="prev" title="Linux Foundation Scholarship">
+                  <i class="fa fa-angle-left"></i> Linux Foundation Scholarship
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

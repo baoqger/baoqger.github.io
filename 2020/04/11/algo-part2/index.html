@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="Part 2Circular ListJudge a linked list is circular or not 123456789101112131415function circular(list) &#123;  let slow &#x3D; list.getFirst();  let fast &#x3D; list.getFirst();  while (fast.next &amp;&amp; fas">
+<meta property="og:type" content="article">
+<meta property="og:title" content="algo-part2">
+<meta property="og:url" content="https://organicprogrammer.com/2020/04/11/algo-part2/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="Part 2Circular ListJudge a linked list is circular or not 123456789101112131415function circular(list) &#123;  let slow &#x3D; list.getFirst();  let fast &#x3D; list.getFirst();  while (fast.next &amp;&amp; fas">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-04-11T13:00:20.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2020/04/11/algo-part2/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2020/04/11/algo-part2/","path":"2020/04/11/algo-part2/","title":"algo-part2"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>algo-part2 | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Part-2"><span class="nav-number">1.</span> <span class="nav-text">Part 2</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Circular-List"><span class="nav-number">1.1.</span> <span class="nav-text">Circular List</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tree"><span class="nav-number">1.2.</span> <span class="nav-text">Tree</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Tree-level-width"><span class="nav-number">1.3.</span> <span class="nav-text">Tree level width</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Events"><span class="nav-number">1.4.</span> <span class="nav-text">Events</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Binary-Search-Tree"><span class="nav-number">1.5.</span> <span class="nav-text">Binary Search Tree</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Validate-the-Binary-Search-Tree"><span class="nav-number">1.6.</span> <span class="nav-text">Validate the Binary Search Tree</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BubbleSort"><span class="nav-number">1.7.</span> <span class="nav-text">BubbleSort</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Selection-Sort"><span class="nav-number">1.8.</span> <span class="nav-text">Selection Sort</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Merge-Sort"><span class="nav-number">1.9.</span> <span class="nav-text">Merge Sort</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#binary-Gap"><span class="nav-number">1.10.</span> <span class="nav-text">binary Gap</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Bug-and-Sell-Stock"><span class="nav-number">1.11.</span> <span class="nav-text">Bug and Sell Stock</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2020/04/11/algo-part2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="algo-part2 | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          algo-part2
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-04-11 21:00:20" itemprop="dateCreated datePublished" datetime="2020-04-11T21:00:20+08:00">2020-04-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Part-2"><a href="#Part-2" class="headerlink" title="Part 2"></a>Part 2</h2><h3 id="Circular-List"><a href="#Circular-List" class="headerlink" title="Circular List"></a>Circular List</h3><p>Judge a linked list is circular or not</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">circular</span>(<span class="params">list</span>) &#123;</span><br><span class="line">  <span class="keyword">let</span> slow = list.<span class="title function_">getFirst</span>();</span><br><span class="line">  <span class="keyword">let</span> fast = list.<span class="title function_">getFirst</span>();</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (fast.<span class="property">next</span> &amp;&amp; fast.<span class="property">next</span>.<span class="property">next</span>) &#123;</span><br><span class="line">    slow = slow.<span class="property">next</span>;</span><br><span class="line">    fast = fast.<span class="property">next</span>.<span class="property">next</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (slow === fast) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Tree"><a href="#Tree" class="headerlink" title="Tree"></a>Tree</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Node</span> &#123;</span><br><span class="line">  <span class="title function_">constructor</span>(<span class="params">data</span>) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">data</span> = data;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">children</span> = [];</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="title function_">add</span>(<span class="params">data</span>) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">children</span>.<span class="title function_">push</span>(<span class="keyword">new</span> <span class="title class_">Node</span>(data));</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="title function_">remove</span>(<span class="params">data</span>) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">children</span> = <span class="variable language_">this</span>.<span class="property">children</span>.<span class="title function_">filter</span>(<span class="function"><span class="params">node</span> =&gt;</span> &#123;</span><br><span class="line">      <span class="keyword">return</span> node.<span class="property">data</span> !== data;</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Tree</span> &#123;</span><br><span class="line">  <span class="title function_">constructor</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">root</span> = <span class="literal">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 广度优先</span></span><br><span class="line">  <span class="title function_">traverseBF</span>(<span class="params">fn</span>) &#123;</span><br><span class="line">    <span class="comment">// 初始化一个数组</span></span><br><span class="line">    <span class="keyword">const</span> arr = [<span class="variable language_">this</span>.<span class="property">root</span>];</span><br><span class="line">    <span class="comment">// 循环判断</span></span><br><span class="line">    <span class="keyword">while</span> (arr.<span class="property">length</span>) &#123;</span><br><span class="line">      <span class="comment">// 取得头部的元素</span></span><br><span class="line">      <span class="keyword">const</span> node = arr.<span class="title function_">shift</span>();</span><br><span class="line">      <span class="comment">// 把头部元素的children push到array里</span></span><br><span class="line">      arr.<span class="title function_">push</span>(...node.<span class="property">children</span>);</span><br><span class="line">      <span class="title function_">fn</span>(node);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 深度优先</span></span><br><span class="line">  <span class="title function_">traverseDF</span>(<span class="params">fn</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> arr = [<span class="variable language_">this</span>.<span class="property">root</span>];</span><br><span class="line">    <span class="keyword">while</span> (arr.<span class="property">length</span>) &#123;</span><br><span class="line">      <span class="keyword">const</span> node = arr.<span class="title function_">shift</span>();</span><br><span class="line"></span><br><span class="line">      arr.<span class="title function_">unshift</span>(...node.<span class="property">children</span>);</span><br><span class="line">      <span class="title function_">fn</span>(node);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable language_">module</span>.<span class="property">exports</span> = &#123; <span class="title class_">Tree</span>, <span class="title class_">Node</span> &#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Tree-level-width"><a href="#Tree-level-width" class="headerlink" title="Tree level width"></a>Tree level width</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="title class_">Given</span> the root node <span class="keyword">of</span> a tree, <span class="keyword">return</span></span><br><span class="line">an array where each element is the width</span><br><span class="line"><span class="keyword">of</span> the tree at each level.</span><br><span class="line">--- <span class="title class_">Example</span></span><br><span class="line"><span class="title class_">Given</span>:</span><br><span class="line">    <span class="number">0</span></span><br><span class="line">  / |  \</span><br><span class="line"><span class="number">1</span>   <span class="number">2</span>   <span class="number">3</span></span><br><span class="line">|       |</span><br><span class="line"><span class="number">4</span>       <span class="number">5</span></span><br><span class="line"><span class="title class_">Answer</span>: [<span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>solution: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">levelWidth</span>(<span class="params">root</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> arr = [root, <span class="string">&#x27;s&#x27;</span>];</span><br><span class="line">  <span class="keyword">const</span> counters = [<span class="number">0</span>];</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (arr.<span class="property">length</span> &gt; <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> node = arr.<span class="title function_">shift</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (node === <span class="string">&#x27;s&#x27;</span>) &#123;</span><br><span class="line">      counters.<span class="title function_">push</span>(<span class="number">0</span>);</span><br><span class="line">      arr.<span class="title function_">push</span>(<span class="string">&#x27;s&#x27;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      arr.<span class="title function_">push</span>(...node.<span class="property">children</span>);</span><br><span class="line">      counters[counters.<span class="property">length</span> - <span class="number">1</span>]++;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> counters;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Events"><a href="#Events" class="headerlink" title="Events"></a>Events</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// --- Directions</span></span><br><span class="line"><span class="comment">// Create an &#x27;eventing&#x27; library out of the</span></span><br><span class="line"><span class="comment">// Events class.  The Events class should</span></span><br><span class="line"><span class="comment">// have methods &#x27;on&#x27;, &#x27;trigger&#x27;, and &#x27;off&#x27;.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Events</span> &#123;</span><br><span class="line">  <span class="title function_">constructor</span>(<span class="params"></span>) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">events</span> = &#123;&#125;;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Register an event handler</span></span><br><span class="line">  <span class="title function_">on</span>(<span class="params">eventName, callback</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="variable language_">this</span>.<span class="property">events</span>[eventName]) &#123;</span><br><span class="line">      <span class="variable language_">this</span>.<span class="property">events</span>[eventName].<span class="title function_">push</span>(callback);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="variable language_">this</span>.<span class="property">events</span>[eventName] = [callback];</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Trigger all callbacks associated</span></span><br><span class="line">  <span class="comment">// with a given eventName</span></span><br><span class="line">  <span class="title function_">trigger</span>(<span class="params">eventName</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="variable language_">this</span>.<span class="property">events</span>[eventName]) &#123;</span><br><span class="line">      <span class="keyword">for</span> (<span class="keyword">let</span> cb <span class="keyword">of</span> <span class="variable language_">this</span>.<span class="property">events</span>[eventName]) &#123;</span><br><span class="line">        <span class="title function_">cb</span>();</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// Remove all event handlers associated</span></span><br><span class="line">  <span class="comment">// with the given eventName</span></span><br><span class="line">  <span class="title function_">off</span>(<span class="params">eventName</span>) &#123;</span><br><span class="line">    <span class="keyword">delete</span> <span class="variable language_">this</span>.<span class="property">events</span>[eventName];</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Binary-Search-Tree"><a href="#Binary-Search-Tree" class="headerlink" title="Binary Search Tree"></a>Binary Search Tree</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1) Implement the Node class to create</span></span><br><span class="line"><span class="comment">// a binary search tree.  The constructor</span></span><br><span class="line"><span class="comment">// should initialize values &#x27;data&#x27;, &#x27;left&#x27;,</span></span><br><span class="line"><span class="comment">// and &#x27;right&#x27;.</span></span><br><span class="line"><span class="comment">// 2) Implement the &#x27;insert&#x27; method for the</span></span><br><span class="line"><span class="comment">// Node class.  Insert should accept an argument</span></span><br><span class="line"><span class="comment">// &#x27;data&#x27;, then create an insert a new node</span></span><br><span class="line"><span class="comment">// at the appropriate location in the tree.</span></span><br><span class="line"><span class="comment">// 3) Implement the &#x27;contains&#x27; method for the Node</span></span><br><span class="line"><span class="comment">// class.  Contains should accept a &#x27;data&#x27; argument</span></span><br><span class="line"><span class="comment">// and return the Node in the tree with the same value.</span></span><br><span class="line"><span class="comment">// If the value isn&#x27;t in the tree return null.</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Node</span> &#123;</span><br><span class="line">  <span class="title function_">constructor</span>(<span class="params">data</span>) &#123;</span><br><span class="line">    <span class="comment">// 每个node三个属性</span></span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">data</span> = data;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">left</span> = <span class="literal">null</span>;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">right</span> = <span class="literal">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="title function_">insert</span>(<span class="params">data</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (data &lt; <span class="variable language_">this</span>.<span class="property">data</span> &amp;&amp; <span class="variable language_">this</span>.<span class="property">left</span>) &#123;</span><br><span class="line">      <span class="comment">//对left子节点的递归insert</span></span><br><span class="line">      <span class="variable language_">this</span>.<span class="property">left</span>.<span class="title function_">insert</span>(data);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (data &lt; <span class="variable language_">this</span>.<span class="property">data</span>) &#123;</span><br><span class="line">      <span class="comment">// 赋值给left子节点</span></span><br><span class="line">      <span class="variable language_">this</span>.<span class="property">left</span> = <span class="keyword">new</span> <span class="title class_">Node</span>(data);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (data &gt; <span class="variable language_">this</span>.<span class="property">data</span> &amp;&amp; <span class="variable language_">this</span>.<span class="property">right</span>) &#123;</span><br><span class="line">      <span class="comment">//对right子节点的递归insert</span></span><br><span class="line">      <span class="variable language_">this</span>.<span class="property">right</span>.<span class="title function_">insert</span>(data);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (data &gt; <span class="variable language_">this</span>.<span class="property">data</span>) &#123;</span><br><span class="line">      <span class="comment">// 赋值给right子节点</span></span><br><span class="line">      <span class="variable language_">this</span>.<span class="property">right</span> = <span class="keyword">new</span> <span class="title class_">Node</span>(data);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="title function_">contains</span>(<span class="params">data</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (<span class="variable language_">this</span>.<span class="property">data</span> === data) &#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="variable language_">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (<span class="variable language_">this</span>.<span class="property">data</span> &lt; data &amp;&amp; <span class="variable language_">this</span>.<span class="property">right</span>) &#123;</span><br><span class="line">      <span class="comment">// right子节点的contains操作</span></span><br><span class="line">      <span class="keyword">return</span> <span class="variable language_">this</span>.<span class="property">right</span>.<span class="title function_">contains</span>(data);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="variable language_">this</span>.<span class="property">data</span> &gt; data &amp;&amp; <span class="variable language_">this</span>.<span class="property">left</span>) &#123;</span><br><span class="line">      <span class="comment">// left子节点的contains操作</span></span><br><span class="line">      <span class="keyword">return</span> <span class="variable language_">this</span>.<span class="property">left</span>.<span class="title function_">contains</span>(data);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Validate-the-Binary-Search-Tree"><a href="#Validate-the-Binary-Search-Tree" class="headerlink" title="Validate the Binary Search Tree"></a>Validate the Binary Search Tree</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">validate</span>(<span class="params">node, min = <span class="literal">null</span>, max = <span class="literal">null</span></span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (max !== <span class="literal">null</span> &amp;&amp; node.<span class="property">data</span> &gt; max) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (min !== <span class="literal">null</span> &amp;&amp; node.<span class="property">data</span> &lt; min) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (node.<span class="property">left</span> &amp;&amp; !<span class="title function_">validate</span>(node.<span class="property">left</span>, min, node.<span class="property">data</span>)) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (node.<span class="property">right</span> &amp;&amp; !<span class="title function_">validate</span>(node.<span class="property">right</span>, node.<span class="property">data</span>, max)) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="BubbleSort"><a href="#BubbleSort" class="headerlink" title="BubbleSort"></a>BubbleSort</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">bubbleSort</span>(<span class="params">arr</span>) &#123;</span><br><span class="line">  <span class="comment">// Implement bubblesort</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; arr.<span class="property">length</span>; i++) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> j = <span class="number">0</span>; j &lt; (arr.<span class="property">length</span> - i - <span class="number">1</span>); j++) &#123;</span><br><span class="line">      <span class="keyword">if</span> (arr[j] &gt; arr[j+<span class="number">1</span>]) &#123;</span><br><span class="line">        <span class="keyword">const</span> lesser = arr[j+<span class="number">1</span>];</span><br><span class="line">        arr[j+<span class="number">1</span>] = arr[j];</span><br><span class="line">        arr[j] = lesser;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// return the sorted array</span></span><br><span class="line">  <span class="keyword">return</span> arr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Selection-Sort"><a href="#Selection-Sort" class="headerlink" title="Selection Sort"></a>Selection Sort</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">selectionSort</span>(<span class="params">arr</span>) &#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; arr.<span class="property">length</span>; i++) &#123;</span><br><span class="line">    <span class="keyword">let</span> indexOfMin = i;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> j = i+<span class="number">1</span>; j &lt;arr.<span class="property">length</span>; j++) &#123;</span><br><span class="line">      <span class="keyword">if</span> (arr[j] &lt; arr[indexOfMin]) &#123;</span><br><span class="line">        indexOfMin = j;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (indexOfMin !== i) &#123;</span><br><span class="line">      <span class="keyword">let</span> lesser = arr[indexOfMin];</span><br><span class="line">      arr[indexOfMin] = arr[i];</span><br><span class="line">      arr[i] = lesser;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> arr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Merge-Sort"><a href="#Merge-Sort" class="headerlink" title="Merge Sort"></a>Merge Sort</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">mergeSort</span>(<span class="params">arr</span>) &#123;</span><br><span class="line">  <span class="keyword">if</span> (arr.<span class="property">length</span> === <span class="number">1</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> arr;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> center = <span class="title class_">Math</span>.<span class="title function_">floor</span>(arr.<span class="property">length</span> / <span class="number">2</span>);</span><br><span class="line">  <span class="keyword">const</span> left = arr.<span class="title function_">slice</span>(<span class="number">0</span>, center);</span><br><span class="line">  <span class="keyword">const</span> right = arr.<span class="title function_">slice</span>(center);</span><br><span class="line">  <span class="comment">// 神奇的递归</span></span><br><span class="line">  <span class="keyword">return</span> <span class="title function_">merge</span>(<span class="title function_">mergeSort</span>(left), <span class="title function_">mergeSort</span>(right));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 辅助函数merge，能够把两个已经排序的left和right数组，整合排序为一个array</span></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">merge</span>(<span class="params">left, right</span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> results = [];</span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> (left.<span class="property">length</span> &amp;&amp; right.<span class="property">length</span>) &#123;</span><br><span class="line">    <span class="keyword">if</span> (left[<span class="number">0</span>] &lt; right[<span class="number">0</span>]) &#123;</span><br><span class="line">      results.<span class="title function_">push</span>(left.<span class="title function_">shift</span>());</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      results.<span class="title function_">push</span>(right.<span class="title function_">shift</span>());</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">// 到这行的时候，left和right，至少有一个是空的了，所以不用纠结left和right的前后位置了。</span></span><br><span class="line">  <span class="keyword">return</span> [...results, ...left, ...right];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="binary-Gap"><a href="#binary-Gap" class="headerlink" title="binary Gap"></a>binary Gap</h3><p>A binary gap within a positive integer N is any maximal sequence of consecutive zeros that is surrounded by ones at both ends in the binary representation of N.</p>
+<p>For example, number 9 has binary representation 1001 and contains a binary gap of length 2. The number 529 has binary representation 1000010001 and contains two binary gaps: one of length 4 and one of length 3. The number 20 has binary representation 10100 and contains one binary gap of length 1. The number 15 has binary representation 1111 and has no binary gaps. The number 32 has binary representation 100000 and has no binary gaps.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">binaryGap</span>(<span class="params">num</span>) &#123;</span><br><span class="line">  <span class="keyword">let</span> str = num.<span class="title function_">toString</span>(<span class="number">2</span>).<span class="title function_">split</span>(<span class="string">&#x27;&#x27;</span>)</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(str)</span><br><span class="line">  <span class="keyword">let</span> counter = <span class="number">0</span>;</span><br><span class="line">  <span class="keyword">let</span> max = <span class="number">0</span>;</span><br><span class="line">  str.<span class="title function_">forEach</span>(<span class="function">(<span class="params">char</span>) =&gt;</span>  &#123;</span><br><span class="line">    <span class="keyword">if</span> (char === <span class="string">&#x27;0&#x27;</span>) &#123;</span><br><span class="line">      counter ++;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      <span class="keyword">if</span> (counter &gt; max) &#123;</span><br><span class="line">        max = counter;</span><br><span class="line">      &#125;</span><br><span class="line">      counter = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// console.log(counter)</span></span><br><span class="line">  &#125;);</span><br><span class="line">  <span class="keyword">return</span> max;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Bug-and-Sell-Stock"><a href="#Bug-and-Sell-Stock" class="headerlink" title="Bug and Sell Stock"></a>Bug and Sell Stock</h3><p>You will be given a list of stock prices for a given day and your goal is to return the maximum profit that could have been made by buying a stock at the given price and then selling the stock later on. For example if the input is: [45, 24, 35, 31, 40, 38, 11] then your program should return 16 because if you bought the stock at $24 and sold it at $40, a profit of $16 was made and this is the largest profit that could be made. If no profit could have been made, return -1.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">getMaxProfit</span>(<span class="params">arr</span>) &#123;</span><br><span class="line">  <span class="keyword">var</span> minIdx = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">var</span> maxIdx = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">var</span> currMin = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">var</span> maxProfit = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(arr.<span class="property">length</span> &lt; <span class="number">2</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">Error</span>(<span class="string">&quot;Need atleast two time periods to be profitable!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="keyword">var</span> i = <span class="number">1</span>; i &lt; arr.<span class="property">length</span>; i++) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// new current min.</span></span><br><span class="line">        <span class="keyword">if</span>(arr[i] &lt; arr[currMin]) &#123;</span><br><span class="line">          currMin = i;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// new best profit</span></span><br><span class="line">        <span class="keyword">if</span>(arr[maxIdx] - arr[minIdx] &lt; arr[i] - arr[currMin]) &#123;</span><br><span class="line">                maxIdx = i;</span><br><span class="line">              minIdx = currMin;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    maxProfit  = arr[maxIdx] - arr[minIdx];</span><br><span class="line">    <span class="keyword">return</span> maxProfit;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/04/10/algo-part1/" rel="prev" title="algo-part1">
+                  <i class="fa fa-angle-left"></i> algo-part1
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2020/04/12/rxjs-marble-testing/" rel="next" title="Typical usage case of Marble Testing for RxJS">
+                  Typical usage case of Marble Testing for RxJS <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

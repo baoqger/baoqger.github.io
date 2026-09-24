@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIn this article, I want to introduce a distributed systems platform: Service Fabric, that is used to build microservices.  First things first, what is Service Fabric? In the software world,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Build Microservices with Service Fabric: A Hands-on Approach">
+<meta property="og:url" content="https://organicprogrammer.com/2023/03/20/guide-to-service-fabric-architecture/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn this article, I want to introduce a distributed systems platform: Service Fabric, that is used to build microservices.  First things first, what is Service Fabric? In the software world,">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/health-metrics-ui.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/reliable-services.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/actor-model.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/healthmetrics-architecture.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/partition-replication.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/partition-key.png">
+<meta property="article:published_time" content="2023-03-20T10:18:32.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Service Fabric, stateless, stateful, actor model, scalability, reliability,  partition">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/health-metrics-ui.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2023/03/20/guide-to-service-fabric-architecture/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2023/03/20/guide-to-service-fabric-architecture/","path":"2023/03/20/guide-to-service-fabric-architecture/","title":"Build Microservices with Service Fabric: A Hands-on Approach"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Build Microservices with Service Fabric: A Hands-on Approach | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Hands-on-Project"><span class="nav-number">2.</span> <span class="nav-text">Hands-on Project</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Service-Fabric-Programming-Model"><span class="nav-number">3.</span> <span class="nav-text">Service Fabric Programming Model</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Reliable-Services"><span class="nav-number">4.</span> <span class="nav-text">Reliable Services</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Architecture-of-HealthMetrics"><span class="nav-number">5.</span> <span class="nav-text">Architecture of HealthMetrics</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Naming-Perspective"><span class="nav-number">6.</span> <span class="nav-text">Naming Perspective</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Communication-Perspective"><span class="nav-number">7.</span> <span class="nav-text">Communication Perspective</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Scalability-Perspective"><span class="nav-number">8.</span> <span class="nav-text">Scalability Perspective</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">9.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2023/03/20/guide-to-service-fabric-architecture/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Build Microservices with Service Fabric: A Hands-on Approach | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Build Microservices with Service Fabric: A Hands-on Approach
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-03-20 18:18:32" itemprop="dateCreated datePublished" datetime="2023-03-20T18:18:32+08:00">2023-03-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:13" itemprop="dateModified" datetime="2026-09-24T08:11:13+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In this article, I want to introduce a distributed systems platform: <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-overview"><code>Service Fabric</code></a>, that is used to build microservices. </p>
+<p>First things first, what is <code>Service Fabric</code>? In the software world, <code>Service Fabric</code> is in the scope of the <code>orchestrator</code>. So it is the competitor of <a target="_blank" rel="noopener" href="https://kubernetes.io/"><code>Kubernetes</code></a>, <a target="_blank" rel="noopener" href="https://docs.docker.com/engine/swarm/"><code>Docker Swarm</code></a>, etc. </p>
+<p>I know what you’re thinking about, at the time of writing, <code>Kubernetes</code> already won the competition. Why am I still writing about <code>Service Fabric</code>? My motivation to write this post is as follows:</p>
+<ul>
+<li>Firstly, I once used <code>Service Fabric</code> to build microservices and learned something valuable about it. I want to summarize all my learnings and share them with you here! </li>
+<li>Secondly, we can (simply) examine both <code>Service Fabric</code> and <code>Kubernetes</code> to understand why the cloud-native solution is better and what problems it can solve. </li>
+<li>Finally, <code>Service Fabric</code> is still widely used in some enterprise applications, in detail, you can refer <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-application-scenarios">here</a>. So the skills you learned about service fabric are valuable.</li>
+</ul>
+<h3 id="Hands-on-Project"><a href="#Hands-on-Project" class="headerlink" title="Hands-on Project"></a>Hands-on Project</h3><p>To learn the <code>Service Fabric</code> platform, we will examine an open-source project: <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation">HealthMetrics</a>. This project is originally developed by Microsoft itself to demonstrate the power of service fabric and I added some enhancements to it, in detail please refer to this <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation">GitHub repo</a>.</p>
+<p>At the business requirement level, this application goes like this: each <code>patient</code> keeps reporting the heart rate data to the <code>doctor</code> via the wearable device(the <code>band</code> in this case). And the <code>doctor</code> aggregates the collected health data and reports to the <code>county</code> service. Each <code>county</code> service instance runs some statistics on doctors’ data and sends the report to the <code>country</code> service. Finally, you can get something as follows: </p>
+<img src="/images/health-metrics-ui.png" title="health metrics" width="800px" height="600px">
+
+<p>Before we explore the detailed implementation, you can pause here for a few minutes. How will you design the architecture if this application is assigned to you? How to make it both <code>reliable</code> and <code>scalable</code>?  </p>
+<h3 id="Service-Fabric-Programming-Model"><a href="#Service-Fabric-Programming-Model" class="headerlink" title="Service Fabric Programming Model"></a>Service Fabric Programming Model</h3><p><code>Service Fabric</code> provides multiple ways to write and manage your services: </p>
+<ul>
+<li>Reliable Services: is the most popular choice in the context of service fabric, we’ll examine much more about it later. </li>
+<li>Containers: service fabric can also deploy services in containers. But if you choose to use containers, why not directly use <code>Kubernetes</code>? I’ll not cover it in this post. </li>
+<li>Guest executables: You can run any type of code or script like Node.js as guest executables in the service fabric. Note that the service fabric platform doesn’t include the runtime for the guest executables, instead, the operating system hosting the service fabric must provide the corresponding runtime for the given language. It provides a flexible way to run legacy applications within microservices. If you have an interest in it, please refer to this <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-guest-executables-introduction">article</a>, I will not examine the details in this post.</li>
+</ul>
+<p>Next, let’s examine what are <code>Reliable Services</code>.</p>
+<h3 id="Reliable-Services"><a href="#Reliable-Services" class="headerlink" title="Reliable Services"></a>Reliable Services</h3><p>As I mentioned above, <code>service fabric</code> is an <code>orchestrator</code> which provides infrastructure-level functionalities like <code>cluster management</code>, <code>service discovery</code>, and <code>scaling</code> as <code>Kubernetes</code> does. But <code>service fabric</code> goes further by also providing a <code>reliable services</code> model to guide the development on the application level, this’s a special point compared to <code>Kubernetes</code>. Simply speaking, the application code can call the <code>service fabric</code> runtime APIs to query the system for building reliable applications. In the following sections, I’ll show you what that means with some code blocks. </p>
+<p><code>Reliable Services</code> can be classified into two types as follows: </p>
+<ul>
+<li>Stateless service: when we mentioned stateless service in the context of service fabric, we are not saying that the service doesn’t have any state to store, but it means that the service doesn’t store the data inside the cluster of service fabric. Indeed, the stateless service can store states in the external database. The naming of stateless is relative to the cluster. </li>
+<li>Stateful service: similarly, the stateful service keeps its state locally in the service fabric cluster, which means the data and service are in the same virtual or physical machine. And this is called <code>Reliable Collections</code>. Compared with external data storage, <code>Reliable Collections</code> implies low latency and high performance. In the following section, I will introduce more about <code>Reliable Collections</code>, which is a very interesting topic. Please hold on!</li>
+</ul>
+<img src="/images/reliable-services.png" title="reliable services" width="600px" height="400px">
+
+<p>Besides stateless and stateful services listed above, there is the third type of service provided by Service Fabric: <code>Actor Service</code>. </p>
+<ul>
+<li>Actor Service: is a special type of stateful service, which applies the <code>actor model</code> theory. The <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Actor_model"><code>actor model</code></a> is a general computer science theory handling <code>concurrent computation</code>. It is a very big topic worthy of a separate article. I’ll not cover the details in this post, instead, let’s go through this model in the context of service fabric.</li>
+</ul>
+<p>The <code>actor model</code> is proposed many years ago in 1973 to simplify the process of writing concurrent programs with the following several advantages: </p>
+<ul>
+<li>Encapsulation: in the actor model, each actor is a self-contained unit that encapsulates its own state and behavior. And each actor runs <code>only one thread</code>, so you don’t have to worry about complex multi-threading programming issues. But how does it support high concurrency? Just allocate <code>more actor instances</code> as the load goes up.   </li>
+<li>Message passing: different from the traditional multi-threading programming techniques, actors do not <code>share memories</code>, instead, they communicate with async message-passing communication, which can reduce the complexity of concurrent programs. </li>
+<li>Location transparency: as a self-contained computation unit, each actor can be located on different machines, which makes it the perfect solution for building distributed applications as service fabric does.</li>
+</ul>
+<p>In the future, I will write an article on the actor model to examine more details about it. Next, let’s take a look at the demo app: <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation">HealthMetrics</a> and analyze how it was built based on the programming models we discussed above. </p>
+<img src="/images/actor-model.png" title="actor model" width="400px" height="300px">  
+
+<h3 id="Architecture-of-HealthMetrics"><a href="#Architecture-of-HealthMetrics" class="headerlink" title="Architecture of HealthMetrics"></a>Architecture of HealthMetrics</h3><img src="/images/healthmetrics-architecture.png" title="architecture" width="800px" height="600px">
+
+<p>There are several services included in this <code>HealthMetrics</code> demo application. They are: </p>
+<ul>
+<li>BandCreationService: this <code>stateless</code> service read the input CSV file and creates the individual <code>band actors</code> and <code>doctor actors</code>. For example, as the above snapshot shows, the application creates roughly 300 band actors and doctor actors.  </li>
+<li>BandActor: this <code>actor</code> service is the host for the band actors. Each BandActor represents an individual wearable device, which generates heart rate data and then sends it to the designated DoctorActor every 5 seconds. </li>
+<li>DoctorActor: the doctor <code>actor</code> service aggregates all of the data it receives from each band actor and generates an overall view for that doctor and then pushes it into the CountyService every 5 seconds.</li>
+<li>CountyService: this <code>stateful</code> service aggregates the information provided by the doctor actor further and also pushes the data into the NationalService. </li>
+<li>NationalService: this <code>stateful</code> service maintains the total aggerated data for the entire county and is used to serve data requested by WebService. </li>
+<li>WebService: this <code>stateless</code> service just hosts a simple web API to query information from NationalService and render the data on the web UI.</li>
+</ul>
+<p>As you can see, this demo application consists of all three types of services provided by service fabric, which is a perfect case to learn <code>service fabric</code>, right? </p>
+<p>In the next sections, let’s examine what kinds of techniques of service fabric are applied to build this highly <code>scalable</code> and <code>available</code> microservices application. </p>
+<h3 id="Naming-Perspective"><a href="#Naming-Perspective" class="headerlink" title="Naming Perspective"></a>Naming Perspective</h3><p><code>Naming</code> plays an important role in the <code>distributed system</code>. They are used to share resources, to uniquely identify entities, to refer to locations, and so on. In the <code>distributed system</code>, each name should be resolved to the entity it refers to. To resolve names, it is necessary to implement a <code>naming system</code>.</p>
+<p>In <code>Service Fabric</code>, <code>naming</code> is used to identify and locate <code>services</code> and <code>actors</code> within a cluster. And <code>Service Fabric</code> uses a <code>structured naming</code> system, where services and actors are identified using a <code>hierarchical</code> naming scheme. The naming system is based on the concept of a <code>namespace</code>. A namespace is a logical grouping of related <code>applications</code> and <code>services</code>. In the <code>Service Fabric</code> namespace, the first level is the <code>application</code>, which represents a logical grouping of services, and the second level is the <code>service</code>, which represents a specific unit of functionality that is part of the application. And the default namespace is <code>fabric:/</code>, so the service <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier">URI</a> in the <code>Service Fabric</code> cluster is in the following format: </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fabric:/applicationName/ServiceName</span><br></pre></td></tr></table></figure>
+<p>And in our <code>HealthMetrics</code> demo app, the URL will be something like <code>fabric:/HealthMetrics/HealthMetrics.BandActor</code> or <code>fabric:/HealthMetrics/HealthMetrics.CountyService</code>(the application name is <code>HealthMetrics</code> and the service name is <code>HealthMetrics.BandActor</code> or <code>HealthMetrics.CountyService</code>). </p>
+<p>In this demo app, we build a helper class <code>ServiceUriBuilder</code> to generate URI as follows: </p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Uri <span class="title">ToUri</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">string</span> applicationInstance = <span class="keyword">this</span>.ApplicationInstance;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (String.IsNullOrEmpty(applicationInstance))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// the ApplicationName property here automatically prepends &quot;fabric:/&quot; for us</span></span><br><span class="line">            applicationInstance = FabricRuntime.GetActivationContext().ApplicationName.Replace(<span class="string">&quot;fabric:/&quot;</span>, String.Empty);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (InvalidOperationException)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// FabricRuntime is not available. </span></span><br><span class="line">            <span class="comment">// This indicates that this is being called from somewhere outside the Service Fabric cluster.</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> Uri(<span class="string">&quot;fabric:/&quot;</span> + applicationInstance + <span class="string">&quot;/&quot;</span> + <span class="keyword">this</span>.ServiceInstance);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>For detail, please refer to this source code <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetrics.Common/ServiceUriBuilder.cs">file</a>.</p>
+<p>Since the behavior of the name resolver is quite similar to the internet domain name resolver, the <code>Service Fabric Name Service</code> can be regarded as an internal <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Domain_Name_System"><code>DNS</code></a> service. This type of internal <code>DNS</code> service is a common requirement for all distributed systems, including <code>Kubernetes</code>. In the modern <code>cloud-native</code> ecosystem, the popular choice is <a target="_blank" rel="noopener" href="https://coredns.io/"><code>CoreDNS</code></a>, which runs inside K8S. In the future, I will write an article about DNS. Please keep watching my blog’s update.</p>
+<p>Besides this default <code>DNS</code> solution mentioned above, you can use other <code>service registry</code> and <code>service discovery</code> solutions. For example, in my <a href="https://organicprogrammer.com/2020/11/16/golang-service-discovery-consul/">previous article</a>, I once examined how to do this based on <a target="_blank" rel="noopener" href="https://www.consul.io/"><code>Consul</code></a>. Imagine your large-scale application consists of hundreds of microservices, with the default DNS solutions you have to hardcode so many names in each service. That’s just where <code>Consul</code> can help. In detail, I’ll not repeat it here, please refer to my previous article!</p>
+<p>Now that we understand how the naming system works, let’s examine how to do inter-service communication based on that. </p>
+<h3 id="Communication-Perspective"><a href="#Communication-Perspective" class="headerlink" title="Communication Perspective"></a>Communication Perspective</h3><p>Inter-service communication is at the heart of all distributed systems. For nondistributed platforms, communication between processes can be done by <code>sharing memories</code>. But the communication between processes on different machines has always been based on the low-level message passing as offered by the underlying <code>network</code>. There are two widely used models for communications in distributed systems: <code>Remote Procedure Call(RPC)</code> and <code>Message-Oriented Middleware(MOM)</code>. </p>
+<ul>
+<li><p><code>Remote Procedure Call(RPC)</code>: is ideal for <code>client-server</code> applications and aims at hiding message-passing details from the client. The <code>HTTP</code> protocol is a typical <code>client-server</code> model, so <code>HTTP</code> requests can be thought of as a type of <code>RPC</code>.  In the <code>client-server</code> model, the client and server <code>must be online at the same time</code> to <code>exchange</code> information, so it’s often called <code>synchronous communication</code>.  </p>
+</li>
+<li><p><code>Message-Oriented Middleware(MOM)</code>: is suitable for distributed applications, where the communication does not follow the strict pattern of a client-server model. In this model, there are three parties involved: the <code>message producer</code>, the <code>message consumer</code>, and the <code>message broker</code>. In this case, when the <code>message producer</code> publishes the message, the <code>message consumer</code> doesn’t have to be online, the <code>message broker</code> will store the message until the consumer becomes available to receive it, so this model is also called <code>asynchronous communication</code>.</p>
+</li>
+</ul>
+<p>The <code>Service Fabric</code> supports <code>RPC</code> out of the box. In our <code>HealthMetrics</code> demo app, you can find the <code>RPC</code> calls and HTTP requests easily. For example, when the <code>BandActor</code> and the <code>DoctorActor</code> are created, the <code>RPC</code> call is used in the <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetrics.BandCreationService/Service.cs#L86"><code>BandCreationService</code></a> as follows: </p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">async</span> Task <span class="title">CreateBandActorTask</span>(<span class="params">BandActorGenerator bag, CancellationToken cancellationToken</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// omit some code for simplicity</span></span><br><span class="line">    ActorId bandActorId;</span><br><span class="line">    ActorId doctorActorId;</span><br><span class="line">    bandActorId = <span class="keyword">new</span> ActorId(Guid.NewGuid()); </span><br><span class="line">    doctorActorId = <span class="keyword">new</span> ActorId(bandActorInfo.DoctorId);</span><br><span class="line">    IDoctorActor docActor = ActorProxy.Create&lt;IDoctorActor&gt;(doctorActorId, <span class="keyword">this</span>.DoctorServiceUri);</span><br><span class="line">    <span class="keyword">await</span> docActor.NewAsync(doctorName, randomCountyRecord);</span><br><span class="line">    IBandActor bandActor = ActorProxy.Create&lt;IBandActor&gt;(bandActorId, <span class="keyword">this</span>.ActorServiceUri);</span><br><span class="line">    <span class="keyword">await</span> bandActor.NewAsync(bandActorInfo);</span><br><span class="line">    <span class="comment">// omit some code for simplicity</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>You can see the <code>ActorProxy</code> instance is created as the <code>RPC</code> client, and the <code>NewAsync</code> method of <code>BandActor</code> and <code>DoctorActor</code> service is called. For example, the <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetrics.BandActor/BandActor.cs#L78"><code>NewAsync</code></a> method of <code>BandActor</code> goes like this: </p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">NewAsync</span>(<span class="params">BandInfo info</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;CountyRecord&gt;(<span class="string">&quot;CountyInfo&quot;</span>, info.CountyInfo);</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;Guid&gt;(<span class="string">&quot;DoctorId&quot;</span>, info.DoctorId);</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;HealthIndex&gt;(<span class="string">&quot;HealthIndex&quot;</span>, info.HealthIndex);</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;<span class="built_in">string</span>&gt;(<span class="string">&quot;PatientName&quot;</span>, info.PersonName);</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;List&lt;HeartRateRecord&gt;&gt;(<span class="string">&quot;HeartRateRecords&quot;</span>, <span class="keyword">new</span> List&lt;HeartRateRecord&gt;()); <span class="comment">// initially the heart rate records are empty list</span></span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.RegisterReminders();</span><br><span class="line"></span><br><span class="line">    ActorEventSource.Current.ActorMessage(<span class="keyword">this</span>, <span class="string">&quot;Band created. ID: &#123;0&#125;, Name: &#123;1&#125;, Doctor ID: &#123;2&#125;&quot;</span>, <span class="keyword">this</span>.Id, info.PersonName, info.DoctorId);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>You can ignore the detailed content of this method for now, I will explain in a later section.</p>
+<p>And when the <code>DoctorActor</code> service reports its status, it calls the <code>CountyService</code> endpoint with HTTP requests: </p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">SendHealthReportToCountyAsync</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// omit some code</span></span><br><span class="line">    <span class="keyword">await</span> servicePartitionClient.InvokeWithRetryAsync(</span><br><span class="line">        client =&gt;</span><br><span class="line">        &#123;</span><br><span class="line">            Uri serviceAddress = <span class="keyword">new</span> Uri(</span><br><span class="line">                client.BaseAddress,</span><br><span class="line">                <span class="built_in">string</span>.Format(</span><br><span class="line">                    <span class="string">&quot;county/health/&#123;0&#125;/&#123;1&#125;&quot;</span>,</span><br><span class="line">                    partitionKey.Value.ToString(),</span><br><span class="line">                    id));</span><br><span class="line"></span><br><span class="line">            HttpWebRequest request = WebRequest.CreateHttp(serviceAddress);</span><br><span class="line">            request.Method = <span class="string">&quot;POST&quot;</span>;</span><br><span class="line">            request.ContentType = <span class="string">&quot;application/json&quot;</span>;</span><br><span class="line">            request.KeepAlive = <span class="literal">false</span>;</span><br><span class="line">            request.Timeout = (<span class="built_in">int</span>) client.OperationTimeout.TotalMilliseconds;</span><br><span class="line">            request.ReadWriteTimeout = (<span class="built_in">int</span>) client.ReadWriteTimeout.TotalMilliseconds;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">using</span> (Stream requestStream = request.GetRequestStream())</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">using</span> (BufferedStream buffer = <span class="keyword">new</span> BufferedStream(requestStream))</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="keyword">using</span> (StreamWriter writer = <span class="keyword">new</span> StreamWriter(buffer))</span><br><span class="line">                    &#123;</span><br><span class="line">                        JsonSerializer serializer = <span class="keyword">new</span> JsonSerializer();</span><br><span class="line">                        serializer.Serialize(writer, payload);</span><br><span class="line">                        buffer.Flush();</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">using</span> (HttpWebResponse response = (HttpWebResponse) request.GetResponse())</span><br><span class="line">                    &#123;</span><br><span class="line">                        ActorEventSource.Current.Message(<span class="string">&quot;Doctor Sent Data to County: &#123;0&#125;&quot;</span>, serviceAddress);</span><br><span class="line">                        <span class="keyword">return</span> Task.FromResult(<span class="literal">true</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    );</span><br><span class="line">    <span class="comment">// omit some code</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In the demo app, no <code>asynchronous communication</code> is used. But you can easily integrate the <code>message broker</code> middleware with the <code>Service Fabric</code>. This kind of microservice design is called <code>Event-Driven Architecture</code>. In the future, I will write another article about it, please keep watching my blog!</p>
+<h3 id="Scalability-Perspective"><a href="#Scalability-Perspective" class="headerlink" title="Scalability Perspective"></a>Scalability Perspective</h3><p><code>Scalability</code> has become one of the most important design goals for developers of distributed systems. A system can be scalable, meaning that we can easily add more users and resources to the system without any noticeable loss of performance. In most cases, scalability problems in distributed systems appear as performance problems caused by the limited capacity of servers and networks. </p>
+<p>Simply speaking, there are two types of scaling techniques: <code>scaling up</code> and <code>scaling out</code>: </p>
+<ul>
+<li>scaling up: is the process by which a machine is equipped with more and often more powerful resources(e.g., by increasing memory, upgrading CPUs, or replacing network modules) so that it can better accommodate performance-demanding applications. However, there are limits to how much you can scale up a single machine, and at some point, it may become more cost-effective to scale out. </li>
+<li>scaling out: is all about extending a networked computer system with more computers and subsequently distributing workloads across the extended set of computers. There are basically only three techniques we can apply: <code>asynchronous communication</code>, <code>replication</code> and <code>Partitioning</code>.</li>
+</ul>
+<p>We already examined asynchronous communication in the last section. Next, let’s take a deep look at the other two: </p>
+<ul>
+<li><p><code>Replication</code>:  is a technique, which <code>replicates</code> more components or resources, etc., across a distributed system. <code>Replication</code> not only increases <code>availability</code>; but also helps to balance the load between components, leading to <code>better performance</code>. In Service Fabric, no matter whether it is a stateless or stateful service, you can replicate the service across multiple nodes. As the workload of your application increases, Service Fabric will automatically distribute the load. But <code>replication</code> can only boost performance for <code>read</code> requests (which don’t change data); if you need to optimize the performance for <code>write</code> requests (which change data), you need <code>Partitioning</code>. </p>
+</li>
+<li><p><code>Partitioning</code>:  is an important scaling technique, which involves taking a component or other resource, splitting it into <code>smaller parts</code>, and subsequently spreading those parts across the system. Each partition only contains a subset of the entire dataset. This can help reduce the amount of data that needs to be processed and accessed by each partition,  which can lead to faster processing times and improved performance. In addition to reducing the size of the data set, partitioning can also improve concurrency and reduce contention.</p>
+</li>
+</ul>
+<p>In Service Fabric, each <code>partition</code> consists of a <code>replica set</code> with a single <code>primary</code> replica and multiple active <code>secondary</code> replicas. Service Fabric makes sure to distribute replicas of partitions across nodes so that secondary replicas of a partition do not end up on the same node as the primary replica, which can increase the <code>availability</code>. </p>
+<img src="/images/partition-replication.png" title="partition and replicas" width="600px" height="400px"> 
+
+<p>The difference between a <code>primary</code> replica and a <code>secondary</code> replica is that the <code>primary</code> replica can handle both <code>read and write</code> requests, while the <code>secondary</code> replica can only handle <code>read</code> requests. Moreover, by default, the read requests are only handled by the <code>primary</code> replica, if you want to balance the read requests among all the <code>secondary</code> replicas, you need to set <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-reliable-services-lifecycle"><code>ListenOnSecondary</code></a> at the application code level. You can set the number of replicas with <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L155"><code>MinReplicaSetSize</code></a> and <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L158"><code>TargetReplicaSetSize</code></a></p>
+<p>And when the client needs to call the service with multiple partitions, the client needs to generate a <code>ServicePartitionKey</code>; and send requests to the service with this partition key. For example, the <code>DoctorActor</code> sends the health report to the county service with multiple partitions as follows: </p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">SendHealthReportToCountyAsync</span>()</span> &#123;</span><br><span class="line">    <span class="comment">// omit some code </span></span><br><span class="line">    ServicePartitionKey partitionKey = <span class="keyword">new</span> ServicePartitionKey(countyRecord.CountyId);</span><br><span class="line">    ServicePartitionClient&lt;HttpCommunicationClient&gt; servicePartitionClient =</span><br><span class="line">    <span class="keyword">new</span> ServicePartitionClient&lt;HttpCommunicationClient&gt;(</span><br><span class="line">        <span class="keyword">this</span>.clientFactory,</span><br><span class="line">        <span class="keyword">this</span>.countyServiceInstanceUri,</span><br><span class="line">        partitionKey);</span><br><span class="line">    <span class="keyword">await</span> servicePartitionClient.InvokeWithRetryAsync();</span><br><span class="line">    <span class="comment">// omit some code</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>You can see the partition key is generated based on the county id field. Service Fabric provides several different <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-concepts-partitioning">partition schemas</a>. In this case, <code>ranged partitioning</code> is used, where the partition key is an <code>integer</code>. </p>
+<p>The county service specifies an integer range by a <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L34"><code>Low Key</code></a> ( set to 0) and <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L35"><code>High Key</code></a> (set to 57000). It also defines the number of partitions as <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L61"><code>PartitionCount</code></a> (set to 3). All the integer keys are evenly distributed among the partitions. So the partitions of the county service go as follows: </p>
+<img src="/images/partition-key.png" title="partition key" width="400px" height="300px"> 
+
+<p>As I mentioned above, the county id is unique, we could then generate a hash code based on the id field, then modulus the key range, to finally get the partition key. Service Fabric runtime will direct the requests to the target node based on that partition key. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this post, we quickly examined some interesting topics about Service Fabric. I have to admit that Service Fabric is a big project, what I examined here only covers a small portion of the entire system. Feel free to explore more!</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Service-Fabric-stateless-stateful-actor-model-scalability-reliability-partition/" rel="tag"># Service Fabric, stateless, stateful, actor model, scalability, reliability,  partition</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2023/02/13/note-on-red-black-tree/" rel="prev" title="Understand Red Black Tree: part one - background">
+                  <i class="fa fa-angle-left"></i> Understand Red Black Tree: part one - background
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2023/04/09/understand-more-aws-service-by-negative-cases/" rel="next" title="Scalability Lessons Learned from Amazon Return to The Monolith">
+                  Scalability Lessons Learned from Amazon Return to The Monolith <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIn this post, I will show you the usage and implementation of two Golang standard packages’ : bytes (especially bytes.Buffer) and bufio. These two packages are widely used in the Golang ecos">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang bytes.Buffer and bufio">
+<meta property="og:url" content="https://organicprogrammer.com/2021/04/04/golang-bytes-buffer/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn this post, I will show you the usage and implementation of two Golang standard packages’ : bytes (especially bytes.Buffer) and bufio. These two packages are widely used in the Golang ecos">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-04-04T09:50:14.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Golang, bufio, bytes, buffer">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2021/04/04/golang-bytes-buffer/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2021/04/04/golang-bytes-buffer/","path":"2021/04/04/golang-bytes-buffer/","title":"Golang bytes.Buffer and bufio"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Golang bytes.Buffer and bufio | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Demo-application"><span class="nav-number">2.</span> <span class="nav-text">Demo application</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#client-go"><span class="nav-number">2.1.</span> <span class="nav-text">client.go</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#server-go"><span class="nav-number">2.2.</span> <span class="nav-text">server.go</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Bytes-Buffer"><span class="nav-number">3.</span> <span class="nav-text">Bytes.Buffer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Bufio"><span class="nav-number">4.</span> <span class="nav-text">Bufio</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Customized-Reader"><span class="nav-number">5.</span> <span class="nav-text">Customized Reader</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">6.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/04/04/golang-bytes-buffer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Golang bytes.Buffer and bufio | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Golang bytes.Buffer and bufio
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-04-04 17:50:14" itemprop="dateCreated datePublished" datetime="2021-04-04T17:50:14+08:00">2021-04-04</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In this post, I will show you the usage and implementation of two Golang standard packages’ : <code>bytes</code> (especially <code>bytes.Buffer</code>) and <code>bufio</code>.</p>
+<p>These two packages are widely used in the Golang ecosystem especially works related to networking, files and other IO tasks. </p>
+<h3 id="Demo-application"><a href="#Demo-application" class="headerlink" title="Demo application"></a>Demo application</h3><p>One good way to learn new programming knowledge is checking how to use it in real-world applications. The following great demo application is from the open source book <code>Network Programming with Go by Jan Newmarch</code>.</p>
+<p>For your convenience, I paste the code here. This demo consists of two parts: client side and server side, which together form a simple directory browsing protocol. The client would be at the user end, talking to a server somewhere else. The client sends commands to the server side that allows you to list files in a directory and print the directory on the server. </p>
+<p>First is the client side program: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;net&quot;</span></span><br><span class="line">    <span class="string">&quot;os&quot;</span></span><br><span class="line">    <span class="string">&quot;bufio&quot;</span></span><br><span class="line">    <span class="string">&quot;strings&quot;</span></span><br><span class="line">    <span class="string">&quot;bytes&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// strings used by the user interface</span></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">    uiDir  = <span class="string">&quot;dir&quot;</span></span><br><span class="line">    uiCd   = <span class="string">&quot;cd&quot;</span></span><br><span class="line">    uiPwd  = <span class="string">&quot;pwd&quot;</span></span><br><span class="line">    uiQuit = <span class="string">&quot;quit&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// strings used across the network</span></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">    DIR = <span class="string">&quot;DIR&quot;</span></span><br><span class="line">    CD  = <span class="string">&quot;CD&quot;</span></span><br><span class="line">    PWD = <span class="string">&quot;PWD&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(os.Args) != <span class="number">2</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;Usage: &quot;</span>, os.Args[<span class="number">0</span>], <span class="string">&quot;host&quot;</span>)</span><br><span class="line">        os.Exit(<span class="number">1</span>)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    host := os.Args[<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line">    conn, err := net.Dial(<span class="string">&quot;tcp&quot;</span>, host+<span class="string">&quot;:1202&quot;</span>)</span><br><span class="line">    checkError(err)</span><br><span class="line"></span><br><span class="line">    reader := bufio.NewReader(os.Stdin)</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        line, err := reader.ReadString(<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">        <span class="comment">// lose trailing whitespace</span></span><br><span class="line">        line = strings.TrimRight(line, <span class="string">&quot; \t\r\n&quot;</span>)</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// split into command + arg</span></span><br><span class="line">        strs := strings.SplitN(line, <span class="string">&quot; &quot;</span>, <span class="number">2</span>)</span><br><span class="line">        <span class="comment">// decode user request</span></span><br><span class="line">        <span class="keyword">switch</span> strs[<span class="number">0</span>] &#123;</span><br><span class="line">        <span class="keyword">case</span> uiDir:</span><br><span class="line">            dirRequest(conn)</span><br><span class="line">        <span class="keyword">case</span> uiCd:</span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">len</span>(strs) != <span class="number">2</span> &#123;</span><br><span class="line">                fmt.Println(<span class="string">&quot;cd &lt;dir&gt;&quot;</span>)</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            &#125;</span><br><span class="line">            fmt.Println(<span class="string">&quot;CD \&quot;&quot;</span>, strs[<span class="number">1</span>], <span class="string">&quot;\&quot;&quot;</span>)</span><br><span class="line">            cdRequest(conn, strs[<span class="number">1</span>])</span><br><span class="line">        <span class="keyword">case</span> uiPwd:</span><br><span class="line">            pwdRequest(conn)</span><br><span class="line">        <span class="keyword">case</span> uiQuit:</span><br><span class="line">            conn.Close()</span><br><span class="line">            os.Exit(<span class="number">0</span>)</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            fmt.Println(<span class="string">&quot;Unknown command&quot;</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">dirRequest</span><span class="params">(conn net.Conn)</span></span> &#123;</span><br><span class="line">    conn.Write([]<span class="type">byte</span>(DIR + <span class="string">&quot; &quot;</span>))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> buf [<span class="number">512</span>]<span class="type">byte</span></span><br><span class="line">    result := bytes.NewBuffer(<span class="literal">nil</span>)</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="comment">// read till we hit a blank line</span></span><br><span class="line">        n, _ := conn.Read(buf[<span class="number">0</span>:])</span><br><span class="line">        result.Write(buf[<span class="number">0</span>:n])</span><br><span class="line">        length := result.Len()</span><br><span class="line">        contents := result.Bytes()</span><br><span class="line">        <span class="keyword">if</span> <span class="type">string</span>(contents[length<span class="number">-4</span>:]) == <span class="string">&quot;\r\n\r\n&quot;</span> &#123;</span><br><span class="line">            fmt.Println(<span class="type">string</span>(contents[<span class="number">0</span> : length<span class="number">-4</span>]))</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">cdRequest</span><span class="params">(conn net.Conn, dir <span class="type">string</span>)</span></span> &#123;</span><br><span class="line">    conn.Write([]<span class="type">byte</span>(CD + <span class="string">&quot; &quot;</span> + dir))</span><br><span class="line">    <span class="keyword">var</span> response [<span class="number">512</span>]<span class="type">byte</span></span><br><span class="line">    n, _ := conn.Read(response[<span class="number">0</span>:])</span><br><span class="line">    s := <span class="type">string</span>(response[<span class="number">0</span>:n])</span><br><span class="line">    <span class="keyword">if</span> s != <span class="string">&quot;OK&quot;</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;Failed to change dir&quot;</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">pwdRequest</span><span class="params">(conn net.Conn)</span></span> &#123;</span><br><span class="line">    conn.Write([]<span class="type">byte</span>(PWD))</span><br><span class="line">    <span class="keyword">var</span> response [<span class="number">512</span>]<span class="type">byte</span></span><br><span class="line">    n, _ := conn.Read(response[<span class="number">0</span>:])</span><br><span class="line">    s := <span class="type">string</span>(response[<span class="number">0</span>:n])</span><br><span class="line">    fmt.Println(<span class="string">&quot;Current dir \&quot;&quot;</span> + s + <span class="string">&quot;\&quot;&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">checkError</span><span class="params">(err <span class="type">error</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;Fatal error &quot;</span>, err.Error())</span><br><span class="line">        os.Exit(<span class="number">1</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="client-go"><a href="#client-go" class="headerlink" title="client.go"></a><strong><code>client.go</code></strong></h5><p>Then is server side code: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;net&quot;</span></span><br><span class="line">    <span class="string">&quot;os&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">    DIR = <span class="string">&quot;DIR&quot;</span></span><br><span class="line">    CD  = <span class="string">&quot;CD&quot;</span></span><br><span class="line">    PWD = <span class="string">&quot;PWD&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line"></span><br><span class="line">    service := <span class="string">&quot;0.0.0.0:1202&quot;</span></span><br><span class="line">    tcpAddr, err := net.ResolveTCPAddr(<span class="string">&quot;tcp&quot;</span>, service)</span><br><span class="line">    checkError(err)</span><br><span class="line"></span><br><span class="line">    listener, err := net.ListenTCP(<span class="string">&quot;tcp&quot;</span>, tcpAddr)</span><br><span class="line">    checkError(err)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        conn, err := listener.Accept()</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">continue</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">go</span> handleClient(conn)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">handleClient</span><span class="params">(conn net.Conn)</span></span> &#123;</span><br><span class="line">    <span class="keyword">defer</span> conn.Close()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> buf [<span class="number">512</span>]<span class="type">byte</span></span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        n, err := conn.Read(buf[<span class="number">0</span>:])</span><br><span class="line">        <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">            conn.Close()</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        s := <span class="type">string</span>(buf[<span class="number">0</span>:n])</span><br><span class="line">        <span class="comment">// decode request</span></span><br><span class="line">        <span class="keyword">if</span> s[<span class="number">0</span>:<span class="number">2</span>] == CD &#123;</span><br><span class="line">            chdir(conn, s[<span class="number">3</span>:])</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> s[<span class="number">0</span>:<span class="number">3</span>] == DIR &#123;</span><br><span class="line">            dirList(conn)</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> s[<span class="number">0</span>:<span class="number">3</span>] == PWD &#123;</span><br><span class="line">            pwd(conn)</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">chdir</span><span class="params">(conn net.Conn, s <span class="type">string</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> os.Chdir(s) == <span class="literal">nil</span> &#123;</span><br><span class="line">        conn.Write([]<span class="type">byte</span>(<span class="string">&quot;OK&quot;</span>))</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        conn.Write([]<span class="type">byte</span>(<span class="string">&quot;ERROR&quot;</span>))</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">pwd</span><span class="params">(conn net.Conn)</span></span> &#123;</span><br><span class="line">    s, err := os.Getwd()</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        conn.Write([]<span class="type">byte</span>(<span class="string">&quot;&quot;</span>))</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    conn.Write([]<span class="type">byte</span>(s))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">dirList</span><span class="params">(conn net.Conn)</span></span> &#123;</span><br><span class="line">    <span class="keyword">defer</span> conn.Write([]<span class="type">byte</span>(<span class="string">&quot;\r\n&quot;</span>))</span><br><span class="line"></span><br><span class="line">    dir, err := os.Open(<span class="string">&quot;.&quot;</span>)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    names, err := dir.Readdirnames(<span class="number">-1</span>)</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> _, nm := <span class="keyword">range</span> names &#123;</span><br><span class="line">        conn.Write([]<span class="type">byte</span>(nm + <span class="string">&quot;\r\n&quot;</span>))</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">checkError</span><span class="params">(err <span class="type">error</span>)</span></span> &#123;</span><br><span class="line">    <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">        fmt.Println(<span class="string">&quot;Fatal error &quot;</span>, err.Error())</span><br><span class="line">        os.Exit(<span class="number">1</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="server-go"><a href="#server-go" class="headerlink" title="server.go"></a><strong><code>server.go</code></strong></h5><h3 id="Bytes-Buffer"><a href="#Bytes-Buffer" class="headerlink" title="Bytes.Buffer"></a>Bytes.Buffer</h3><p>Based on the above demo, let’s review how <code>Bytes.Buffer</code> is used. </p>
+<p>According to Go official document:  </p>
+<blockquote>
+<p>Package bytes implements functions for the manipulation of byte slices.<br>A Buffer is a variable-sized buffer of bytes with Read and Write methods.</p>
+</blockquote>
+<p>The <code>bytes</code> package itself is easy to understand, which provides functionalities to manipulate byte slice. The concern is <code>bytes.Buffer</code>, what benefits can we get by using it? Let’s review the demo code where it is used.</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">dirRequest</span><span class="params">(conn net.Conn)</span></span> &#123;</span><br><span class="line">    conn.Write([]<span class="type">byte</span>(DIR + <span class="string">&quot; &quot;</span>))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">var</span> buf [<span class="number">512</span>]<span class="type">byte</span></span><br><span class="line">    result := bytes.NewBuffer(<span class="literal">nil</span>)</span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="comment">// read till we hit a blank line</span></span><br><span class="line">        n, _ := conn.Read(buf[<span class="number">0</span>:])</span><br><span class="line">        result.Write(buf[<span class="number">0</span>:n])</span><br><span class="line">        length := result.Len()</span><br><span class="line">        contents := result.Bytes()</span><br><span class="line">        <span class="keyword">if</span> <span class="type">string</span>(contents[length<span class="number">-4</span>:]) == <span class="string">&quot;\r\n\r\n&quot;</span> &#123;</span><br><span class="line">            fmt.Println(<span class="type">string</span>(contents[<span class="number">0</span> : length<span class="number">-4</span>]))</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The above code block is from <code>client.go</code> part. And the scenario is: the client send <code>DIR</code> command to server side, server run this <code>DIR</code> command which will return contents of current directory. Client and server use <code>conn.Read</code> and <code>conn.Write</code> to communicate with each other. The client keeps reading data in a <code>for</code> loop until all the data is consumed which is marked by two continuous <code>\r\n</code> strings. </p>
+<p>In this case, a new <code>bytes.Buffer</code> object is created by calling <code>NewBuffer</code> method and three other member methods are called: <code>Write</code>, <code>Len</code> and <code>Bytes</code>. Let’s review their source code: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Buffer <span class="keyword">struct</span> &#123;</span><br><span class="line">	buf      []<span class="type">byte</span> </span><br><span class="line">	off      <span class="type">int</span>    </span><br><span class="line">	lastRead readOp </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Buffer)</span></span> Write(p []<span class="type">byte</span>) (n <span class="type">int</span>, err <span class="type">error</span>) &#123;</span><br><span class="line">	b.lastRead = opInvalid</span><br><span class="line">	m, ok := b.tryGrowByReslice(<span class="built_in">len</span>(p))</span><br><span class="line">	<span class="keyword">if</span> !ok &#123;</span><br><span class="line">		m = b.grow(<span class="built_in">len</span>(p))</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="built_in">copy</span>(b.buf[m:], p), <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Buffer)</span></span> Len() <span class="type">int</span> &#123; </span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">len</span>(b.buf) - b.off </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Buffer)</span></span> Bytes() []<span class="type">byte</span> &#123; </span><br><span class="line">    <span class="keyword">return</span> b.buf[b.off:] </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The implementation is easy to understand and no need to add more explanation. One interesting point is inside the <code>Write</code> function. It will first check whether the buffer has enough room for new bytes, if no then it will call   internal <code>grow</code> method to add more space. </p>
+<p>In fact, this is the biggest benefit you can get from <code>Buffer</code>. You don’t need to manage the dynamic change of buffer length manually, <code>bytes.Buffer</code> will help you to do that. In this way you won’t waste memory by setting the possible maximum length just for providing enough space. To some extend, it is similar to the <strong>vector</strong> in C++ language.   </p>
+<h3 id="Bufio"><a href="#Bufio" class="headerlink" title="Bufio"></a>Bufio</h3><p>Next, let’s review how <code>Bufio</code> pacakge works. In our demo, it is used as following: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">reader := bufio.NewReader(os.Stdin)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> &#123;</span><br><span class="line">    line, err := reader.ReadString(<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">    <span class="comment">// hide other code below</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Before we dive into the details about the demo code, let’s first understand what is the purpose of <code>bufio</code> package. </p>
+<p>First we need to understand that when applications run IO operations like read or write data from or to files, network and database. It will trigger <code>system call</code> in the bottom level, which is heavy in the performance point of view.  </p>
+<p>Buffer IO is a technique used to temporarily accumulate the results for an IO operation before transmitting it forward. This technique can increase the speed of a program by reducing the number of system calls. For example, in case you want to read data from disk byte by byte. Instead of directly reading each byte from the disk every time, with buffer IO technique, we can read a block of data into buffer once, then consumers can read data from the buffer in whatever way you want. Performance will be improved by reducing heavy system calls.</p>
+<p>Concretely, let’s review how <code>bufio</code> package do this. The Go official document goes like this:</p>
+<blockquote>
+<p>Package bufio implements buffered I&#x2F;O. It wraps an io.Reader or io.Writer object, creating another object (Reader or Writer) that also implements the interface but provides buffering and some help for textual I&#x2F;O.</p>
+</blockquote>
+<p>Let’s understand the definition by reading the source code: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// NewReader and NewReaderSize in bufio.go</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewReader</span><span class="params">(rd io.Reader)</span></span> *Reader &#123;</span><br><span class="line">	<span class="keyword">return</span> NewReaderSize(rd, defaultBufSize)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewReaderSize</span><span class="params">(rd io.Reader, size <span class="type">int</span>)</span></span> *Reader &#123;</span><br><span class="line">	b, ok := rd.(*Reader)</span><br><span class="line">	<span class="keyword">if</span> ok &amp;&amp; <span class="built_in">len</span>(b.buf) &gt;= size &#123;</span><br><span class="line">		<span class="keyword">return</span> b</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> size &lt; minReadBufferSize &#123;</span><br><span class="line">		size = minReadBufferSize</span><br><span class="line">	&#125;</span><br><span class="line">	r := <span class="built_in">new</span>(Reader)</span><br><span class="line">	r.reset(<span class="built_in">make</span>([]<span class="type">byte</span>, size), rd)</span><br><span class="line">	<span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>In our demo, we use <code>NewReader</code> which then calls <code>NewReaderSize</code> to create a new <code>Reader</code> instance. One thing need to notice is that the parameter is <code>io.Reader</code> type, which is an important interface implements only one method <code>Read</code>.</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// the Reader interface in io.go file</span></span><br><span class="line"><span class="keyword">type</span> Reader <span class="keyword">interface</span> &#123;</span><br><span class="line">	Read(p []<span class="type">byte</span>) (n <span class="type">int</span>, err <span class="type">error</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>In our case, we use <code>os.Stdin</code> as the function argument, which will read data from standard input. </p>
+<p>Then let’s reivew declaration of <code>bufio.Reader</code>  which wraps <code>io.Reader</code>:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Reader implements buffering for an io.Reader object.</span></span><br><span class="line"><span class="keyword">type</span> Reader <span class="keyword">struct</span> &#123;</span><br><span class="line">	buf          []<span class="type">byte</span></span><br><span class="line">	rd           io.Reader <span class="comment">// reader provided by the client</span></span><br><span class="line">	r, w         <span class="type">int</span>       <span class="comment">// buf read and write positions</span></span><br><span class="line">	err          <span class="type">error</span></span><br><span class="line">	lastByte     <span class="type">int</span> <span class="comment">// last byte read for UnreadByte; -1 means invalid</span></span><br><span class="line">	lastRuneSize <span class="type">int</span> <span class="comment">// size of last rune read for UnreadRune; -1 means invalid</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>bufio.Reader</code> has many methods defined, in our case we use <code>ReadString</code>, which will call another low-level method <code>ReadSlice</code>. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Reader)</span></span> ReadSlice(delim <span class="type">byte</span>) (line []<span class="type">byte</span>, err <span class="type">error</span>) &#123;</span><br><span class="line">	s := <span class="number">0</span> </span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="comment">// Search buffer.</span></span><br><span class="line">		<span class="keyword">if</span> i := bytes.IndexByte(b.buf[b.r+s:b.w], delim); i &gt;= <span class="number">0</span> &#123;</span><br><span class="line">			i += s</span><br><span class="line">			line = b.buf[b.r : b.r+i+<span class="number">1</span>]</span><br><span class="line">			b.r += i + <span class="number">1</span></span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> b.err != <span class="literal">nil</span> &#123;</span><br><span class="line">			line = b.buf[b.r:b.w]</span><br><span class="line">			b.r = b.w</span><br><span class="line">			err = b.readErr()</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> b.Buffered() &gt;= <span class="built_in">len</span>(b.buf) &#123;</span><br><span class="line">			b.r = b.w</span><br><span class="line">			line = b.buf</span><br><span class="line">			err = ErrBufferFull</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		s = b.w - b.r </span><br><span class="line"></span><br><span class="line">		b.fill() <span class="comment">// buffer is not full</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> i := <span class="built_in">len</span>(line) - <span class="number">1</span>; i &gt;= <span class="number">0</span> &#123;</span><br><span class="line">		b.lastByte = <span class="type">int</span>(line[i])</span><br><span class="line">		b.lastRuneSize = <span class="number">-1</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>When <code>buf</code> byte slice contains data, it will search the target value inside it. But initially <code>buf</code> is empty, it need firstly load some data, right? That is the most interesting part. The <code>b.fill()</code> is just for that. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(b *Reader)</span></span> fill() &#123;</span><br><span class="line">	<span class="keyword">if</span> b.r &gt; <span class="number">0</span> &#123;</span><br><span class="line">		<span class="built_in">copy</span>(b.buf, b.buf[b.r:b.w])</span><br><span class="line">		b.w -= b.r</span><br><span class="line">		b.r = <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> b.w &gt;= <span class="built_in">len</span>(b.buf) &#123;</span><br><span class="line">		<span class="built_in">panic</span>(<span class="string">&quot;bufio: tried to fill full buffer&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Read new data: try a limited number of times.</span></span><br><span class="line">	<span class="keyword">for</span> i := maxConsecutiveEmptyReads; i &gt; <span class="number">0</span>; i-- &#123;</span><br><span class="line">		n, err := b.rd.Read(b.buf[b.w:]) <span class="comment">// call the underlying Reader</span></span><br><span class="line">		<span class="keyword">if</span> n &lt; <span class="number">0</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(errNegativeRead)</span><br><span class="line">		&#125;</span><br><span class="line">		b.w += n</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			b.err = err</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> n &gt; <span class="number">0</span> &#123;</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	b.err = io.ErrNoProgress</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The data is loaded into <code>buf</code> by calling the underlying Reader,</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">n, err := b.rd.Read(b.buf[b.w:])</span><br></pre></td></tr></table></figure>
+<p>in our case is <code>os.Stdin</code>.</p>
+<h3 id="Customized-Reader"><a href="#Customized-Reader" class="headerlink" title="Customized Reader"></a>Customized Reader</h3><p>To have a better understand about the buffering IO technique, we can define our own customized <code>Reader</code> and pass it <code>bufio.NewReader</code> as follows: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;bufio&quot;</span></span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;io&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment">// customized Reader struct</span></span><br><span class="line"><span class="keyword">type</span> Reader <span class="keyword">struct</span> &#123;</span><br><span class="line">	counter <span class="type">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *Reader)</span></span> Read(p []<span class="type">byte</span>) (n <span class="type">int</span>, err <span class="type">error</span>) &#123;</span><br><span class="line">	fmt.Println(<span class="string">&quot;Read&quot;</span>)</span><br><span class="line">	<span class="keyword">if</span> r.counter &gt;= <span class="number">3</span> &#123; <span class="comment">// simulate EOF</span></span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>, io.EOF</span><br><span class="line">	&#125;</span><br><span class="line">	s := <span class="string">&quot;a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p&quot;</span></span><br><span class="line">	<span class="built_in">copy</span>(p, s)</span><br><span class="line">	r.counter += <span class="number">1</span></span><br><span class="line">	<span class="keyword">return</span> <span class="built_in">len</span>(s), <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	r := <span class="built_in">new</span>(Reader)</span><br><span class="line">	br := bufio.NewReader(r)</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		token, err := br.ReadSlice(<span class="string">&#x27;,&#x27;</span>)</span><br><span class="line">		fmt.Printf(<span class="string">&quot;Token: %q\n&quot;</span>, token)</span><br><span class="line">		<span class="keyword">if</span> err == io.EOF &#123;</span><br><span class="line">			fmt.Println(<span class="string">&quot;Read done&quot;</span>)</span><br><span class="line">			<span class="keyword">break</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Please run the demo code above, observe the output and think about why it generates such result. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this post, I only talked about <code>Reader</code> part of bufio, if you understand the behavior explained above clearly, it’s easy to understand <code>Writer</code> quickly as well. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Golang-bufio-bytes-buffer/" rel="tag"># Golang, bufio, bytes, buffer</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/03/31/go-module/" rel="prev" title="go-module">
+                  <i class="fa fa-angle-left"></i> go-module
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/04/26/golang-context-source-code/" rel="next" title="Golang Context package source code analysis: part 1">
+                  Golang Context package source code analysis: part 1 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

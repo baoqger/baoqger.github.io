@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundHTTP is everywhere. As a software engineer, you’re using the HTTP protocol every day. Starting an HTTP server will be an easy task if you’re using any modern language or framework. For examp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to write a Golang HTTP server with Linux system calls">
+<meta property="og:url" content="https://organicprogrammer.com/2021/07/31/how-to-implement-simple-http-server-golang/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundHTTP is everywhere. As a software engineer, you’re using the HTTP protocol every day. Starting an HTTP server will be an easy task if you’re using any modern language or framework. For examp">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/osi_model.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/data_encapsulation.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/socket_network.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/socket_tcp.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/http_message_format.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/golang_http_server_demo.png">
+<meta property="article:published_time" content="2021-07-31T02:15:25.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="HTTP, system call, Linux, Golang">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/osi_model.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2021/07/31/how-to-implement-simple-http-server-golang/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2021/07/31/how-to-implement-simple-http-server-golang/","path":"2021/07/31/how-to-implement-simple-http-server-golang/","title":"How to write a Golang HTTP server with Linux system calls"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>How to write a Golang HTTP server with Linux system calls | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#OSI-network-model"><span class="nav-number">2.</span> <span class="nav-text">OSI network model</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#TCP-IP"><span class="nav-number">3.</span> <span class="nav-text">TCP&#x2F;IP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Socket"><span class="nav-number">4.</span> <span class="nav-text">Socket</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP"><span class="nav-number">5.</span> <span class="nav-text">HTTP</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Demo"><span class="nav-number">6.</span> <span class="nav-text">Demo</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/07/31/how-to-implement-simple-http-server-golang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="How to write a Golang HTTP server with Linux system calls | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          How to write a Golang HTTP server with Linux system calls
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-07-31 10:15:25" itemprop="dateCreated datePublished" datetime="2021-07-31T10:15:25+08:00">2021-07-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p><code>HTTP</code> is everywhere. As a software engineer, you’re using the <code>HTTP</code> protocol every day. Starting an <code>HTTP</code> server will be an easy task if you’re using any modern language or framework. For example, in Golang you can do that with the following lines of code:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;net/http&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    http.HandleFunc(<span class="string">&quot;/hi&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span>&#123;</span><br><span class="line">        fmt.Fprintf(w, <span class="string">&quot;Hi&quot;</span>)</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line">    log.Fatal(http.ListenAndServe(<span class="string">&quot;:8081&quot;</span>, <span class="literal">nil</span>))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>You can finish the job easily because <code>net/http</code> package implements the <code>HTTP</code> protocol completely. How can you do that without <code>net/http</code> package ? That’s the target of this article. </p>
+<p><strong>Note</strong>: This article is inspired by <a target="_blank" rel="noopener" href="https://joe.schafer.dev/go-server-with-syscalls/">Joe Schafer’s post</a> a lot. My implementation has something different which totally removes dependency on Golang’s <code>net</code> package, but the idea of using <code>system call</code> in Golang to setup the TCP&#x2F;IP connetion is the same. Thanks very much for Joe Schafer’s interesting post.</p>
+<p>Another thing I need to mention is this article will cover many concepts, but it’s very difficult to discuss all of them in detail. To understand this article smoothly, you need some prerequisite knowledge such as <code>OSI model</code>, <code>TCP/IP stack</code>, <code>socket programming</code>, <code>HTTP protocol</code> and <code>system call</code>. I will add some explanations on these topics to help you understand this article and give some references and links to let you continue exploring more in advanced level. </p>
+<h3 id="OSI-network-model"><a href="#OSI-network-model" class="headerlink" title="OSI network model"></a>OSI network model</h3><p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/OSI_model"><code>OSI model</code></a> partitions the data flow in a communication system into <strong>seven abstraction layers</strong>. These layers form a protocol stack, with each layer communicating with the layer above and the layer below as follows: </p>
+<img src="/images/osi_model.png" title="network" width="400px" height="300px">
+
+<p>For example, <code>HTTP</code> is in <strong>layer 7</strong>, <code>TCP</code> is in <strong>layer 4</strong> and <code>IP</code> is in <strong>layer 3</strong>. </p>
+<p>OSI is a general model, which was first specified in the early 1980s. <strong>But neither traditional nor modern networking protocols fit into this model neatly</strong>. For example, <code>TCP/IP</code> stack does not define the three upper layers: session, presentation, and application. In fact, it does not define anything above the transport layer. From the viewpoint of <code>TCP/IP</code>, everything above the transport layer is part of<br>the application. So the layered network model more  consistent with Linux (TCP&#x2F;IP stack is implemented in Linux kernel) is as follows: </p>
+<ul>
+<li>Application Layer (telnet, ftp, http)</li>
+<li>Host-to-Host Transport Layer (TCP, UDP)</li>
+<li>Internet Layer (IP and routing)</li>
+<li>Network Access Layer (Ethernet, wi-fi)</li>
+</ul>
+<p>Once again, <strong>it is important to point out that the upper layers—Layers 5, 6, and 7—are not part of the TCP&#x2F;IP stack</strong>. </p>
+<p>Another critical point to understand is <code>data encapsulation</code>.  The data flow goes from the bottom physical level to the highest-level representation of data in an application.</p>
+<p>Each layer has administrative information that it has to keep about its own layer. It does this by adding header information to the packet it receives from the layer above, as the packet passes down. Each header contains information regarding the message contents. For example, one <code>HTTP</code> server sends data from one host to another. It uses the <code>TCP</code> protocol on top of the <code>IP</code> protocol, which may be sent over <code>Ethernet</code>. This looks like: </p>
+<img src="/images/data_encapsulation.png" title="network" width="400px" height="300px">
+
+
+
+<p>The packet transmitted over ethernet, is the bottom one. On the receiving side, these headers are removed as the packet moves up.</p>
+<p>Next let’s see how <code>TCP/IP</code> stack encapsulates <code>HTTP</code> message and send it over the network through <code>socket</code>. The idea can be illustrated with the following image: </p>
+<img src="/images/socket_network.png" title="network" width="600px" height="400px">
+
+<p>I will explain how it works by writing a HTTP server from scratch, you can refer to this <a target="_blank" rel="noopener" href="https://github.com/baoqger/http-server-scratch">Github repo</a> to get all the code. </p>
+<h3 id="TCP-IP"><a href="#TCP-IP" class="headerlink" title="TCP&#x2F;IP"></a>TCP&#x2F;IP</h3><p><code>TCP/IP</code> stack is originated from <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/ARPANET"><code>ARPANET</code></a> project, which is integrated into Unix BSD OS as the first implementation of <code>TCP/IP</code> protocols.</p>
+<p>Nowadays, <code>TCP/IP</code> is still implemented in the operating system level. For Linux system, you can find the source code inside the kernel. The detailed implementation is outside the scope of this article. You can study it in this Github <a target="_blank" rel="noopener" href="https://github.com/torvalds/linux/tree/master/net/ipv4">link</a>. </p>
+<h3 id="Socket"><a href="#Socket" class="headerlink" title="Socket"></a>Socket</h3><p>As I mentioned in the above sections, HTTP server is running in the application level. How it can work with <code>TCP/IP</code> stack which lives in the kernel? The answer is <code>socket</code>. </p>
+<p>The <code>socket</code> interface was originally developed as part of the BSD operating system. Sockets provide an interface between the application level programs and the TCP&#x2F;IP stack. Linux (or other OS) provides an API and sockets, and applications use this API to access the networking facilities in the kernel. </p>
+<p>The socket interface is really TCP&#x2F;IP’s window on the world. In most modern systems incorporating TCP&#x2F;IP, the socket interface is the only way that applications make use of the TCP&#x2F;IP suite of protocols. </p>
+<p>One main advantage of sockets in Unix or Linux system is that the socket is treated as a <code>file descriptor</code>, and all the standard I&#x2F;O functions work on sockets in the same way they work on a local file. File descriptor is simply an integer associated with an open file. </p>
+<p>You may heard <strong>everything in Unix is a file</strong>. The file can be a network connection, a pipe, a real file in the disk, a device or anything else. So when you want to send data to another program over the Interent you will do it through a file descriptor.   </p>
+<p>In our HTTP server case, <strong>it will get the request by reading data from the socket and send the response by writing data to the socket</strong>.  </p>
+<p>Next, let’s review the source code to see how the HTTP server is implemented.</p>
+<p>First, we need setup the TCP connection through socket, the process can be described in the following image: </p>
+<img src="/images/socket_tcp.png" title="network" width="600px" height="400px">
+
+<p>In Golang, <code>net</code> package provides all the socket related functionalities. Since this article’s purpose is writing a HTTP server from scratch, so I create a package named <strong>simplenet</strong> to provide the very basic implementation. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> simplenet</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;os&quot;</span></span><br><span class="line">	<span class="string">&quot;syscall&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> netSocket <span class="keyword">struct</span> &#123;</span><br><span class="line">	fd <span class="type">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewNetSocket</span><span class="params">(ip IP, port <span class="type">int</span>)</span></span> (*netSocket, <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="comment">// ForkLock docs state that socket syscall requires the lock.</span></span><br><span class="line">	syscall.ForkLock.Lock()</span><br><span class="line">	<span class="comment">// AF_INET = Address Family for IPv4</span></span><br><span class="line">	<span class="comment">// SOCK_STREAM = virtual circuit service</span></span><br><span class="line">	<span class="comment">// 0: the protocol for SOCK_STREAM, there&#x27;s only 1.</span></span><br><span class="line">	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, <span class="number">0</span>)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, os.NewSyscallError(<span class="string">&quot;socket&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line">	syscall.ForkLock.Unlock()</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Allow reuse of recently-used addresses.</span></span><br><span class="line">	<span class="keyword">if</span> err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, <span class="number">1</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		syscall.Close(fd)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, os.NewSyscallError(<span class="string">&quot;setsockopt&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Bind the socket to a port</span></span><br><span class="line">	sa := &amp;syscall.SockaddrInet4&#123;Port: port&#125;</span><br><span class="line">	<span class="built_in">copy</span>(sa.Addr[:], ip)</span><br><span class="line">	<span class="keyword">if</span> err = syscall.Bind(fd, sa); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, os.NewSyscallError(<span class="string">&quot;bind&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Listen for incoming connections.</span></span><br><span class="line">	<span class="keyword">if</span> err = syscall.Listen(fd, syscall.SOMAXCONN); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, os.NewSyscallError(<span class="string">&quot;listen&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> &amp;netSocket&#123;fd: fd&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ns netSocket)</span></span> Read(p []<span class="type">byte</span>) (<span class="type">int</span>, <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(p) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">	n, err := syscall.Read(ns.fd, p) <span class="comment">// read from socket file descriptor</span></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		n = <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> n, err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ns netSocket)</span></span> Write(p []<span class="type">byte</span>) (<span class="type">int</span>, <span class="type">error</span>) &#123;</span><br><span class="line">	n, err := syscall.Write(ns.fd, p) <span class="comment">// write to socket file descriptor</span></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		n = <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> n, err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Creates a new netSocket for the next pending connection request.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ns *netSocket)</span></span> Accept() (*netSocket, <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="comment">// syscall.ForkLock doc states lock not needed for blocking accept.</span></span><br><span class="line">	nfd, _, err := syscall.Accept(ns.fd)</span><br><span class="line">	<span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</span><br><span class="line">		syscall.CloseOnExec(nfd)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> &amp;netSocket&#123;nfd&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ns *netSocket)</span></span> Close() <span class="type">error</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> syscall.Close(ns.fd)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>netSocket</strong> data model is created to represent the socket, which contains only one field <strong>fd</strong> means file descriptor. And all the socket related APIs: <strong>Read</strong>, <strong>Write</strong>,  <strong>Accept</strong> and <strong>Close</strong>, are defined. The usage of socket API is not in this article’s scope, you can easily find a lot of great documents about it online. </p>
+<p>The logic of <strong>netSocket</strong> is not complicated, because it delegates the job to the kernel by <code>system call</code>. A system call is a programmatic way a program requests a service from the kernel, in detail you can refer to this <a target="_blank" rel="noopener" href="https://opensource.com/article/19/10/strace">article</a>. In Golang, all the system calls are wrapped inside the <code>syscall</code> standard package.  </p>
+<p>One thing need to mention is different platform have different <code>syscall</code> usages, so the demo code shown in this article can only be compiled and build on Linux system. </p>
+<p>Now we setup the TCP server and wait for connection request from client side. Next, let’s see how to read or write HTTP request and response through socket. </p>
+<h3 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h3><p>The main workflow is as follows: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;flag&quot;</span></span><br><span class="line">	<span class="string">&quot;http-server-scratch/simplenet&quot;</span></span><br><span class="line">	<span class="string">&quot;log&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	ipFlag := flag.String(<span class="string">&quot;ip_addr&quot;</span>, <span class="string">&quot;127.0.0.1&quot;</span>, <span class="string">&quot;The IP address to use&quot;</span>)</span><br><span class="line">	portFlag := flag.Int(<span class="string">&quot;port&quot;</span>, <span class="number">8080</span>, <span class="string">&quot;The port to use.&quot;</span>)</span><br><span class="line">	flag.Parse()</span><br><span class="line"></span><br><span class="line">	ip := simplenet.ParseIP(*ipFlag)</span><br><span class="line">	port := *portFlag</span><br><span class="line">	socket, err := simplenet.NewNetSocket(ip, port)</span><br><span class="line">	<span class="keyword">defer</span> socket.Close()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="built_in">panic</span>(err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	log.Print(<span class="string">&quot;===============&quot;</span>)</span><br><span class="line">	log.Print(<span class="string">&quot;Server Started!&quot;</span>)</span><br><span class="line">	log.Print(<span class="string">&quot;===============&quot;</span>)</span><br><span class="line">	log.Print()</span><br><span class="line">	log.Printf(<span class="string">&quot;addr: http://%s:%d&quot;</span>, ip, port)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="comment">// Block until incoming connection</span></span><br><span class="line">		rw, e := socket.Accept()</span><br><span class="line">		log.Print()</span><br><span class="line">		log.Print()</span><br><span class="line">		log.Printf(<span class="string">&quot;Incoming connection&quot;</span>)</span><br><span class="line">		<span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(e)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Read request</span></span><br><span class="line">		log.Print(<span class="string">&quot;Reading request&quot;</span>)</span><br><span class="line">		req, err := simplenet.ParseRequest(rw)</span><br><span class="line">		log.Print(<span class="string">&quot;request: &quot;</span>, req)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(err)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Write response</span></span><br><span class="line">		log.Print(<span class="string">&quot;Writing response&quot;</span>)</span><br><span class="line">		simplenet.WriteString(rw, <span class="string">&quot;HTTP/1.1 200 OK\r\n&quot;</span>+</span><br><span class="line">			<span class="string">&quot;Content-Type: text/html; charset=utf-8\r\n&quot;</span>+</span><br><span class="line">			<span class="string">&quot;Content-Length: 20\r\n&quot;</span>+</span><br><span class="line">			<span class="string">&quot;\r\n&quot;</span>+</span><br><span class="line">			<span class="string">&quot;&lt;h1&gt;hello world&lt;/h1&gt;&quot;</span>)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Print(err.Error())</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>As you can see, the HTTP request parsing logic is defined in the <strong>ParseRequest</strong> method in <strong>simplenet</strong> package. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> simplenet</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;bufio&quot;</span></span><br><span class="line">	<span class="string">&quot;errors&quot;</span></span><br><span class="line">	<span class="string">&quot;http-server-scratch/simplenet/simpleTextProto&quot;</span></span><br><span class="line">	<span class="string">&quot;io&quot;</span></span><br><span class="line">	<span class="string">&quot;strconv&quot;</span></span><br><span class="line">	<span class="string">&quot;strings&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> request <span class="keyword">struct</span> &#123;</span><br><span class="line">	method <span class="type">string</span> <span class="comment">// GET, POST, etc.</span></span><br><span class="line">	header simpleTextProto.MIMEHeader</span><br><span class="line">	body   []<span class="type">byte</span></span><br><span class="line">	uri    <span class="type">string</span> <span class="comment">// The raw URI from the request</span></span><br><span class="line">	proto  <span class="type">string</span> <span class="comment">// &quot;HTTP/1.1&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">ParseRequest</span><span class="params">(c *netSocket)</span></span> (*request, <span class="type">error</span>) &#123;</span><br><span class="line">	b := bufio.NewReader(*c)</span><br><span class="line">	tp := simpleTextProto.NewReader(b) <span class="comment">// need replace</span></span><br><span class="line">	req := <span class="built_in">new</span>(request)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Parse request line: parse &quot;GET /index.html HTTP/1.0&quot;</span></span><br><span class="line">	<span class="keyword">var</span> s <span class="type">string</span></span><br><span class="line">	s, _ = tp.ReadLine() <span class="comment">// need replace</span></span><br><span class="line">	sp := strings.Split(s, <span class="string">&quot; &quot;</span>)</span><br><span class="line">	req.method, req.uri, req.proto = sp[<span class="number">0</span>], sp[<span class="number">1</span>], sp[<span class="number">2</span>]</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Parse request headers</span></span><br><span class="line">	mimeHeader, _ := tp.ReadMIMEHeader() <span class="comment">// need replace</span></span><br><span class="line">	req.header = mimeHeader</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Parse request body</span></span><br><span class="line">	<span class="keyword">if</span> req.method == <span class="string">&quot;GET&quot;</span> || req.method == <span class="string">&quot;HEAD&quot;</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> req, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(req.header[<span class="string">&quot;Content-Length&quot;</span>]) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, errors.New(<span class="string">&quot;no content length&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	length, err := strconv.Atoi(req.header[<span class="string">&quot;Content-Length&quot;</span>][<span class="number">0</span>])</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	body := <span class="built_in">make</span>([]<span class="type">byte</span>, length)</span><br><span class="line">	<span class="keyword">if</span> _, err = io.ReadFull(b, body); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	req.body = body</span><br><span class="line">	<span class="keyword">return</span> req, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The HTTP request message can be divided into three parts <code>request line</code>, <code>request headers</code> and <code>request body</code> as follows: </p>
+<img src="/images/http_message_format.png" title="network" width="600px" height="400px">
+
+
+<p>The logic inside <strong>ParseRequest</strong> handles these 3 parts step by step. You can refer to the comments in the demo code. </p>
+<p>One thing need to emphasis is that <strong>ParseRequest</strong> method doesn’t depends on <code>net</code> package. Because I want to show how HTTP server works in the bottom level, so I copy the request parsing logics from <code>net</code> package into my <code>simplenet</code> package. The parsing for request header part is kind of complex, but it doesn’t influence your understanding about the main concept of HTTP server. If you want to know the details, you can refer to the <code>simplenet/simpleTextProto</code> package. The important thing to understand is HTTP server reads the request message with <strong>Read</strong> method of <strong>netSocket</strong> . And the <strong>Read</strong> method makes socket read system call to get network data from TCP stack: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">syscall.Read(ns.fd, p)</span><br></pre></td></tr></table></figure>
+
+<p>On the other side,  HTTP response is sent back by calling <code>WriteString</code> method of <code>simplenet</code> package</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WriteString</span><span class="params">(c *netSocket, s <span class="type">string</span>)</span></span> (n <span class="type">int</span>, err <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="keyword">return</span> c.Write([]<span class="type">byte</span>(s))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>WriteString</code> simply calls <strong>Write</strong> method of <strong>netsocket</strong>, which makes socket write system call to send data over Interent with TCP stack:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">syscall.Write(ns.fd, p)</span><br></pre></td></tr></table></figure>
+<p>That’s all for the code part. Next let’s try to run this simple HTTP server we build from scratch.</p>
+<h3 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h3><p>Build (need Linux platform) and run this HTTP server with default options setting and send request to it with <code>curl</code>. The result goes as follows: </p>
+<img src="/images/golang_http_server_demo.png" title="network" width="600px" height="400px">
+
+<p>the server works as expected. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/HTTP-system-call-Linux-Golang/" rel="tag"># HTTP, system call, Linux, Golang</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/07/14/how-to-collect-metrics-k8s/" rel="prev" title="how-to-collect-metrics-k8s">
+                  <i class="fa fa-angle-left"></i> how-to-collect-metrics-k8s
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/08/06/win-wsl/" rel="next" title="New way to set up Linux development environment in Windows with WSL">
+                  New way to set up Linux development environment in Windows with WSL <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="IntroductionIn my eyes, compared with developing applications with high-level programming languages, one of the biggest differences for system programming with low-level languages like C and C++, is y">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Understand userland heap memory allocation: part one - overview">
+<meta property="og:url" content="https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="IntroductionIn my eyes, compared with developing applications with high-level programming languages, one of the biggest differences for system programming with low-level languages like C and C++, is y">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/process-memory-address.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/virtual-memory-technique.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/maps-capture.png">
+<meta property="article:published_time" content="2022-08-05T12:31:11.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Linux, memory layout, heap, stack">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/process-memory-address.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/","path":"2022/08/05/userland-memory-allocation-one/","title":"Understand userland heap memory allocation: part one - overview"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Understand userland heap memory allocation: part one - overview | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Process-memory-management-overview"><span class="nav-number">2.</span> <span class="nav-text">Process memory management overview</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Process-virtual-memory"><span class="nav-number">2.1.</span> <span class="nav-text">Process virtual memory</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Virtual-memory-technique"><span class="nav-number">2.2.</span> <span class="nav-text">Virtual memory technique</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Static-vs-Dynamic-memory-allocation"><span class="nav-number">2.3.</span> <span class="nav-text">Static vs Dynamic memory allocation</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Understand userland heap memory allocation: part one - overview | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Understand userland heap memory allocation: part one - overview
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-08-05 20:31:11" itemprop="dateCreated datePublished" datetime="2022-08-05T20:31:11+08:00">2022-08-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:13" itemprop="dateModified" datetime="2026-09-24T08:11:13+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In my eyes, compared with developing applications with high-level programming languages, one of the biggest differences for system programming with low-level languages like C and C++, is you have to manage the memory by yourself. So you call APIs like <code>malloc</code>, and <code>free</code> to allocate the memory based on your need and release the memory when the resource is no longer needed. It is not only one of the most frequent causes of <a target="_blank" rel="noopener" href="https://developers.redhat.com/articles/2021/11/01/debug-memory-errors-valgrind-and-gdb">bugs</a> in system programming; but also can lead to many <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Memory_safety">security issues</a>. </p>
+<p>It’s not difficult to understand the correct usage of APIs like <code>malloc</code>, and <code>free</code>. But have you ever wondered how they work, for example: </p>
+<ul>
+<li>When you call <code>malloc</code>, does it trigger system calls and delegate the task to the kernel or there are some other mechanisms? </li>
+<li>When you call <code>malloc(10)</code> and try to allocate 10 bytes of heap memory, how many bytes of memory do you get? 10 bytes or more?</li>
+<li>When the memory is allocated, where exactly the heap objects are located?</li>
+<li>When you call <code>free</code>, is the memory directly returned to the kernel?</li>
+</ul>
+<p>This article will try to answer these questions. </p>
+<p>Note that memory is a super complex topic, so I can’t cover everything about it in one article (In fact, what is covered in this article is very limited). This article will focus on <code>userland memory(heap) allocation</code>. </p>
+<h3 id="Process-memory-management-overview"><a href="#Process-memory-management-overview" class="headerlink" title="Process memory management overview"></a>Process memory management overview</h3><h4 id="Process-virtual-memory"><a href="#Process-virtual-memory" class="headerlink" title="Process virtual memory"></a>Process virtual memory</h4><p>Every time we start a program, a memory area for that program is reserved, and that’s <code>process virtual memory</code> as shown in the following image: </p>
+<img src="/images/process-memory-address.png" title="process virtual memory" width="400px" height="300px">
+
+<p>You can note that each process has one <strong>invisible</strong> memory segment containing kernel codes and data structures. This invisible memory segment is important; since it’s directly related to <code>virtual memory</code>, which is employed by the kernel for memory management. Before we dive into the other different segments, let’s understand virtual memory first. </p>
+<h4 id="Virtual-memory-technique"><a href="#Virtual-memory-technique" class="headerlink" title="Virtual memory technique"></a>Virtual memory technique</h4><img src="/images/virtual-memory-technique.png" title="virtual memory technique" width="600px" height="400px">
+
+<p>Why do we need virtual memory? Virtual memory is a service provided by the kernel in the form of abstraction. Without virtual memory, applications would need to manage their physical memory space, coordinating with every other process running on the computer. Virtual memory leaves that management to the kernel by creating the maps that allow translation between virtual and physical memory.  The kernel creates an illusion that each process occupies the entire physical memory space. We can also realize <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Process_isolation">process isolation</a> based on virtual memory to enhance security. </p>
+<p>Virtual memory is out of this article’s scope, if you’re interested, please take a look at the core techniques: <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Memory_paging">paging</a> and <a target="_blank" rel="noopener" href="https://linuxhint.com/linux-memory-management-swap-space/">swapping</a>. </p>
+<h4 id="Static-vs-Dynamic-memory-allocation"><a href="#Static-vs-Dynamic-memory-allocation" class="headerlink" title="Static vs Dynamic memory allocation"></a>Static vs Dynamic memory allocation</h4><p>Next, let’s take a close look at the process memory layout above and understand where they are from. Generally speaking, there are two ways via which memories can be allocated for storing data: <code>static</code> and <code>dynamic</code>. Static memory allocation happens at <code>compile time</code>, while dynamic memory allocation occurs at <code>runtime</code>. </p>
+<p>When a program started, the executable file(on the Linux system, it’s called an <code>ELF</code> file) will be loaded into the memory as a <code>Process Image</code>. This <code>ELF</code> file contains the following segments:</p>
+<ul>
+<li>.TEXT: contains the executable part of the program with all the machine codes.</li>
+<li>.DATA: contains <code>initialized</code> static and global variables. </li>
+<li>.BSS: is short for <code>block started by symbol</code> contains <code>uninitialized</code> static and global variables.</li>
+</ul>
+<p>The <code>ELF</code> file will be loaded by the kernel and create a process image. And these static data will be mapped into the corresponding segments of the virtual memory. The <a target="_blank" rel="noopener" href="https://www.linuxjournal.com/article/1060">ELF loader</a> is also an interesting topic, I will write another article about it in the future. Please keep watching my blog!</p>
+<p>The <code>memory-mapped region</code> segment is used for storing the <a href="https://organicprogrammer.com/2019/08/25/how-to-write-linux-c-program-with-external-library/">shared libraries</a>. </p>
+<p>Finally, <code>stack</code> and <code>heap</code> segments are produced at runtime dynamically, which are used to store and operate on temporary variables that are used during the execution of the program. Previously, I once wrote an article about the <a href="https://organicprogrammer.com/2020/08/19/stack-frame/">stack</a>, please refer to it if you want to know the details.</p>
+<p>The only remaining segment we didn’t mention yet is the <code>heap</code>, which is this article’s focus! </p>
+<p>You can check the memory layout of one process by examining this file <code>/proc/{pid}/maps</code> as below: </p>
+<img src="/images/maps-capture.png" title="proc/pid/maps" width="800px" height="600px">
+
+<p>Note that the above investigation doesn’t consider multiple threads. The memory layout of the process with multi-threads will be more complex, please refer to other online <a target="_blank" rel="noopener" href="https://azeria-labs.com/heap-exploitation-part-2-glibc-heap-free-bins/">documents</a>.</p>
+<p>In this section, we had a rough overview of memory management from top to bottom. Hope you can see the big picture and know where we are. Next, let’s dig into the <code>heap</code> segment and see how it works. </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux-memory-layout-heap-stack/" rel="tag"># Linux, memory layout, heap, stack</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/07/22/CPacketSniffer/" rel="prev" title="cPacketSniffer">
+                  <i class="fa fa-angle-left"></i> cPacketSniffer
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/09/08/userland-memory-allocation-two/" rel="next" title="Understand userland heap memory allocation: part two - allocate chunk">
+                  Understand userland heap memory allocation: part two - allocate chunk <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

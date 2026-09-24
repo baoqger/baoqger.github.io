@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="You can’t create something out of nothing. Docker Deep Dive by Nigel Poulton When I want to learn how Docker works behind the scenes, I searched a lot online, but the output is very limited. And ‘Dock">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Book Reviews">
+<meta property="og:url" content="https://organicprogrammer.com/book-reviews/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="You can’t create something out of nothing. Docker Deep Dive by Nigel Poulton When I want to learn how Docker works behind the scenes, I searched a lot online, but the output is very limited. And ‘Dock">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-06-21T07:43:07.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/book-reviews/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":false,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/book-reviews/index.html","path":"book-reviews/index.html","title":"Book Reviews"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Book Reviews | Chris Bao's Blog
+</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-overview-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner page posts-expand">
+
+
+    
+    
+    
+    <div class="post-block" lang="en"><header class="post-header">
+
+<h1 class="post-title" itemprop="name headline">Book Reviews
+</h1>
+
+<div class="post-meta-container">
+</div>
+
+</header>
+
+      
+      
+      
+      <div class="post-body">
+          <p><em>You can’t create something out of nothing.</em></p>
+<p><strong>Docker Deep Dive</strong> by Nigel Poulton</p>
+<p>When I want to learn how Docker works behind the scenes, I searched a lot online, but the output is very limited. And ‘Docker Deep Dive’ is the only one I can find! This book covers many topics related to Docker. It doesn’t show the source code level details, but it serves as a good starting point for the exploration of the container technology world. The explanation of <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Virtual_Extensible_LAN"><code>VXLAN</code></a> in the Docker networking part is the most impressive chapter for me. </p>
+<p><strong>Design Patterns Explained: A New Perspective on Object Oriented Design</strong> by Alan Shalloway</p>
+<p> In my opinion, design patterns are one of the most overlooked skills by software engineers. I rarely hear colleagues discussing it in my work. Only when you need to refactor or extend a project written by someone else will you realize your macro-level design skills are quite limited. To be honest, I read this book because the classic ‘Design Patterns’ by the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Design_Patterns">‘Gang of Four’</a> is too difficult to understand. Books related to design patterns need to provide a context. Only when readers understand this context can they further comprehend the value of various patterns. This book allows me to easily immerse myself in its context and engage in deep thinking, which is the most valuable aspect.</p>
+<p> <strong>Advanced Algorithms and Data Structures</strong> by Marcello La Rocca</p>
+<p> This is an algorithm book that I will definitely read repeatedly in the future! Compared to other classic algorithm books, it is much less academic. You won’t find many complex formulas and derivations, but rather, you will see many illustrative diagrams that help you understand. Pay attention to the word ‘advanced’ in the book title, which means that the book discusses high-level data structures and algorithms. I believe that very few people would frequently use data structures like Bloom filters, which are discussed in the book, in their daily work. However, reading this book will make you aware that there are indeed people in your industry using such advanced technology, which is awe-inspiring.</p>
+<p> <strong>Foundations of Scalable Systems: Designing Distributed Architectures</strong> by Ian Gorton</p>
+<p> Designing scalable distributed systems is a crucial skill for senior software engineers. Nowadays, interviews for such positions often include a focus on this skill, known as a <code>system design interview</code>. And this book can provide a solid foundation for excelling in these interviews.<br>I highly recommend every chapter of this book to the readers. various layers of a scalable distributed system, including the underlying network protocol, distributed databases, distributed caching, message brokers, microservices, serverless architectures, and more. All of these topics can greatly deepen your understanding of the scalable distributed system. Of course, if you want to fully absorb the contents, multiple readings of the book may be necessary. </p>
+<p> <strong>Grokking Concurrency</strong> by Kirill Bobrov</p>
+<p> One of the standout features of “Grokking Concurrency” by Kirill Bobrov is its explanation of how concurrent programming operates in a universal context, transcending the confines of any specific programming language. This broad approach not only enhances comprehension but also underscores the fundamental principles underlying concurrent programming, making it applicable across diverse programming environments. On completing this book, I gain a comprehensive understanding of the intricacies of concurrency, parallelism, multithreading, and asynchronous programming.</p>
+<p> <strong>Start Small, Stay Small: A Developer’s Guide to Launching a Startup</strong> by Rob Walling</p>
+<p>This book has been on my radar for quite some time, and despite its publication approximately 10 years ago, its content remains incredibly relevant. It effectively addresses two crucial questions: why developers transition into self-funded startup entrepreneurship, and more importantly, how to navigate this shift successfully.</p>
+<p> <code>While it is true there are always new technologies to learn, as you mature in your technology career it&#39;s likely you will begin to feel like a hamster on a wheel as you learn one more way to pull data out of a database</code>. Superficial learning of this kind is insufficient for long-term career security. The book reinforced my belief in the need to leverage my software engineering skills to establish and own a business.</p>
+<p>The book then provides a comprehensive framework for actualizing this goal. It emphasizes that as a software engineer, technical and coding skills contribute to less than 30% of the overall objective. Instead, one must learn how to identify a viable market, effectively market their product, and manage their time efficiently. It underscores the potential necessity of delegating tasks, even including aspects of coding to achieve success!  </p>
+
+      </div>
+      
+      
+      
+    </div>
+
+    
+    
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

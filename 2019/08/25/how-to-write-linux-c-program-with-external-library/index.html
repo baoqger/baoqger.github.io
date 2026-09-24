@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundAfter you learn and understand how to write small C programs in Linux (that means you know the syntax of C language and how to compile your programs with gcc), you will want to have some adv">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to use libraries in Linux C program">
+<meta property="og:url" content="https://organicprogrammer.com/2019/08/25/how-to-write-linux-c-program-with-external-library/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundAfter you learn and understand how to write small C programs in Linux (that means you know the syntax of C language and how to compile your programs with gcc), you will want to have some adv">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/compile_process.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/ldd-result.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/ldso.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/ld.so.conf.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/libc.conf.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/ldconfig.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/ldd-result-after.png">
+<meta property="article:published_time" content="2019-08-25T08:08:36.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/compile_process.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2019/08/25/how-to-write-linux-c-program-with-external-library/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2019/08/25/how-to-write-linux-c-program-with-external-library/","path":"2019/08/25/how-to-write-linux-c-program-with-external-library/","title":"How to use libraries in Linux C program"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>How to use libraries in Linux C program | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-solopreneur"><a href="/solopreneur/" rel="section"><i class="fa fa-briefcase fa-fw"></i>solopreneur</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Static-library-vs-Shared-library"><span class="nav-number">2.</span> <span class="nav-text">Static library vs Shared library</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Naming-convention"><span class="nav-number">3.</span> <span class="nav-text">Naming convention</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Link-library"><span class="nav-number">4.</span> <span class="nav-text">Link library</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Filesystem-placement-convention"><span class="nav-number">5.</span> <span class="nav-text">Filesystem placement convention</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dynamic-linker"><span class="nav-number">6.</span> <span class="nav-text">Dynamic linker</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Register-library"><span class="nav-number">7.</span> <span class="nav-text">Register library</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Summary"><span class="nav-number">8.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2019/08/25/how-to-write-linux-c-program-with-external-library/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="How to use libraries in Linux C program | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          How to use libraries in Linux C program
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-08-25 16:08:36" itemprop="dateCreated datePublished" datetime="2019-08-25T16:08:36+08:00">2019-08-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-24 08:11:14" itemprop="dateModified" datetime="2026-09-24T08:11:14+08:00">2026-09-24</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>After you learn and understand how to write small C programs in Linux (that means you know the syntax of C language and how to compile your programs with <code>gcc</code>), you will want to have some adventures to write more powerful and larger programs. To be a great software engineer, you need this passion to explore, right?</p>
+<p>To write a larger program, you can’t build everything from scratch. This means you need to import and use libraries developed by others in your program.  </p>
+<p>For new developers of Linux C programming, the whole handling of libraries can be a mystery, which requires knowledge about <code>gcc compiler</code>, <code>Linux system</code>, <code>GNU conventions</code> and so on. In this article, I will focus on this topic and piece all these together. After reading this post, I hope you can feel free and confident to add the shared libraries from the open source world to your program. </p>
+<p><strong>Note</strong>: To illustrate the discussion more clearly, this article is based on this demo github <a target="_blank" rel="noopener" href="https://github.com/baoqger/handle-c-library-demo-linux">app</a>. And my demo app is forked from Stephan Avenwedde’s original <a target="_blank" rel="noopener" href="https://opensource.com/article/20/6/linux-libraries">repo</a>. Thanks for that.  </p>
+<p>The code logic of this demo app is very straightforward, so I will not review the code line by line in this article, which is not the target of this post. </p>
+<h3 id="Static-library-vs-Shared-library"><a href="#Static-library-vs-Shared-library" class="headerlink" title="Static library vs Shared library"></a>Static library vs Shared library</h3><p>Generally speaking, there are two types of libraries: <code>Static</code> and <code>Shared</code>. </p>
+<ul>
+<li><strong>static library</strong>: is simply a collection of ordinary object files; conventionally, static libraries end with the <code>.a</code> suffix. This collection is created using <code>ar</code> command. For example, in the demo app, we build the static library like this:</li>
+</ul>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CFLAGS =-Wall -Werror</span><br><span class="line"></span><br><span class="line"><span class="section">libmy_static.a: libmy_static_a.o libmy_static_b.o</span></span><br><span class="line">	ar -rsv ./lib/static/libmy_static.a libmy_static_a.o libmy_static_b.o</span><br><span class="line"></span><br><span class="line"><span class="section">libmy_static_a.o: libmy_static_a.c</span></span><br><span class="line">	cc -c libmy_static_a.c -o libmy_static_a.o <span class="variable">$(CFLAGS)</span></span><br><span class="line"></span><br><span class="line"><span class="section">libmy_static_b.o: libmy_static_b.c</span></span><br><span class="line">	cc -c libmy_static_b.c -o libmy_static_b.o <span class="variable">$(CFLAGS)</span></span><br></pre></td></tr></table></figure>
+<p>In our case, the static library will be installed in the subdirectory <code>./lib/static</code> and named as <code>libmy_static.a</code>.   </p>
+<p>When the application links against a static library, the library’s code becomes part of the resulting executable. So you can run the application without any further setting or configuration. That’s the biggest advantage of the static library, and you’ll see how it works in the next section. </p>
+<p>Static libraries aren’t used as often as they once were, since <code>shared library</code> has more advantages. </p>
+<ul>
+<li><strong>shared library</strong>: end with <code>.so</code> which means <strong>shared object</strong>. The shared library is loaded into memory when the application starts. If multiple applications use the same shared library, the shared library will be loaded only once. In our demo app, the shared library is built as follows:</li>
+</ul>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">libmy_shared.so: libmy_shared.o</span></span><br><span class="line">	cc -shared -o ./lib/shared/libmy_shared.so libmy_shared.o</span><br><span class="line"></span><br><span class="line"><span class="section">libmy_shared.o: libmy_shared.c</span></span><br><span class="line">	cc -c -fPIC libmy_shared.c -o libmy_shared.o</span><br></pre></td></tr></table></figure>
+
+<p>The shared library <code>libmy_shared.so</code> is installed inside <code>./lib/shared</code> subdirectory. Note that the shared library is built with some special options for <code>gcc</code>, like <code>-fPIC</code> and <code>-shared</code>. In detail, you can check the document of gcc. </p>
+<h3 id="Naming-convention"><a href="#Naming-convention" class="headerlink" title="Naming convention"></a>Naming convention</h3><p>Generally speaking, the name of shared library follows the pattern: <code>lib</code> + name of library + <code>.so</code>. Of course, version information is very important, but in this article, let’s ignore the version issue.</p>
+<h3 id="Link-library"><a href="#Link-library" class="headerlink" title="Link library"></a>Link library</h3><p>After building the libraries, next step you need to import the libraries in your app. For our app, the source code is the file of <code>demo/main.c</code> as follows:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;libmy_shared.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;libmy_static_a.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;libmy_static_b.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Press Enter to repeat\n\n&quot;</span>);</span><br><span class="line">    <span class="keyword">do</span>&#123;</span><br><span class="line">        <span class="type">int</span> n = getRandInt();</span><br><span class="line">        n = negateIfOdd(n);</span><br><span class="line">        printInteger(&amp;n);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (getchar() == <span class="string">&#x27;\n&#x27;</span>);</span><br><span class="line">   </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Note that we import three <code>header file</code> of our libraries. The next question is how to build the demo app. </p>
+<p>Let’s recall the building process of a C program as follows:</p>
+<img src="/images/compile_process.png" title="compile process" width="800px" height="600px">
+
+<p>This is a two-step process: <code>compile</code> and <code>link</code>. Firstly, the source code file of <code>main.c</code> will be compiled to an object file, let’s say <code>main.o</code> file. In this step, the critical thing is telling <code>gcc</code> where to find the <code>header file</code> of the libraries. Next, link the <code>main.o</code> object file with our libraries: <code>libmy_static.a</code> and <code>libmy_shared.so</code>. <code>gcc</code> needs to know the name of library it should link and where to find these libraries, right? </p>
+<p>These information can be defined by the following three options:</p>
+<ul>
+<li><code>I</code>: add the include directory for header files,</li>
+<li><code>l</code>: name of the library </li>
+<li><code>L</code>: the directory for the library</li>
+</ul>
+<p>In our case, the <code>make</code> command to build the demo app is as follows:</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">LIBS = -L../lib/shared -L../lib/static -lmy_shared -lmy_static -I../</span><br><span class="line"></span><br><span class="line">CFLAGS =-Wall -Werror</span><br><span class="line"></span><br><span class="line"><span class="section">demo: </span></span><br><span class="line">	cc -o my_app main.c <span class="variable">$(CFLAGS)</span> <span class="variable">$(LIBS)</span></span><br></pre></td></tr></table></figure>
+
+<p>Since we have two libraries: <code>libmy_static.a</code> and <code>libmy_shared.so</code>, based on the naming convention we mentioned above, the <code>-l</code> option for library name should be <strong>my_static</strong> and <strong>my_shared</strong>. We can use two <code>-l</code> options for each library.  </p>
+<p>For the <code>-L</code> option, we need to provide the directory path where to find the libraries. We can use the path <code>../lib/shared</code> and <code>../lib/static</code> relative to the demo’s source code file. Right? And the same rule applies to the <code>-I</code> option for the include header file as well. </p>
+<p>Run <code>make demo</code> command, and you can build the demo app with the libraries linked together successfully. </p>
+<h3 id="Filesystem-placement-convention"><a href="#Filesystem-placement-convention" class="headerlink" title="Filesystem placement convention"></a>Filesystem placement convention</h3><p>As I show above, the libraries are placed inside the subdirectory of this project.  This is inconvenient for others to import your library. Most open source software tends to follow the <code>GNU</code> standards. The <code>GNU</code> standards recommend installing by default all libraries in <code>/usr/local/lib</code> and all the header files in <code>/usr/local/include</code> when distributing source code. So let’s add one more <code>make</code> command to install the library file and header file to the directory based on the GNU convention: </p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">INSTALL ?= install</span><br><span class="line">PREFIX ?= /usr/local</span><br><span class="line">LIBDIR = <span class="variable">$(PREFIX)</span>/lib</span><br><span class="line">INCLUDEDIR = <span class="variable">$(PREFIX)</span>/<span class="keyword">include</span></span><br><span class="line"></span><br><span class="line"><span class="section">install: library</span></span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D libmy_shared.h <span class="variable">$(INCLUDEDIR)</span>/libmy_shared.h</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D libmy_static_a.h <span class="variable">$(INCLUDEDIR)</span>/libmy_static_a.h</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D libmy_static_b.h <span class="variable">$(INCLUDEDIR)</span>/libmy_static_b.h</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D ./lib/static/libmy_static.a <span class="variable">$(LIBDIR)</span>/libmy_static.a</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D ./lib/shared/libmy_shared.so <span class="variable">$(LIBDIR)</span>/libmy_shared.so</span><br><span class="line"></span><br><span class="line"><span class="section">uninstall:</span></span><br><span class="line">	rm <span class="variable">$(INCLUDEDIR)</span>/libmy_shared.h</span><br><span class="line">	rm <span class="variable">$(INCLUDEDIR)</span>/libmy_static_a.h</span><br><span class="line">	rm <span class="variable">$(INCLUDEDIR)</span>/libmy_static_b.h</span><br><span class="line">	rm <span class="variable">$(LIBDIR)</span>/libmy_static.a</span><br><span class="line">	rm <span class="variable">$(LIBDIR)</span>/libmy_shared.so</span><br></pre></td></tr></table></figure>
+
+<p>You can find the similar make command in my open source projects for this purpose. </p>
+<p>The benefit is <code>gcc</code> compiler (which is also from GNU and follows the same convention) will look for the libraries by default in these two directories: <code>/usr/local/lib</code> and <code>/usr/local/include</code>. So you don’t need to set <code>-L</code> and <code>-I</code> options. For example, after we run <code>make install</code> command above and install the library into the system directory, you can build the demo app as follows: </p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">GNULIBS = -lmy_shared -lmy_static</span><br><span class="line"></span><br><span class="line">CFLAGS =-Wall -Werror</span><br><span class="line"></span><br><span class="line"><span class="comment"># you can run this make command after you install </span></span><br><span class="line"><span class="comment"># the libraries into the default system directory: /usr/local/bin</span></span><br><span class="line"><span class="section">gnudemo: </span></span><br><span class="line">	cc -o my_app main.c <span class="variable">$(CFLAGS)</span> <span class="variable">$(GNULIBS)</span></span><br></pre></td></tr></table></figure>
+
+<p>Understand the <code>GNU</code> convention can make your development more easier, right? </p>
+<p>Then next step let’s run the demo app by simply calling <code>./my_app</code>, but you’ll get the following error message:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./my_app: error while loading shared libraries: libmy_shared.so: cannot open shared object file: No such file or directroy</span><br></pre></td></tr></table></figure>
+
+<p>What’s happening? </p>
+<h3 id="Dynamic-linker"><a href="#Dynamic-linker" class="headerlink" title="Dynamic linker"></a>Dynamic linker</h3><p>When we start up an executable, the Linux kernel automatically runs the <code>dynamic linker</code> (or dynamic loader). This dynamic linker, in turn, finds and loads all other shared libraries used by the program.</p>
+<p>In fact, the executable file in Linux system is usually in the format of <a target="_blank" rel="noopener" href="https://linux-audit.com/elf-binaries-on-linux-understanding-and-analysis/"><code>ELF</code></a> which abbreviates <code>Executable and Linkable Format</code>. The ELF executable contains linking information, and the dynamic linker just reads that information to load shared libraries. </p>
+<p>In Linux system, the dynamic linker is name <code>ld.so</code></p>
+<p>Based on the above error message, we can say that the dynamic linker cannot find the shared library. We can verify this point by running <code>ldd</code> command, which is used to print the shared objects (shared libraries) required by each program or shared object specified on the command line.</p>
+<img src="/images/ldd-result.png" title="ldd" width="800px" height="600px">
+
+<p>Clearly, our shared library <code>libmy_shared.so</code> is not found. We need to take a look how at <code>ld.so</code> works. The best way to find such information is running <code>man</code> command. We can get the following information in the <code>ld.so</code> man document:</p>
+<img src="/images/ldso.png" title="ld.so" width="800px" height="600px">
+
+<p>Based on this screenshot, we can solve this issue in three ways:</p>
+<ul>
+<li>install the shared library in the directory: <code>/lib</code> or <code>/usr/lib</code></li>
+<li>edit the environment variable <code>LD_LIBRARY_PATH</code> by appending the path of directories containing our library </li>
+<li>update the cache file <code>/etc/ld.so.cache</code></li>
+</ul>
+<p>The first two methods can work well based on my test, but personally I recommend to use the third method, which is a more systematic way to register a library. </p>
+<h3 id="Register-library"><a href="#Register-library" class="headerlink" title="Register library"></a>Register library</h3><p>To register a new library, we need to use command <code>ldconfig</code> which configures dynamic linker run-time bindings. </p>
+<p>How does <code>ldconfig</code> work? It will search <code>.so</code> library files in some specific directories, and the search result will be updated to dynamic linker’s cache file <code>/etc/ld.so.cache</code>. </p>
+<p>And one of the directory <code>ldconfig</code> will look at is <code>/etc/ld.so.conf</code>. In our Ubuntu system, it’s in fact a file as follows:</p>
+<img src="/images/ld.so.conf.png" title="ld.so.conf" width="800px" height="600px">
+
+<p>it is expanded to all the <code>.conf</code> files inside <code>ld.so.conf.d</code>, in my case, there is one default file <code>libc.conf</code> as follows: </p>
+<img src="/images/libc.conf.png" title="libc.conf" width="800px" height="600px">
+
+<p>Note that <code>/usr/local/lib</code> is defined inside the file, then <code>ldconfig</code> will search .so libraries in this directory. </p>
+<p>As we mentioned in above section, <code>/usr/local/lib</code> is just the place to install shared library based on GNU convention. Right? </p>
+<p>So we can simply run <code>ldconfig</code> command without any option to <strong>register a new library</strong> (make sure the library is install in that directory): </p>
+<img src="/images/ldconfig.png" title="ldconfig" width="800px" height="600px">
+
+<p>In the above screenshot, you can see the change before and after running command <code>sudo ldconfig</code>. (<code>ldconfig -p</code> will list the current libraries reading from cache file <code>/etc/ld.so.cache</code>). After registering the library, it is added into the cache file of dynamic linker, right? Let’s verify this again with <code>ldd</code>:   </p>
+<img src="/images/ldd-result-after.png" title="ldd-result" width="800px" height="600px">
+
+<p>Our new shared library can be found! Then we can run the app successfully as well. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article we discussed several important tools like <code>ld.so</code>, <code>ldd</code>, <code>ldconfig</code> and <code>gcc</code>, which help you build and import shared libraries. Another thing is <code>GNU</code> convention or standard which defines the behavior of these tools.  </p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/03/06/https-certificate-manual-verify-openssl/" rel="prev" title="How HTTPS works: part five - manual verification of SSL&#x2F;TLS certificates">
+                  <i class="fa fa-angle-left"></i> How HTTPS works: part five - manual verification of SSL/TLS certificates
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/09/09/what-happen-dpkg-install/" rel="next" title="What happens when you run apt commands">
+                  What happens when you run apt commands <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
