@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-count">70</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">38</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,150 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/" class="post-title-link" itemprop="url">Breaking Into Edge AI: Deconstructing the Transformer Autoregressive Loop with ONNX Small Models</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-09-26 10:00:00 / Modified: 22:48:41" itemprop="dateCreated datePublished" datetime="2026-09-26T10:00:00+08:00">2026-09-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>If you have been reading my articles for a while, you probably know that I have focused mainly on <code>Azure</code> and <code>AWS</code> cloud AI services and applications. In this post, I want to step outside that comfort zone and introduce a different direction: <strong>edge AI</strong>.</p>
+<p>In this article, I will share what I learned about <code>ONNX (Open Neural Network Exchange)</code> — an open standard and file format that helps AI models run across platforms. We will look at the problem it solves, the convenience it brings to AI&#x2F;ML applications, and how this capability extends in the GenAI era to make local small-model deployment and inference much easier.</p>
+<p>If those questions interest you, let’s get started.</p>
+<img src="/images/edge-ai-onnx/Local_Edge_AI_Processing_Loop.png" alt="" >
+
+<h2 id="ONNX-Cross-Platform-AI-Models"><a href="#ONNX-Cross-Platform-AI-Models" class="headerlink" title="ONNX: Cross-Platform AI Models"></a>ONNX: Cross-Platform AI Models</h2><h4 id="What-Problem-Does-ONNX-Solve"><a href="#What-Problem-Does-ONNX-Solve" class="headerlink" title="What Problem Does ONNX Solve?"></a>What Problem Does ONNX Solve?</h4><p>What problem is <code>ONNX</code> trying to solve? Let me explain with a story from my own experience.</p>
+<p>At a previous employer, we built a real-time computing system as a cloud service on the <code>.NET</code> stack. Due to business requirements, we needed to explore deploying machine learning models on that system and serving online inference. Before that, the system had no ML requirements or capabilities at all — it was a fairly ordinary <code>.NET</code> backend microservices stack.</p>
+<p>To add ML inference, I researched several approaches:</p>
+<p><strong>Dedicated model inference services</strong>: Platforms like <code>Azure Machine Learning</code> or <code>AWS SageMaker</code> can host models for online inference, and our system would communicate with them over the network. This approach requires significant <strong>infrastructure</strong> investment, and network calls also add <strong>latency</strong>.</p>
+<p><strong>Embedded ML frameworks</strong>: We could integrate frameworks like <code>PyTorch</code> or <code>TensorFlow</code> directly into our system, embed models in-process, avoid extra infrastructure and operations, and skip network calls at inference time — all good for performance. But this approach locks you into a specific framework and reduces flexibility.</p>
+<p>As you can see, each approach has trade-offs. Wouldn’t it be great if one solution combined the strengths of both while avoiding their weaknesses? That is exactly what <code>ONNX</code> does.</p>
+<h4 id="ONNX"><a href="#ONNX" class="headerlink" title="ONNX"></a>ONNX</h4><img src="/images/edge-ai-onnx/Pasted%20image%2020260916153212.png" alt="" width="523px">
+
+<p><code>ONNX (Open Neural Network Exchange)</code> is an open standard that defines a common format for machine learning models, enabling cross-platform deployment. You can think of it as the AI equivalent of <code>POSIX (Portable Operating System Interface)</code> — a standard that lets different UNIX&#x2F;Linux kernels interoperate.</p>
+<p>Today, <code>ONNX</code> is supported by major ML frameworks and vendors.</p>
+<h4 id="ONNX-ONNX-Runtime"><a href="#ONNX-ONNX-Runtime" class="headerlink" title="ONNX &amp; ONNX Runtime"></a>ONNX &amp; ONNX Runtime</h4><img src="/images/edge-ai-onnx/Pasted%20image%2020260916155838.png" alt="" width="700px">
+
+<p>With <code>ONNX</code>, the ML training and deployment workflow naturally splits into two phases:</p>
+<p><strong>Training phase</strong>: <code>ONNX</code> defines the model standard, and mainstream ML frameworks provide tools to convert models into <code>ONNX</code> format. In the example below, the <code>scikit-learn</code> framework uses the <code>skl2onnx</code> library to perform the conversion.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Convert into ONNX format.</span></span><br><span class="line"><span class="keyword">from</span> skl2onnx <span class="keyword">import</span> to_onnx</span><br><span class="line"></span><br><span class="line">onx = to_onnx(clr, X[:<span class="number">1</span>])</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;rf_iris.onnx&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(onx.SerializeToString())</span><br></pre></td></tr></table></figure>
+
+<p><strong>Inference phase</strong>: Another key component is <code>ONNX Runtime</code> — the runtime engine that executes models. <code>ONNX Runtime</code> is a native C++ library with binding APIs for different stacks, such as C# and Python.</p>
+<p>In addition, <code>ONNX Runtime</code> provides different libraries for different hardware — CPU, GPU, and more. In this article, we will default to CPU. In a future post, I will dig into how to improve efficiency with GPU.</p>
+<p>The most basic inference flow looks like this. This example uses .NET and C#, based on the <code>Microsoft.ML.OnnxRuntime</code> NuGet package.</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntime;</span><br><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntime.Tensors;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 1. Create an inference session</span></span><br><span class="line">session = <span class="keyword">new</span> InferenceSession(onnxModelPath)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. Build tensor from features</span></span><br><span class="line"><span class="keyword">var</span> inputTensor = <span class="keyword">new</span> DenseTensor&lt;<span class="built_in">float</span>&gt;(data, shape);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. Wrap for ONNX Runtime (legacy API)</span></span><br><span class="line"><span class="keyword">var</span> featuers_input = NamedOnnxValue.CreateFromTensor&lt;<span class="built_in">float</span>&gt;(<span class="string">&quot;feature_input&quot;</span>, inputTensor);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. Run model</span></span><br><span class="line">session.Run(features_input);</span><br></pre></td></tr></table></figure>
+
+<p>Using ONNX for traditional ML models is not the main focus of this article. Next, let’s look at what opportunities ONNX opens up in the GenAI era.</p>
+<h2 id="ONNX-Runtime-GenAI-Evolution-in-the-LLM-Era"><a href="#ONNX-Runtime-GenAI-Evolution-in-the-LLM-Era" class="headerlink" title="ONNX Runtime GenAI: Evolution in the LLM Era"></a>ONNX Runtime GenAI: Evolution in the LLM Era</h2><p>In the <code>GenAI</code> era, <code>ONNX Runtime</code> has a dedicated extension: <code>ONNX Runtime GenAI</code>. It follows the same philosophy as <code>ONNX Runtime</code> — letting applications embed and load models directly.</p>
+<p>In theory, that means large models too. But frontier models today sit in the hundreds of billions or trillions of parameters. In practice, no application can realistically embed those locally.</p>
+<p>We can, however, push the idea to the other extreme: <strong>small models</strong>!</p>
+<p>Because they do not depend on cloud resources, <code>small models</code> fit many scenarios: <strong>limited network connectivity</strong>, <strong>strict data privacy and compliance</strong>, and <strong>lower accuracy requirements but higher latency sensitivity</strong>, among others.</p>
+<p>So <code>ONNX Runtime GenAI</code> is a strong platform for <strong>edge AI built on small models</strong>!</p>
+<p>In the demo below, let’s try it hands-on.</p>
+<h2 id="Demo-Local-Small-Models-with-ONNX"><a href="#Demo-Local-Small-Models-with-ONNX" class="headerlink" title="Demo: Local Small Models with ONNX"></a>Demo: Local Small Models with ONNX</h2><h4 id="Phi-3-Mini-4K-Instruct-ONNX-Model"><a href="#Phi-3-Mini-4K-Instruct-ONNX-Model" class="headerlink" title="Phi-3-Mini-4K-Instruct ONNX Model"></a>Phi-3-Mini-4K-Instruct ONNX Model</h4><p>In this article, we use Microsoft’s <code>Phi</code> family small model: <code>Phi-3-Mini-4K-Instruct</code>.</p>
+<p><code>Phi-3-Mini-4K-Instruct</code> is an instruction-tuned variant built on top of <code>Phi-3-Mini-4K</code> — a model better aligned with how users interact with chat systems. It has 3.8B parameters and a 4K context window.</p>
+<p>The model ships in variants for different compute targets: <code>cuda</code>, <code>directml</code>, and <code>cpu_and_mobile</code>.</p>
+<img src="/images/edge-ai-onnx/Pasted%20image%2020260911153901.png" alt="" >
+
+<p>Today we use the <code>cpu_and_mobile</code> variant. It is <strong>quantized</strong>, with weights compressed to <code>int4</code>, which makes it friendly for ordinary PCs, mobile devices, and edge hardware.</p>
+<img src="/images/edge-ai-onnx/Pasted%20image%2020260911154418.png" alt="" >
+
+<h4 id="Building-a-Transformer-Workflow-with-ONNX-Runtime-GenAI"><a href="#Building-a-Transformer-Workflow-with-ONNX-Runtime-GenAI" class="headerlink" title="Building a Transformer Workflow with ONNX Runtime GenAI"></a>Building a Transformer Workflow with ONNX Runtime GenAI</h4><p>When you call large models on cloud platforms like <code>Azure Foundry</code> or <code>AWS Bedrock</code>, you usually just specify the model name. Some platforms expose a few Transformer parameters — <code>temperature</code>, <code>top_k</code>, <code>top_p</code>, and so on — so you can shape model behavior at a basic level.</p>
+<p><code>ONNX Runtime GenAI</code> is a relatively low-level engine. You need to assemble the <code>Transformer</code> workflow yourself through its APIs.</p>
+<p>On one hand, that is a real challenge. On the other hand, it is an excellent way to learn and practice <code>Transformer</code> fundamentals hands-on. In the sections below, let’s see how to build that workflow with <code>ONNX Runtime GenAI</code>.</p>
+<p>The code examples use C# and .NET.</p>
+<h5 id="Creating-the-Tokenizer"><a href="#Creating-the-Tokenizer" class="headerlink" title="Creating the Tokenizer"></a>Creating the Tokenizer</h5><p>The basic unit of information for large language models is the <code>token</code>, so the first step is to create a <code>Tokenizer</code>.</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> tokenizer = <span class="keyword">new</span> Tokenizer(model);</span><br><span class="line"><span class="keyword">var</span> tokenizerStream = tokenizer.CreateStream();</span><br><span class="line"></span><br><span class="line">Console.WriteLine(<span class="string">&quot;Tokenizer created&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>Later, we will see how this <code>Tokenizer</code> converts the user’s prompt into tokens.</p>
+<h5 id="Creating-the-Model"><a href="#Creating-the-Model" class="headerlink" title="Creating the Model"></a>Creating the Model</h5><p>Next, we create the model.</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> path = <span class="string">&quot;pathtoonnxmodel&quot;</span></span><br><span class="line"><span class="keyword">var</span> config = <span class="keyword">new</span> Config(path);</span><br><span class="line"><span class="keyword">var</span> model = <span class="keyword">new</span> Model(config);</span><br><span class="line">Console.WriteLine(<span class="string">&quot;Model loaded&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>Pass the model directory path to the engine. It automatically loads the ONNX Runtime GenAI configuration file: <code>genai_config.json</code>. For the <code>Phi-3-Mini-4K-Instruct</code> model we use here, the file looks like this:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;model&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;bos_token_id&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;context_length&quot;</span><span class="punctuation">:</span> <span class="number">4096</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;decoder&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;session_options&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">                <span class="attr">&quot;log_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;onnxruntime-genai&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;provider_options&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">]</span></span><br><span class="line">            <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;filename&quot;</span><span class="punctuation">:</span> <span class="string">&quot;phi3-mini-4k-instruct-cpu-int4-rtn-block-32-acc-level-4.onnx&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;head_size&quot;</span><span class="punctuation">:</span> <span class="number">96</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;hidden_size&quot;</span><span class="punctuation">:</span> <span class="number">3072</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;inputs&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">                <span class="attr">&quot;input_ids&quot;</span><span class="punctuation">:</span> <span class="string">&quot;input_ids&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;attention_mask&quot;</span><span class="punctuation">:</span> <span class="string">&quot;attention_mask&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;past_key_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;past_key_values.%d.key&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;past_value_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;past_key_values.%d.value&quot;</span></span><br><span class="line">            <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;outputs&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">                <span class="attr">&quot;logits&quot;</span><span class="punctuation">:</span> <span class="string">&quot;logits&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;present_key_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;present.%d.key&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;present_value_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;present.%d.value&quot;</span></span><br><span class="line">            <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;num_attention_heads&quot;</span><span class="punctuation">:</span> <span class="number">32</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;num_hidden_layers&quot;</span><span class="punctuation">:</span> <span class="number">32</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;num_key_value_heads&quot;</span><span class="punctuation">:</span> <span class="number">32</span></span><br><span class="line">        <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;eos_token_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">            <span class="number">32000</span><span class="punctuation">,</span></span><br><span class="line">            <span class="number">32001</span><span class="punctuation">,</span></span><br><span class="line">            <span class="number">32007</span></span><br><span class="line">        <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;pad_token_id&quot;</span><span class="punctuation">:</span> <span class="number">32000</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;phi3&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;vocab_size&quot;</span><span class="punctuation">:</span> <span class="number">32064</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;search&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;diversity_penalty&quot;</span><span class="punctuation">:</span> <span class="number">0.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;do_sample&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;early_stopping&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;length_penalty&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;max_length&quot;</span><span class="punctuation">:</span> <span class="number">4096</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;min_length&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;no_repeat_ngram_size&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;num_beams&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;num_return_sequences&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;past_present_share_buffer&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;repetition_penalty&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;temperature&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;top_k&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;top_p&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Beyond basic model metadata, the <code>search</code> section defines many parameters that affect Transformer inference behavior. We cannot cover all of them in this article, but keep in mind they are adjustable. Try changing them and observe the differences — that is one of the best ways to build intuition for how models behave. I will share more on this topic in a future post.</p>
+<h5 id="Configuring-the-Generator"><a href="#Configuring-the-Generator" class="headerlink" title="Configuring the Generator"></a>Configuring the Generator</h5><p>Next we need a <code>Generator</code>. This is not a theoretical Transformer concept — it is a key engine component that orchestrates the entire workflow.</p>
+<p>Transformer models use an <strong>autoregressive</strong> mechanism: generate one token at a time, then predict the next token based on the prompt and all tokens generated so far — forming a loop. The <code>Generator</code> controls that loop.</p>
+<p>When you create the <code>Generator</code>, you can tune the parameters mentioned above to control model behavior:</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> generatorParams = <span class="keyword">new</span> GeneratorParams(model);</span><br><span class="line"><span class="keyword">var</span> generator = <span class="keyword">new</span> Generator(model, generatorParams);</span><br></pre></td></tr></table></figure>
+
+<p>Now let’s look at that loop.</p>
+<h5 id="Token-Generation-Loop"><a href="#Token-Generation-Loop" class="headerlink" title="Token Generation Loop"></a>Token Generation Loop</h5><figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Get input tokens</span></span><br><span class="line"><span class="built_in">string</span> user_prompt = <span class="string">&quot;hello&quot;</span>;</span><br><span class="line"><span class="built_in">string</span> prompt = <span class="string">$@&quot;[&#123;&#123;&quot;&quot;role&quot;&quot;:&quot;&quot;system&quot;&quot;,&quot;&quot;content&quot;&quot;:&quot;&quot;<span class="subst">&#123;systemPrompt&#125;</span>&quot;&quot;&#125;&#125;,&#123;&#123;&quot;&quot;role&quot;&quot;:&quot;&quot;user&quot;&quot;,&quot;&quot;content&quot;&quot;:&quot;&quot;<span class="subst">&#123;user_prompt&#125;</span>&quot;&quot;&#125;&#125;]&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> sequences = tokenizer.Encode(prompt);</span><br><span class="line"></span><br><span class="line"><span class="comment">// append input tokens to generator</span></span><br><span class="line">generator.AppendTokenSequences(sequences);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Run generation loop</span></span><br><span class="line"><span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">&#123;</span><br><span class="line">    generator.GenerateNextToken();</span><br><span class="line">    <span class="keyword">if</span> (generator.IsDone())</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Get output tokens and decode to string</span></span><br><span class="line"><span class="keyword">var</span> outputSequence = generator.GetSequence(<span class="number">0</span>);</span><br><span class="line"><span class="keyword">var</span> outputString = tokenizer.Decode(outputSequence);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Display output</span></span><br><span class="line">Console.WriteLine(<span class="string">&quot;Output:&quot;</span>);</span><br><span class="line">Console.WriteLine(outputString);</span><br></pre></td></tr></table></figure>
+
+<p>From the code above, the flow breaks down into these steps:</p>
+<ul>
+<li>Use the <code>Tokenizer</code> to convert the user prompt into a token sequence</li>
+<li>Pass the token sequence to the <code>Generator</code></li>
+<li>The <code>Generator</code> produces the next token one at a time until completion</li>
+<li>Read the full sequence from the <code>Generator</code></li>
+<li>Use the <code>Tokenizer</code> to decode the token sequence back into a string</li>
+</ul>
+<p>This code is a clear, hands-on illustration of how Transformer inference works in practice. It is worth reading carefully more than once.</p>
+<p>Build and run it, and you will see a small model answering your questions locally on ordinary CPU hardware. Great, right?</p>
+<img src="/images/edge-ai-onnx/Pasted%20image%2020260915135410.png" alt="" >
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +354,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -359,7 +503,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -440,7 +584,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -549,7 +693,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -733,7 +877,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -844,7 +988,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -977,7 +1121,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -1098,7 +1242,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -1227,7 +1371,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -1289,139 +1433,6 @@
 <p><code>tcache bins</code> are per-thread bins. This means if the thread has a chunk on its <code>tcache bins</code>, it can serve the allocation without waiting for the heap lock!  </p>
 <h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined how the userland heap allocaor works by debugging into the heap memory with gdb. The discussion is fully based on the <code>glibc</code> implementation. The design and behavior of the <code>glibc</code> heap allocator are complex but interesting, what we covered here just touches the tip of the iceberg. You can explore more by yourself. </p>
 <p>Moreover, I plan to write a simple version of a heap allocator for learning and teaching purpose. Please keep watching my blog!</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/09/08/userland-memory-allocation-two/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/09/08/userland-memory-allocation-two/" class="post-title-link" itemprop="url">Understand userland heap memory allocation: part two - allocate chunk</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2022-09-08 15:43:57" itemprop="dateCreated datePublished" datetime="2022-09-08T15:43:57+08:00">2022-09-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>The previous <a href="https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/">article</a> gave a general overview of memory management. The story goes on. In this section, let’s break into the heap memory to see how it works basically. </p>
-<h3 id="Memory-allocator"><a href="#Memory-allocator" class="headerlink" title="Memory allocator"></a>Memory allocator</h3><p>We need to first understand some terminology in the memory management field: </p>
-<ul>
-<li><strong>mutator</strong>: the program that modifies the objects in the heap, which is simply the user application. But I will use the term <code>mutator</code> in this article. </li>
-<li><strong>allocator</strong>: the <code>mutator</code> doesn’t allocate memory by itself, it delegates this generic job to the <code>allocator</code>. At the code level, the <code>allocator</code> is generally implemented as a library. The detailed allocation behavior is fully determined by the implementations, in this article I will focus on the memory allocator in the library of <code>glibc</code>.</li>
-</ul>
-<p>The relationship between the <code>mutator</code> and <code>allocator</code> is shown in the following diagram: </p>
-<img src="/images/memo-allocator.png" title="memory allocator" width="400px" height="300px">
-
-<p>There is a third component in the memory management field: the <code>garbage collector(GC)</code>. <code>GC</code> reclaims memories automatically. Since this article is talking about manual heap memory allocation in system programming, we will ignore <code>GC</code> for now. <code>GC</code> is a very interesting technical challenge, I will examine it in the future. Please keep watching my blog!</p>
-<h3 id="Hands-on-demo"><a href="#Hands-on-demo" class="headerlink" title="Hands-on demo"></a>Hands-on demo</h3><p>We will use <code>gdb</code> and <code>pwndbg</code>(which is a gdb <a target="_blank" rel="noopener" href="https://github.com/pwndbg/pwndbg">plugin</a>) and break into the heap memory to see how it works. The <code>gdb</code> provides the functionality to extend it via <code>Python</code> plugins. <code>pwndbg</code> is the most widely used. </p>
-<p>The demo code is as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;malloc.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line">    <span class="type">char</span> *a = (<span class="type">char</span>*)<span class="built_in">malloc</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="built_in">strcpy</span>(a, <span class="string">&quot;AAAABBBBCCCCDDDD&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(a);</span><br><span class="line">    <span class="type">char</span> *b = (<span class="type">char</span>*)<span class="built_in">malloc</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="built_in">free</span>(b);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>The demo code above just allocates some memory, set the content of the memory and releases it later. And then allocate other chunks of memory again. Very simple, all right? </p>
-<p>First, set a <code>breakpoint</code> at line 7(the first <code>malloc</code> call) and run the program in <code>gdb</code>. Then run <code>vmmap</code> command from <code>pwndbg</code>, which can get the process memory layout as follows: </p>
-<img src="/images/heap-demo-vmmap-no-heap.png" title="pwndbg 1" width="800px" height="600px">
-
-<p>Note that there is no <code>heap</code> segment yet before the first <code>malloc</code> call is made. After step over one line in <code>gdb</code>, check the layout again: </p>
-<img src="/images/heap-demo-vmmap-has-heap.png" title="pwndbg 2" width="800px" height="600px">
-
-<p>Now the <code>heap</code> segment is created with the size of <code>132KB</code>(21000 in hexadecimal). As described above, the kernel maps 132KB of physical memory to this process’s virtual memory and marks this 132KB block of physical memory as used to isolate other processes. This mapping routine is done via system calls like <code>brk</code>, <code>sbrk</code> and <code>mmap</code>. Please investigate these system calls yourself.</p>
-<p>132KB is much bigger than the 100B(the size passed to <code>malloc</code>). This behavior can answer one question at the beginning of this article. The system calls aren’t necessary to be triggered each time when <code>malloc</code> is called. This design is aimed to decrease performance overhead. Now the 132KB heap memory is maintained by the <code>allocator</code>. Next time the application calls <code>malloc</code> again, the <code>allocator</code> will allocate memory for it. </p>
-<p>Next, step one more line in <code>gdb</code> to assign value(“AAAABBBBCCCCDDDD”) to the allocated block. Let’s check the content of this 132KB heap segment with <code>heap</code> command as follows:</p>
-<img src="/images/heap-demo-heap.png" title="pwndbg 3" width="300px" height="200px">
-
-<p>There are 3 chunks. Let’s examine these chunks one by one. </p>
-<p>The <code>top</code> chunk contains all the remaining memories which have not been allocated yet. In our case, the kernel maps 132KB of physical memory to this process. And 100B memory is allocated by calling <code>malloc(100)</code>, so the remaining memories are in the <code>top</code> chunk. The <code>top</code> chunk stays on the border of the heap segment, and it can grow and shrink as the process allocates more memory or release unused memory. </p>
-<p>Then let’s look at the chunk with the size of 0x291. The <code>allocator</code> uses this chunk to store heap management structures. It is not important for our analysis, just skip it. </p>
-<p>What we care about is the chunk in the middle with a size of <code>0x71</code>. It should be the block we requested and contains the string “AAAABBBBCCCCDDDD”. We can verify this point by checking its content:</p>
-<img src="/images/heap-demo-display.png" title="pwndbg 3" width="600px" height="400px">
-
-<p>gdb’s <a target="_blank" rel="noopener" href="https://visualgdb.com/gdbreference/commands/x"><code>x</code></a> command can display the memory contents at a given address using the specified format. <code>x/40wx 0x555555559290</code> prints 40 words(each word is 32 bits) of memories starting from 0x555555559290 in the hexadecimal format.</p>
-<p>We can see that the string “AAAABBBBCCCCDDDD” is there. So our guess is correct. But the question is why the size of this chunk is <code>0x71</code>. To understand this, we need to first analyze how the <code>allocator</code> stores <code>chunk</code>. A chunk of memory is represented by the following structure: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span> &#123;</span></span><br><span class="line">  INTERNAL_SIZE_T      prev_size;  <span class="comment">/* Size of previous chunk (only if free).  */</span></span><br><span class="line">  INTERNAL_SIZE_T      size;       <span class="comment">/* Size in bytes, including overhead. */</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">fd</span>;</span>                <span class="comment">/* double links -- used only if free. */</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">bk</span>;</span>                <span class="comment">/* double links -- used only if free. */</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">mchunkptr</span>;</span></span><br></pre></td></tr></table></figure>
-<ul>
-<li><code>prev_size</code>: the size of the previous chunk only when the previous chunk is free, otherwise when the previous chunk is in use it stores the user data of the previous chunk. </li>
-<li><code>size</code>: the size of the current chunk.</li>
-<li><code>fd</code>: pointer to the next free chunk only when the current chunk is free, otherwise when the current chunk is in use it stores the user data.</li>
-<li><code>bk</code>: pointer to the previous free chunk. Behaves in the same way as pointer <code>fd</code>.</li>
-</ul>
-<p>Based on the above description, the following picture illustrates the exact structure of an allocated <code>chunk</code>: </p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">    chunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             Size of previous chunk, if freed                  | </span><br><span class="line">            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             Size of chunk, in bytes                     |A|M|P|</span><br><span class="line">      mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             User data starts here...                          .</span><br><span class="line">            .                                                               .</span><br><span class="line">            .                                                               .</span><br><span class="line">            .                                                               |</span><br><span class="line">nextchunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             Size of chunk                                     |</span><br><span class="line">            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
-<ul>
-<li>chunk: indicates the real starting address of the object in the heap memory. </li>
-<li>mem: indicates the returned address by <code>malloc</code>.</li>
-</ul>
-<p>The memory in between is reserved for the metadata mentioned above: <code>prev_size</code> and <code>size</code>. On a 64-bit system, they’re (type of <code>INTERNAL_SIZE_T</code>) 8 bytes in length. </p>
-<p>For the <code>size</code> field, it is worth noting: </p>
-<ul>
-<li>It includes both the size of metadata and the size of the actual user data.</li>
-<li>It is usually aligned to a multiple of 16 bytes. You can investigate the <a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/381244/purpose-of-memory-alignment">purpose of memory alignment</a> by yourself.</li>
-<li>It contains three special flags(<code>A|M|P</code>) at the three least significant bits. We can ignore the other two bits for now, but the last bit indicates whether the previous chunk is in use(set to 1) or not(set to 0).</li>
-</ul>
-<p>According to this, let’s review the content of this chunk again:</p>
-<img src="/images/heap-demo-display-mark.png" title="pwndbg 3" width="600px" height="400px">
-
-<p>I add marks on the image to help you understand. Let’s do some simple calculations. <code>100 + 8 = 108</code>, 100 is the size of memory we requested, 8 is the size of metadata(for <code>size</code> field). Then <code>108</code> is aligned to <code>112</code> as a multiple of 16 bytes. Finally, since the special flag P is set to 1, then we get <code>112 + 1 = 113(0x71)</code>(that’s the reason why the size is <code>0x71</code> instead of <code>0x70</code>).  </p>
-<p>In this section, we break into the heap segment and see how an allocated chunk works. Next, we’ll check how to free a chunk. </p>
 
       
     </div>

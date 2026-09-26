@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">69</span>
+          <span class="site-state-item-count">70</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">37</span>
+        <span class="site-state-item-count">38</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,139 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/09/08/userland-memory-allocation-two/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/09/08/userland-memory-allocation-two/" class="post-title-link" itemprop="url">Understand userland heap memory allocation: part two - allocate chunk</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-09-08 15:43:57" itemprop="dateCreated datePublished" datetime="2022-09-08T15:43:57+08:00">2022-09-08</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>The previous <a href="https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/">article</a> gave a general overview of memory management. The story goes on. In this section, let’s break into the heap memory to see how it works basically. </p>
+<h3 id="Memory-allocator"><a href="#Memory-allocator" class="headerlink" title="Memory allocator"></a>Memory allocator</h3><p>We need to first understand some terminology in the memory management field: </p>
+<ul>
+<li><strong>mutator</strong>: the program that modifies the objects in the heap, which is simply the user application. But I will use the term <code>mutator</code> in this article. </li>
+<li><strong>allocator</strong>: the <code>mutator</code> doesn’t allocate memory by itself, it delegates this generic job to the <code>allocator</code>. At the code level, the <code>allocator</code> is generally implemented as a library. The detailed allocation behavior is fully determined by the implementations, in this article I will focus on the memory allocator in the library of <code>glibc</code>.</li>
+</ul>
+<p>The relationship between the <code>mutator</code> and <code>allocator</code> is shown in the following diagram: </p>
+<img src="/images/memo-allocator.png" title="memory allocator" width="400px" height="300px">
+
+<p>There is a third component in the memory management field: the <code>garbage collector(GC)</code>. <code>GC</code> reclaims memories automatically. Since this article is talking about manual heap memory allocation in system programming, we will ignore <code>GC</code> for now. <code>GC</code> is a very interesting technical challenge, I will examine it in the future. Please keep watching my blog!</p>
+<h3 id="Hands-on-demo"><a href="#Hands-on-demo" class="headerlink" title="Hands-on demo"></a>Hands-on demo</h3><p>We will use <code>gdb</code> and <code>pwndbg</code>(which is a gdb <a target="_blank" rel="noopener" href="https://github.com/pwndbg/pwndbg">plugin</a>) and break into the heap memory to see how it works. The <code>gdb</code> provides the functionality to extend it via <code>Python</code> plugins. <code>pwndbg</code> is the most widely used. </p>
+<p>The demo code is as follows: </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;string.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;malloc.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> argc, <span class="type">char</span> *argv[])</span> &#123;</span><br><span class="line">    <span class="type">char</span> *a = (<span class="type">char</span>*)<span class="built_in">malloc</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="built_in">strcpy</span>(a, <span class="string">&quot;AAAABBBBCCCCDDDD&quot;</span>);</span><br><span class="line">    <span class="built_in">free</span>(a);</span><br><span class="line">    <span class="type">char</span> *b = (<span class="type">char</span>*)<span class="built_in">malloc</span>(<span class="number">100</span>);</span><br><span class="line">    <span class="built_in">free</span>(b);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>The demo code above just allocates some memory, set the content of the memory and releases it later. And then allocate other chunks of memory again. Very simple, all right? </p>
+<p>First, set a <code>breakpoint</code> at line 7(the first <code>malloc</code> call) and run the program in <code>gdb</code>. Then run <code>vmmap</code> command from <code>pwndbg</code>, which can get the process memory layout as follows: </p>
+<img src="/images/heap-demo-vmmap-no-heap.png" title="pwndbg 1" width="800px" height="600px">
+
+<p>Note that there is no <code>heap</code> segment yet before the first <code>malloc</code> call is made. After step over one line in <code>gdb</code>, check the layout again: </p>
+<img src="/images/heap-demo-vmmap-has-heap.png" title="pwndbg 2" width="800px" height="600px">
+
+<p>Now the <code>heap</code> segment is created with the size of <code>132KB</code>(21000 in hexadecimal). As described above, the kernel maps 132KB of physical memory to this process’s virtual memory and marks this 132KB block of physical memory as used to isolate other processes. This mapping routine is done via system calls like <code>brk</code>, <code>sbrk</code> and <code>mmap</code>. Please investigate these system calls yourself.</p>
+<p>132KB is much bigger than the 100B(the size passed to <code>malloc</code>). This behavior can answer one question at the beginning of this article. The system calls aren’t necessary to be triggered each time when <code>malloc</code> is called. This design is aimed to decrease performance overhead. Now the 132KB heap memory is maintained by the <code>allocator</code>. Next time the application calls <code>malloc</code> again, the <code>allocator</code> will allocate memory for it. </p>
+<p>Next, step one more line in <code>gdb</code> to assign value(“AAAABBBBCCCCDDDD”) to the allocated block. Let’s check the content of this 132KB heap segment with <code>heap</code> command as follows:</p>
+<img src="/images/heap-demo-heap.png" title="pwndbg 3" width="300px" height="200px">
+
+<p>There are 3 chunks. Let’s examine these chunks one by one. </p>
+<p>The <code>top</code> chunk contains all the remaining memories which have not been allocated yet. In our case, the kernel maps 132KB of physical memory to this process. And 100B memory is allocated by calling <code>malloc(100)</code>, so the remaining memories are in the <code>top</code> chunk. The <code>top</code> chunk stays on the border of the heap segment, and it can grow and shrink as the process allocates more memory or release unused memory. </p>
+<p>Then let’s look at the chunk with the size of 0x291. The <code>allocator</code> uses this chunk to store heap management structures. It is not important for our analysis, just skip it. </p>
+<p>What we care about is the chunk in the middle with a size of <code>0x71</code>. It should be the block we requested and contains the string “AAAABBBBCCCCDDDD”. We can verify this point by checking its content:</p>
+<img src="/images/heap-demo-display.png" title="pwndbg 3" width="600px" height="400px">
+
+<p>gdb’s <a target="_blank" rel="noopener" href="https://visualgdb.com/gdbreference/commands/x"><code>x</code></a> command can display the memory contents at a given address using the specified format. <code>x/40wx 0x555555559290</code> prints 40 words(each word is 32 bits) of memories starting from 0x555555559290 in the hexadecimal format.</p>
+<p>We can see that the string “AAAABBBBCCCCDDDD” is there. So our guess is correct. But the question is why the size of this chunk is <code>0x71</code>. To understand this, we need to first analyze how the <code>allocator</code> stores <code>chunk</code>. A chunk of memory is represented by the following structure: </p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span> &#123;</span></span><br><span class="line">  INTERNAL_SIZE_T      prev_size;  <span class="comment">/* Size of previous chunk (only if free).  */</span></span><br><span class="line">  INTERNAL_SIZE_T      size;       <span class="comment">/* Size in bytes, including overhead. */</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">fd</span>;</span>                <span class="comment">/* double links -- used only if free. */</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">bk</span>;</span>                <span class="comment">/* double links -- used only if free. */</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">mchunkptr</span>;</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><code>prev_size</code>: the size of the previous chunk only when the previous chunk is free, otherwise when the previous chunk is in use it stores the user data of the previous chunk. </li>
+<li><code>size</code>: the size of the current chunk.</li>
+<li><code>fd</code>: pointer to the next free chunk only when the current chunk is free, otherwise when the current chunk is in use it stores the user data.</li>
+<li><code>bk</code>: pointer to the previous free chunk. Behaves in the same way as pointer <code>fd</code>.</li>
+</ul>
+<p>Based on the above description, the following picture illustrates the exact structure of an allocated <code>chunk</code>: </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">    chunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             Size of previous chunk, if freed                  | </span><br><span class="line">            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             Size of chunk, in bytes                     |A|M|P|</span><br><span class="line">      mem-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             User data starts here...                          .</span><br><span class="line">            .                                                               .</span><br><span class="line">            .                                                               .</span><br><span class="line">            .                                                               |</span><br><span class="line">nextchunk-&gt; +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br><span class="line">            |             Size of chunk                                     |</span><br><span class="line">            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span><br></pre></td></tr></table></figure>
+<ul>
+<li>chunk: indicates the real starting address of the object in the heap memory. </li>
+<li>mem: indicates the returned address by <code>malloc</code>.</li>
+</ul>
+<p>The memory in between is reserved for the metadata mentioned above: <code>prev_size</code> and <code>size</code>. On a 64-bit system, they’re (type of <code>INTERNAL_SIZE_T</code>) 8 bytes in length. </p>
+<p>For the <code>size</code> field, it is worth noting: </p>
+<ul>
+<li>It includes both the size of metadata and the size of the actual user data.</li>
+<li>It is usually aligned to a multiple of 16 bytes. You can investigate the <a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/381244/purpose-of-memory-alignment">purpose of memory alignment</a> by yourself.</li>
+<li>It contains three special flags(<code>A|M|P</code>) at the three least significant bits. We can ignore the other two bits for now, but the last bit indicates whether the previous chunk is in use(set to 1) or not(set to 0).</li>
+</ul>
+<p>According to this, let’s review the content of this chunk again:</p>
+<img src="/images/heap-demo-display-mark.png" title="pwndbg 3" width="600px" height="400px">
+
+<p>I add marks on the image to help you understand. Let’s do some simple calculations. <code>100 + 8 = 108</code>, 100 is the size of memory we requested, 8 is the size of metadata(for <code>size</code> field). Then <code>108</code> is aligned to <code>112</code> as a multiple of 16 bytes. Finally, since the special flag P is set to 1, then we get <code>112 + 1 = 113(0x71)</code>(that’s the reason why the size is <code>0x71</code> instead of <code>0x70</code>).  </p>
+<p>In this section, we break into the heap segment and see how an allocated chunk works. Next, we’ll check how to free a chunk. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +343,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -319,7 +452,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -444,7 +577,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -663,7 +796,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -782,7 +915,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -887,7 +1020,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -1055,7 +1188,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -1177,7 +1310,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   
@@ -1252,82 +1385,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/01/20/extern-in-c/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/01/20/extern-in-c/" class="post-title-link" itemprop="url">extern-in-c</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2022-01-20 11:47:18" itemprop="dateCreated datePublished" datetime="2022-01-20T11:47:18+08:00">2022-01-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-24 14:04:23" itemprop="dateModified" datetime="2026-09-24T14:04:23+08:00">2026-09-24</time>
+      <time title="Modified: 2026-09-26 22:48:41" itemprop="dateModified" datetime="2026-09-26T22:48:41+08:00">2026-09-26</time>
     </span>
 
   

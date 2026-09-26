@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIf you have been reading my articles for a while, you probably know that I have focused mainly on Azure and AWS cloud AI services and applications. In this post, I want to step outside that">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Breaking Into Edge AI: Deconstructing the Transformer Autoregressive Loop with ONNX Small Models">
+<meta property="og:url" content="https://organicprogrammer.com/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIf you have been reading my articles for a while, you probably know that I have focused mainly on Azure and AWS cloud AI services and applications. In this post, I want to step outside that">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/edge-ai-onnx/Local_Edge_AI_Processing_Loop.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/edge-ai-onnx/Pasted%20image%2020260916153212.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/edge-ai-onnx/Pasted%20image%2020260916155838.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/edge-ai-onnx/Pasted%20image%2020260911153901.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/edge-ai-onnx/Pasted%20image%2020260911154418.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/edge-ai-onnx/Pasted%20image%2020260915135410.png">
+<meta property="article:published_time" content="2026-09-26T02:00:00.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="AI, ONNX, Edge AI">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/edge-ai-onnx/Local_Edge_AI_Processing_Loop.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/","path":"2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/","title":"Breaking Into Edge AI: Deconstructing the Transformer Autoregressive Loop with ONNX Small Models"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Breaking Into Edge AI: Deconstructing the Transformer Autoregressive Loop with ONNX Small Models | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>Project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-public-speak"><a href="/public-speak/" rel="section"><i class="fa fa-microphone fa-fw"></i>Public Speak</a></li><li class="menu-item menu-item-training"><a href="/training/" rel="section"><i class="fa fa-graduation-cap fa-fw"></i>Training</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ONNX-Cross-Platform-AI-Models"><span class="nav-number">2.</span> <span class="nav-text">ONNX: Cross-Platform AI Models</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#What-Problem-Does-ONNX-Solve"><span class="nav-number">2.1.</span> <span class="nav-text">What Problem Does ONNX Solve?</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ONNX"><span class="nav-number">2.2.</span> <span class="nav-text">ONNX</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ONNX-ONNX-Runtime"><span class="nav-number">2.3.</span> <span class="nav-text">ONNX &amp; ONNX Runtime</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ONNX-Runtime-GenAI-Evolution-in-the-LLM-Era"><span class="nav-number">3.</span> <span class="nav-text">ONNX Runtime GenAI: Evolution in the LLM Era</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Demo-Local-Small-Models-with-ONNX"><span class="nav-number">4.</span> <span class="nav-text">Demo: Local Small Models with ONNX</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Phi-3-Mini-4K-Instruct-ONNX-Model"><span class="nav-number">4.1.</span> <span class="nav-text">Phi-3-Mini-4K-Instruct ONNX Model</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Building-a-Transformer-Workflow-with-ONNX-Runtime-GenAI"><span class="nav-number">4.2.</span> <span class="nav-text">Building a Transformer Workflow with ONNX Runtime GenAI</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Creating-the-Tokenizer"><span class="nav-number">4.2.1.</span> <span class="nav-text">Creating the Tokenizer</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Creating-the-Model"><span class="nav-number">4.2.2.</span> <span class="nav-text">Creating the Model</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Configuring-the-Generator"><span class="nav-number">4.2.3.</span> <span class="nav-text">Configuring the Generator</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Token-Generation-Loop"><span class="nav-number">4.2.4.</span> <span class="nav-text">Token Generation Loop</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">70</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">38</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Breaking Into Edge AI: Deconstructing the Transformer Autoregressive Loop with ONNX Small Models | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Breaking Into Edge AI: Deconstructing the Transformer Autoregressive Loop with ONNX Small Models
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-09-26 10:00:00 / Modified: 22:48:40" itemprop="dateCreated datePublished" datetime="2026-09-26T10:00:00+08:00">2026-09-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>If you have been reading my articles for a while, you probably know that I have focused mainly on <code>Azure</code> and <code>AWS</code> cloud AI services and applications. In this post, I want to step outside that comfort zone and introduce a different direction: <strong>edge AI</strong>.</p>
+<p>In this article, I will share what I learned about <code>ONNX (Open Neural Network Exchange)</code> — an open standard and file format that helps AI models run across platforms. We will look at the problem it solves, the convenience it brings to AI&#x2F;ML applications, and how this capability extends in the GenAI era to make local small-model deployment and inference much easier.</p>
+<p>If those questions interest you, let’s get started.</p>
+<img src="/images/edge-ai-onnx/Local_Edge_AI_Processing_Loop.png" alt="" >
+
+<h2 id="ONNX-Cross-Platform-AI-Models"><a href="#ONNX-Cross-Platform-AI-Models" class="headerlink" title="ONNX: Cross-Platform AI Models"></a>ONNX: Cross-Platform AI Models</h2><h4 id="What-Problem-Does-ONNX-Solve"><a href="#What-Problem-Does-ONNX-Solve" class="headerlink" title="What Problem Does ONNX Solve?"></a>What Problem Does ONNX Solve?</h4><p>What problem is <code>ONNX</code> trying to solve? Let me explain with a story from my own experience.</p>
+<p>At a previous employer, we built a real-time computing system as a cloud service on the <code>.NET</code> stack. Due to business requirements, we needed to explore deploying machine learning models on that system and serving online inference. Before that, the system had no ML requirements or capabilities at all — it was a fairly ordinary <code>.NET</code> backend microservices stack.</p>
+<p>To add ML inference, I researched several approaches:</p>
+<p><strong>Dedicated model inference services</strong>: Platforms like <code>Azure Machine Learning</code> or <code>AWS SageMaker</code> can host models for online inference, and our system would communicate with them over the network. This approach requires significant <strong>infrastructure</strong> investment, and network calls also add <strong>latency</strong>.</p>
+<p><strong>Embedded ML frameworks</strong>: We could integrate frameworks like <code>PyTorch</code> or <code>TensorFlow</code> directly into our system, embed models in-process, avoid extra infrastructure and operations, and skip network calls at inference time — all good for performance. But this approach locks you into a specific framework and reduces flexibility.</p>
+<p>As you can see, each approach has trade-offs. Wouldn’t it be great if one solution combined the strengths of both while avoiding their weaknesses? That is exactly what <code>ONNX</code> does.</p>
+<h4 id="ONNX"><a href="#ONNX" class="headerlink" title="ONNX"></a>ONNX</h4><img src="/images/edge-ai-onnx/Pasted%20image%2020260916153212.png" alt="" width="523px">
+
+<p><code>ONNX (Open Neural Network Exchange)</code> is an open standard that defines a common format for machine learning models, enabling cross-platform deployment. You can think of it as the AI equivalent of <code>POSIX (Portable Operating System Interface)</code> — a standard that lets different UNIX&#x2F;Linux kernels interoperate.</p>
+<p>Today, <code>ONNX</code> is supported by major ML frameworks and vendors.</p>
+<h4 id="ONNX-ONNX-Runtime"><a href="#ONNX-ONNX-Runtime" class="headerlink" title="ONNX &amp; ONNX Runtime"></a>ONNX &amp; ONNX Runtime</h4><img src="/images/edge-ai-onnx/Pasted%20image%2020260916155838.png" alt="" width="700px">
+
+<p>With <code>ONNX</code>, the ML training and deployment workflow naturally splits into two phases:</p>
+<p><strong>Training phase</strong>: <code>ONNX</code> defines the model standard, and mainstream ML frameworks provide tools to convert models into <code>ONNX</code> format. In the example below, the <code>scikit-learn</code> framework uses the <code>skl2onnx</code> library to perform the conversion.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Convert into ONNX format.</span></span><br><span class="line"><span class="keyword">from</span> skl2onnx <span class="keyword">import</span> to_onnx</span><br><span class="line"></span><br><span class="line">onx = to_onnx(clr, X[:<span class="number">1</span>])</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;rf_iris.onnx&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(onx.SerializeToString())</span><br></pre></td></tr></table></figure>
+
+<p><strong>Inference phase</strong>: Another key component is <code>ONNX Runtime</code> — the runtime engine that executes models. <code>ONNX Runtime</code> is a native C++ library with binding APIs for different stacks, such as C# and Python.</p>
+<p>In addition, <code>ONNX Runtime</code> provides different libraries for different hardware — CPU, GPU, and more. In this article, we will default to CPU. In a future post, I will dig into how to improve efficiency with GPU.</p>
+<p>The most basic inference flow looks like this. This example uses .NET and C#, based on the <code>Microsoft.ML.OnnxRuntime</code> NuGet package.</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntime;</span><br><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntime.Tensors;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 1. Create an inference session</span></span><br><span class="line">session = <span class="keyword">new</span> InferenceSession(onnxModelPath)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. Build tensor from features</span></span><br><span class="line"><span class="keyword">var</span> inputTensor = <span class="keyword">new</span> DenseTensor&lt;<span class="built_in">float</span>&gt;(data, shape);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. Wrap for ONNX Runtime (legacy API)</span></span><br><span class="line"><span class="keyword">var</span> featuers_input = NamedOnnxValue.CreateFromTensor&lt;<span class="built_in">float</span>&gt;(<span class="string">&quot;feature_input&quot;</span>, inputTensor);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. Run model</span></span><br><span class="line">session.Run(features_input);</span><br></pre></td></tr></table></figure>
+
+<p>Using ONNX for traditional ML models is not the main focus of this article. Next, let’s look at what opportunities ONNX opens up in the GenAI era.</p>
+<h2 id="ONNX-Runtime-GenAI-Evolution-in-the-LLM-Era"><a href="#ONNX-Runtime-GenAI-Evolution-in-the-LLM-Era" class="headerlink" title="ONNX Runtime GenAI: Evolution in the LLM Era"></a>ONNX Runtime GenAI: Evolution in the LLM Era</h2><p>In the <code>GenAI</code> era, <code>ONNX Runtime</code> has a dedicated extension: <code>ONNX Runtime GenAI</code>. It follows the same philosophy as <code>ONNX Runtime</code> — letting applications embed and load models directly.</p>
+<p>In theory, that means large models too. But frontier models today sit in the hundreds of billions or trillions of parameters. In practice, no application can realistically embed those locally.</p>
+<p>We can, however, push the idea to the other extreme: <strong>small models</strong>!</p>
+<p>Because they do not depend on cloud resources, <code>small models</code> fit many scenarios: <strong>limited network connectivity</strong>, <strong>strict data privacy and compliance</strong>, and <strong>lower accuracy requirements but higher latency sensitivity</strong>, among others.</p>
+<p>So <code>ONNX Runtime GenAI</code> is a strong platform for <strong>edge AI built on small models</strong>!</p>
+<p>In the demo below, let’s try it hands-on.</p>
+<h2 id="Demo-Local-Small-Models-with-ONNX"><a href="#Demo-Local-Small-Models-with-ONNX" class="headerlink" title="Demo: Local Small Models with ONNX"></a>Demo: Local Small Models with ONNX</h2><h4 id="Phi-3-Mini-4K-Instruct-ONNX-Model"><a href="#Phi-3-Mini-4K-Instruct-ONNX-Model" class="headerlink" title="Phi-3-Mini-4K-Instruct ONNX Model"></a>Phi-3-Mini-4K-Instruct ONNX Model</h4><p>In this article, we use Microsoft’s <code>Phi</code> family small model: <code>Phi-3-Mini-4K-Instruct</code>.</p>
+<p><code>Phi-3-Mini-4K-Instruct</code> is an instruction-tuned variant built on top of <code>Phi-3-Mini-4K</code> — a model better aligned with how users interact with chat systems. It has 3.8B parameters and a 4K context window.</p>
+<p>The model ships in variants for different compute targets: <code>cuda</code>, <code>directml</code>, and <code>cpu_and_mobile</code>.</p>
+<img src="/images/edge-ai-onnx/Pasted%20image%2020260911153901.png" alt="" >
+
+<p>Today we use the <code>cpu_and_mobile</code> variant. It is <strong>quantized</strong>, with weights compressed to <code>int4</code>, which makes it friendly for ordinary PCs, mobile devices, and edge hardware.</p>
+<img src="/images/edge-ai-onnx/Pasted%20image%2020260911154418.png" alt="" >
+
+<h4 id="Building-a-Transformer-Workflow-with-ONNX-Runtime-GenAI"><a href="#Building-a-Transformer-Workflow-with-ONNX-Runtime-GenAI" class="headerlink" title="Building a Transformer Workflow with ONNX Runtime GenAI"></a>Building a Transformer Workflow with ONNX Runtime GenAI</h4><p>When you call large models on cloud platforms like <code>Azure Foundry</code> or <code>AWS Bedrock</code>, you usually just specify the model name. Some platforms expose a few Transformer parameters — <code>temperature</code>, <code>top_k</code>, <code>top_p</code>, and so on — so you can shape model behavior at a basic level.</p>
+<p><code>ONNX Runtime GenAI</code> is a relatively low-level engine. You need to assemble the <code>Transformer</code> workflow yourself through its APIs.</p>
+<p>On one hand, that is a real challenge. On the other hand, it is an excellent way to learn and practice <code>Transformer</code> fundamentals hands-on. In the sections below, let’s see how to build that workflow with <code>ONNX Runtime GenAI</code>.</p>
+<p>The code examples use C# and .NET.</p>
+<h5 id="Creating-the-Tokenizer"><a href="#Creating-the-Tokenizer" class="headerlink" title="Creating the Tokenizer"></a>Creating the Tokenizer</h5><p>The basic unit of information for large language models is the <code>token</code>, so the first step is to create a <code>Tokenizer</code>.</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> tokenizer = <span class="keyword">new</span> Tokenizer(model);</span><br><span class="line"><span class="keyword">var</span> tokenizerStream = tokenizer.CreateStream();</span><br><span class="line"></span><br><span class="line">Console.WriteLine(<span class="string">&quot;Tokenizer created&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>Later, we will see how this <code>Tokenizer</code> converts the user’s prompt into tokens.</p>
+<h5 id="Creating-the-Model"><a href="#Creating-the-Model" class="headerlink" title="Creating the Model"></a>Creating the Model</h5><p>Next, we create the model.</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> path = <span class="string">&quot;pathtoonnxmodel&quot;</span></span><br><span class="line"><span class="keyword">var</span> config = <span class="keyword">new</span> Config(path);</span><br><span class="line"><span class="keyword">var</span> model = <span class="keyword">new</span> Model(config);</span><br><span class="line">Console.WriteLine(<span class="string">&quot;Model loaded&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>Pass the model directory path to the engine. It automatically loads the ONNX Runtime GenAI configuration file: <code>genai_config.json</code>. For the <code>Phi-3-Mini-4K-Instruct</code> model we use here, the file looks like this:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;model&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;bos_token_id&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;context_length&quot;</span><span class="punctuation">:</span> <span class="number">4096</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;decoder&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;session_options&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">                <span class="attr">&quot;log_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;onnxruntime-genai&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;provider_options&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">]</span></span><br><span class="line">            <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;filename&quot;</span><span class="punctuation">:</span> <span class="string">&quot;phi3-mini-4k-instruct-cpu-int4-rtn-block-32-acc-level-4.onnx&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;head_size&quot;</span><span class="punctuation">:</span> <span class="number">96</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;hidden_size&quot;</span><span class="punctuation">:</span> <span class="number">3072</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;inputs&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">                <span class="attr">&quot;input_ids&quot;</span><span class="punctuation">:</span> <span class="string">&quot;input_ids&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;attention_mask&quot;</span><span class="punctuation">:</span> <span class="string">&quot;attention_mask&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;past_key_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;past_key_values.%d.key&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;past_value_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;past_key_values.%d.value&quot;</span></span><br><span class="line">            <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;outputs&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">                <span class="attr">&quot;logits&quot;</span><span class="punctuation">:</span> <span class="string">&quot;logits&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;present_key_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;present.%d.key&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;present_value_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;present.%d.value&quot;</span></span><br><span class="line">            <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;num_attention_heads&quot;</span><span class="punctuation">:</span> <span class="number">32</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;num_hidden_layers&quot;</span><span class="punctuation">:</span> <span class="number">32</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;num_key_value_heads&quot;</span><span class="punctuation">:</span> <span class="number">32</span></span><br><span class="line">        <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;eos_token_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">            <span class="number">32000</span><span class="punctuation">,</span></span><br><span class="line">            <span class="number">32001</span><span class="punctuation">,</span></span><br><span class="line">            <span class="number">32007</span></span><br><span class="line">        <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;pad_token_id&quot;</span><span class="punctuation">:</span> <span class="number">32000</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;phi3&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;vocab_size&quot;</span><span class="punctuation">:</span> <span class="number">32064</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;search&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;diversity_penalty&quot;</span><span class="punctuation">:</span> <span class="number">0.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;do_sample&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;early_stopping&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;length_penalty&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;max_length&quot;</span><span class="punctuation">:</span> <span class="number">4096</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;min_length&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;no_repeat_ngram_size&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;num_beams&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;num_return_sequences&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;past_present_share_buffer&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;repetition_penalty&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;temperature&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;top_k&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;top_p&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Beyond basic model metadata, the <code>search</code> section defines many parameters that affect Transformer inference behavior. We cannot cover all of them in this article, but keep in mind they are adjustable. Try changing them and observe the differences — that is one of the best ways to build intuition for how models behave. I will share more on this topic in a future post.</p>
+<h5 id="Configuring-the-Generator"><a href="#Configuring-the-Generator" class="headerlink" title="Configuring the Generator"></a>Configuring the Generator</h5><p>Next we need a <code>Generator</code>. This is not a theoretical Transformer concept — it is a key engine component that orchestrates the entire workflow.</p>
+<p>Transformer models use an <strong>autoregressive</strong> mechanism: generate one token at a time, then predict the next token based on the prompt and all tokens generated so far — forming a loop. The <code>Generator</code> controls that loop.</p>
+<p>When you create the <code>Generator</code>, you can tune the parameters mentioned above to control model behavior:</p>
+<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> generatorParams = <span class="keyword">new</span> GeneratorParams(model);</span><br><span class="line"><span class="keyword">var</span> generator = <span class="keyword">new</span> Generator(model, generatorParams);</span><br></pre></td></tr></table></figure>
+
+<p>Now let’s look at that loop.</p>
+<h5 id="Token-Generation-Loop"><a href="#Token-Generation-Loop" class="headerlink" title="Token Generation Loop"></a>Token Generation Loop</h5><figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Get input tokens</span></span><br><span class="line"><span class="built_in">string</span> user_prompt = <span class="string">&quot;hello&quot;</span>;</span><br><span class="line"><span class="built_in">string</span> prompt = <span class="string">$@&quot;[&#123;&#123;&quot;&quot;role&quot;&quot;:&quot;&quot;system&quot;&quot;,&quot;&quot;content&quot;&quot;:&quot;&quot;<span class="subst">&#123;systemPrompt&#125;</span>&quot;&quot;&#125;&#125;,&#123;&#123;&quot;&quot;role&quot;&quot;:&quot;&quot;user&quot;&quot;,&quot;&quot;content&quot;&quot;:&quot;&quot;<span class="subst">&#123;user_prompt&#125;</span>&quot;&quot;&#125;&#125;]&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> sequences = tokenizer.Encode(prompt);</span><br><span class="line"></span><br><span class="line"><span class="comment">// append input tokens to generator</span></span><br><span class="line">generator.AppendTokenSequences(sequences);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Run generation loop</span></span><br><span class="line"><span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">&#123;</span><br><span class="line">    generator.GenerateNextToken();</span><br><span class="line">    <span class="keyword">if</span> (generator.IsDone())</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Get output tokens and decode to string</span></span><br><span class="line"><span class="keyword">var</span> outputSequence = generator.GetSequence(<span class="number">0</span>);</span><br><span class="line"><span class="keyword">var</span> outputString = tokenizer.Decode(outputSequence);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Display output</span></span><br><span class="line">Console.WriteLine(<span class="string">&quot;Output:&quot;</span>);</span><br><span class="line">Console.WriteLine(outputString);</span><br></pre></td></tr></table></figure>
+
+<p>From the code above, the flow breaks down into these steps:</p>
+<ul>
+<li>Use the <code>Tokenizer</code> to convert the user prompt into a token sequence</li>
+<li>Pass the token sequence to the <code>Generator</code></li>
+<li>The <code>Generator</code> produces the next token one at a time until completion</li>
+<li>Read the full sequence from the <code>Generator</code></li>
+<li>Use the <code>Tokenizer</code> to decode the token sequence back into a string</li>
+</ul>
+<p>This code is a clear, hands-on illustration of how Transformer inference works in practice. It is worth reading carefully more than once.</p>
+<p>Build and run it, and you will see a small model answering your questions locally on ordinary CPU hardware. Great, right?</p>
+<img src="/images/edge-ai-onnx/Pasted%20image%2020260915135410.png" alt="" >
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/AI-ONNX-Edge-AI/" rel="tag"># AI, ONNX, Edge AI</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2024/05/01/dotnet-gc-memory-leak-windbg/" rel="prev" title="Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach">
+                  <i class="fa fa-angle-left"></i> Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

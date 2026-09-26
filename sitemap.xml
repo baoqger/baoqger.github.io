@@ -2,24 +2,6 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://organicprogrammer.com/2022/07/22/CPacketSniffer/</loc>
-    
-    <lastmod>2022-07-22</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/2020/04/10/algo-part1/</loc>
-    
-    <lastmod>2020-04-10</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://organicprogrammer.com/2020/04/11/algo-part2/</loc>
     
     <lastmod>2020-04-11</lastmod>
@@ -29,9 +11,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2023/01/01/bst-deletion-issue/</loc>
+    <loc>https://organicprogrammer.com/2020/04/10/algo-part1/</loc>
     
-    <lastmod>2023-01-01</lastmod>
+    <lastmod>2020-04-10</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -56,6 +38,24 @@
   </url>
   
   <url>
+    <loc>https://organicprogrammer.com/2023/01/01/bst-deletion-issue/</loc>
+    
+    <lastmod>2023-01-01</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/</loc>
+    
+    <lastmod>2026-09-26</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://organicprogrammer.com/2022/01/20/extern-in-c/</loc>
     
     <lastmod>2022-01-20</lastmod>
@@ -74,9 +74,18 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2022/11/02/external-sorting-one/</loc>
+    <loc>https://organicprogrammer.com/2022/12/06/external-sorting-two/</loc>
     
-    <lastmod>2022-11-02</lastmod>
+    <lastmod>2022-12-06</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2022/07/22/CPacketSniffer/</loc>
+    
+    <lastmod>2022-07-22</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -92,27 +101,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2022/12/06/external-sorting-two/</loc>
+    <loc>https://organicprogrammer.com/2022/11/02/external-sorting-one/</loc>
     
-    <lastmod>2022-12-06</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/2021/01/29/fabio-source-code-study/</loc>
-    
-    <lastmod>2021-01-29</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/2021/04/04/golang-bytes-buffer/</loc>
-    
-    <lastmod>2021-04-04</lastmod>
+    <lastmod>2022-11-02</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -128,27 +119,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/04/28/golang-context-source-code-part2/</loc>
-    
-    <lastmod>2021-04-28</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://organicprogrammer.com/2020/10/26/golang-concurrent-twoways/</loc>
     
     <lastmod>2020-10-26</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/2020/12/30/golang-load-balancing-fabio/</loc>
-    
-    <lastmod>2020-12-30</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -164,6 +137,24 @@
   </url>
   
   <url>
+    <loc>https://organicprogrammer.com/2021/04/04/golang-bytes-buffer/</loc>
+    
+    <lastmod>2021-04-04</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2020/12/30/golang-load-balancing-fabio/</loc>
+    
+    <lastmod>2020-12-30</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://organicprogrammer.com/2021/02/06/golang-package-module/</loc>
     
     <lastmod>2021-02-05</lastmod>
@@ -173,18 +164,18 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2020/11/16/golang-service-discovery-consul/</loc>
+    <loc>https://organicprogrammer.com/2021/04/28/golang-context-source-code-part2/</loc>
     
-    <lastmod>2020-11-16</lastmod>
+    <lastmod>2021-04-28</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/05/14/golang-sync-cond/</loc>
+    <loc>https://organicprogrammer.com/2021/05/11/golang-sync-once/</loc>
     
-    <lastmod>2021-05-14</lastmod>
+    <lastmod>2021-05-11</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -194,6 +185,15 @@
     <loc>https://organicprogrammer.com/2021/10/08/how-to-build-packet-sniffer/</loc>
     
     <lastmod>2021-10-08</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2020/11/16/golang-service-discovery-consul/</loc>
+    
+    <lastmod>2020-11-16</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -218,18 +218,27 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/07/04/how-to-deisgn-a-load-test-tool/</loc>
+    <loc>https://organicprogrammer.com/2021/05/14/golang-sync-cond/</loc>
     
-    <lastmod>2021-07-04</lastmod>
+    <lastmod>2021-05-14</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/05/11/golang-sync-once/</loc>
+    <loc>https://organicprogrammer.com/2021/01/29/fabio-source-code-study/</loc>
     
-    <lastmod>2021-05-11</lastmod>
+    <lastmod>2021-01-29</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2021/07/04/how-to-deisgn-a-load-test-tool/</loc>
+    
+    <lastmod>2021-07-04</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -254,6 +263,15 @@
   </url>
   
   <url>
+    <loc>https://organicprogrammer.com/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/</loc>
+    
+    <lastmod>2022-02-22</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://organicprogrammer.com/2022/05/04/how-to-write-a-netfilter-firewall-part1/</loc>
     
     <lastmod>2022-05-04</lastmod>
@@ -263,9 +281,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2022/06/08/how-to-write-a-netfilter-firewall-part3/</loc>
+    <loc>https://organicprogrammer.com/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/</loc>
     
-    <lastmod>2022-06-08</lastmod>
+    <lastmod>2022-03-28</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -275,15 +293,6 @@
     <loc>https://organicprogrammer.com/2021/07/31/how-to-implement-simple-http-server-golang/</loc>
     
     <lastmod>2021-07-31</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/</loc>
-    
-    <lastmod>2022-03-28</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -308,9 +317,18 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2022/02/22/how-to-implement-libpcap-on-linux-with-raw-socket-part1/</loc>
+    <loc>https://organicprogrammer.com/2021/12/24/how-traceroute-works/</loc>
     
-    <lastmod>2022-02-22</lastmod>
+    <lastmod>2021-12-24</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2022/06/08/how-to-write-a-netfilter-firewall-part3/</loc>
+    
+    <lastmod>2022-06-08</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -335,9 +353,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/12/24/how-traceroute-works/</loc>
+    <loc>https://organicprogrammer.com/2019/02/25/https-certificate/</loc>
     
-    <lastmod>2021-12-24</lastmod>
+    <lastmod>2019-02-25</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -353,9 +371,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2019/02/25/https-certificate/</loc>
+    <loc>https://organicprogrammer.com/2021/05/21/hystric-circuit-breaker-part1/</loc>
     
-    <lastmod>2019-02-25</lastmod>
+    <lastmod>2021-05-21</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -371,9 +389,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/05/21/hystric-circuit-breaker-part1/</loc>
+    <loc>https://organicprogrammer.com/2021/05/30/hystrix-circuit-breaker-part2/</loc>
     
-    <lastmod>2021-05-21</lastmod>
+    <lastmod>2021-05-30</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -398,9 +416,18 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/05/30/hystrix-circuit-breaker-part2/</loc>
+    <loc>https://organicprogrammer.com/2022/01/12/md5-implementation/</loc>
     
-    <lastmod>2021-05-30</lastmod>
+    <lastmod>2022-01-12</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2020/04/20/memoizedSelector/</loc>
+    
+    <lastmod>2020-04-20</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -425,33 +452,6 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2022/01/12/md5-implementation/</loc>
-    
-    <lastmod>2022-01-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/2020/04/20/memoizedSelector/</loc>
-    
-    <lastmod>2020-04-20</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/2023/02/13/note-on-red-black-tree/</loc>
-    
-    <lastmod>2023-02-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://organicprogrammer.com/2020/09/22/os-xv6-1/</loc>
     
     <lastmod>2020-09-22</lastmod>
@@ -461,9 +461,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/10/08/packet-sniffer-golang/</loc>
+    <loc>https://organicprogrammer.com/2023/02/13/note-on-red-black-tree/</loc>
     
-    <lastmod>2021-10-08</lastmod>
+    <lastmod>2023-02-12</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -488,9 +488,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2020/12/01/svg-data-vis/</loc>
+    <loc>https://organicprogrammer.com/2021/10/08/packet-sniffer-golang/</loc>
     
-    <lastmod>2020-12-01</lastmod>
+    <lastmod>2021-10-08</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -506,27 +506,18 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/12/15/understand-http-1-1-client-golang-part2/</loc>
+    <loc>https://organicprogrammer.com/2020/12/01/svg-data-vis/</loc>
     
-    <lastmod>2021-12-15</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/2021/12/01/understand-http-1-1-client-golang/</loc>
-    
-    <lastmod>2021-12-01</lastmod>
+    <lastmod>2020-12-01</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/10/27/understand-http1-1-persitent-connection-golang-part2/</loc>
+    <loc>https://organicprogrammer.com/2023/04/09/understand-more-aws-service-by-negative-cases/</loc>
     
-    <lastmod>2021-10-27</lastmod>
+    <lastmod>2023-04-09</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -542,6 +533,24 @@
   </url>
   
   <url>
+    <loc>https://organicprogrammer.com/2021/12/01/understand-http-1-1-client-golang/</loc>
+    
+    <lastmod>2021-12-01</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2021/12/15/understand-http-1-1-client-golang-part2/</loc>
+    
+    <lastmod>2021-12-15</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/</loc>
     
     <lastmod>2022-08-05</lastmod>
@@ -551,9 +560,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2023/04/09/understand-more-aws-service-by-negative-cases/</loc>
+    <loc>https://organicprogrammer.com/2021/10/27/understand-http1-1-persitent-connection-golang-part2/</loc>
     
-    <lastmod>2023-04-09</lastmod>
+    <lastmod>2021-10-27</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -578,9 +587,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2022/09/08/userland-memory-allocation-two/</loc>
+    <loc>https://organicprogrammer.com/2021/10/12/why-only-13-dns-root-server/</loc>
     
-    <lastmod>2022-09-08</lastmod>
+    <lastmod>2021-10-12</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -596,9 +605,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2021/10/12/why-only-13-dns-root-server/</loc>
+    <loc>https://organicprogrammer.com/2022/09/08/userland-memory-allocation-two/</loc>
     
-    <lastmod>2021-10-12</lastmod>
+    <lastmod>2022-09-08</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -632,7 +641,7 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/project/index.html</loc>
+    <loc>https://organicprogrammer.com/about/index.html</loc>
     
     <lastmod>2021-06-21</lastmod>
     
@@ -641,9 +650,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/public-speak/index.html</loc>
+    <loc>https://organicprogrammer.com/project/index.html</loc>
     
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2021-06-21</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -659,9 +668,9 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/about/index.html</loc>
+    <loc>https://organicprogrammer.com/public-speak/index.html</loc>
     
-    <lastmod>2021-06-21</lastmod>
+    <lastmod>2026-09-24</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -670,267 +679,274 @@
 
   <url>
     <loc>https://organicprogrammer.com/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   
   <url>
-    <loc>https://organicprogrammer.com/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
     <loc>https://organicprogrammer.com/tags/algorithm/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/Binary-Search-Tree-delete-balanced-performance/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/programming-c-array-pointer/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/Binary-Search-Tree-delete-balanced-performance/</loc>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/AI-ONNX-Edge-AI/</loc>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/dotnet-GC-memory-leak-WinDbg/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/algorithm-external-disk/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/network-packet-capture-libpcap-analyze-and-track-network-traffics-detect-network-security-attacks-Linux-system-programming/</loc>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/Best-practice/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/Fabio-Golang-Source-code/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/Golang-bufio-bytes-buffer/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/golang-concurrent-shared-memory-message-pass/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/Golang-bufio-bytes-buffer/</loc>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/microservice-Load-balancing-Consul-Fabio-Golang-Cloud-Native-Docker/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/Golang-package-workspace-vendor/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/microservice-service-registration-service-discovery-Consul-Golang-Cloud-Native-Docker/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/Service-Fabric-stateless-stateful-actor-model-scalability-reliability-partition/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/tags/Linux-module-Netfilter-firewall/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/HTTP-system-call-Linux-Golang/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/BPF-JIT-virtual-machine/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <loc>https://organicprogrammer.com/tags/Fabio-Golang-Source-code/</loc>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/packet-sniffer-socket-PF-PACKET/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/Linux-module-Netfilter-firewall/</loc>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/BPF-JIT-virtual-machine/</loc>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/HTTP-system-call-Linux-Golang/</loc>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/certificate-digital-signature-hashing/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/digital-signature-hash-function/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/public-key-man-in-the-middle-certificate/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/HTTPS-TLS-handshake-SSL-TLS/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/Linux-Foundation-Scholarship-LIFT/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/docker-c-linux/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/operating-system-xv6-Unix/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/Algorithm-Data-structure-Tree-Red-Black-Tree/</loc>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/memory-management-stack/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/HTTP-protocol-Golang-TCP-socket/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/HTTP-1-1-concurrent/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/</loc>
-    <lastmod>2026-09-24</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/tags/Linux-memory-layout-heap-stack/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/Scalability-AWS/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/HTTP-1-1-persistent-connection-keep-alive-TCP-netstat-tcpdump-Golang-connection-pool/</loc>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/HTTP-protocol-Golang-TCP-socket/</loc>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/Linux-memory-layout-heap-stack/</loc>
+    <lastmod>2026-09-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/HTTP-1-1-concurrent/</loc>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/Linux-memory-layout-heap-gdb/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/apt-Ubuntu-Linux-package-management/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/priority-queue-data-structure-algorithm-time-complexity-Big-O-notation/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/TCP-IP/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
     <loc>https://organicprogrammer.com/tags/Linux-system-programming-Windows-Subsystem-for-Linux/</loc>
-    <lastmod>2026-09-24</lastmod>
+    <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
