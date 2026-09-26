@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIn my previous articles, I have shared quite a bit about RAG systems. One of the most important components in any RAG pipeline is vector storage. High-performance vector databases are usuall">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vector Databases Too Expensive - S3 Vector Might Be Your Answer">
+<meta property="og:url" content="https://organicprogrammer.com/2026/09/26/vector-databases-too-expensive-s3-vector-might-be-your-answer/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn my previous articles, I have shared quite a bit about RAG systems. One of the most important components in any RAG pipeline is vector storage. High-performance vector databases are usuall">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/vector-databases-too-expensive-s3-vector-might-be-your-answer/Budget-Friendly_Scalable_Semantic_Search.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/vector-databases-too-expensive-s3-vector-might-be-your-answer/Pasted%20image%2020260901112340.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/vector-databases-too-expensive-s3-vector-might-be-your-answer/Pasted%20image%2020260901112509.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/vector-databases-too-expensive-s3-vector-might-be-your-answer/Pasted%20image%2020260901112652.png">
+<meta property="article:published_time" content="2026-09-26T03:00:00.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="AWS, S3 Vector, RAG, vector database">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/vector-databases-too-expensive-s3-vector-might-be-your-answer/Budget-Friendly_Scalable_Semantic_Search.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2026/09/26/vector-databases-too-expensive-s3-vector-might-be-your-answer/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2026/09/26/vector-databases-too-expensive-s3-vector-might-be-your-answer/","path":"2026/09/26/vector-databases-too-expensive-s3-vector-might-be-your-answer/","title":"Vector Databases Too Expensive - S3 Vector Might Be Your Answer"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Vector Databases Too Expensive - S3 Vector Might Be Your Answer | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>Project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-public-speak"><a href="/public-speak/" rel="section"><i class="fa fa-microphone fa-fw"></i>Public Speak</a></li><li class="menu-item menu-item-training"><a href="/training/" rel="section"><i class="fa fa-graduation-cap fa-fw"></i>Training</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#From-S3-to-S3-Vector"><span class="nav-number">2.</span> <span class="nav-text">From S3 to S3 Vector</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Characteristics-of-S3-Object-Storage"><span class="nav-number">2.1.</span> <span class="nav-text">Characteristics of S3 Object Storage</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#How-S3-Vector-Extends-S3"><span class="nav-number">2.2.</span> <span class="nav-text">How S3 Vector Extends S3</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Demo"><span class="nav-number">3.</span> <span class="nav-text">Demo</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Create-a-Vector-Bucket"><span class="nav-number">3.1.</span> <span class="nav-text">Create a Vector Bucket</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Create-a-Vector-Index"><span class="nav-number">3.2.</span> <span class="nav-text">Create a Vector Index</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Embedding-and-Data-Ingestion"><span class="nav-number">3.3.</span> <span class="nav-text">Embedding and Data Ingestion</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Query-and-Search"><span class="nav-number">3.4.</span> <span class="nav-text">Query and Search</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Summary"><span class="nav-number">4.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">39</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/09/26/vector-databases-too-expensive-s3-vector-might-be-your-answer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Vector Databases Too Expensive - S3 Vector Might Be Your Answer | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vector Databases Too Expensive - S3 Vector Might Be Your Answer
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-09-26 11:00:00 / Modified: 23:02:12" itemprop="dateCreated datePublished" datetime="2026-09-26T11:00:00+08:00">2026-09-26</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In my previous articles, I have shared quite a bit about <code>RAG</code> systems. One of the most important components in any <code>RAG</code> pipeline is <code>vector storage</code>. High-performance <code>vector databases</code> are usually expensive. But what if you need to store massive amounts of vector data, and latency is not your top priority? Can we find a balance between <code>performance</code> and <code>cost</code>? And if so, what storage option fits that trade-off?</p>
+<p>That is exactly where <code>AWS S3 Vector</code> comes in. In this article, I will share what I learned about this service and walk you through a hands-on example.</p>
+<p>After reading this post, you should understand how S3 Vector extends the S3 object storage model to vector data, and how to use it in a simple RAG-style workflow.</p>
+<img src="/images/vector-databases-too-expensive-s3-vector-might-be-your-answer/Budget-Friendly_Scalable_Semantic_Search.png" alt="" >
+
+<h2 id="From-S3-to-S3-Vector"><a href="#From-S3-to-S3-Vector" class="headerlink" title="From S3 to S3 Vector"></a>From S3 to S3 Vector</h2><h5 id="Characteristics-of-S3-Object-Storage"><a href="#Characteristics-of-S3-Object-Storage" class="headerlink" title="Characteristics of S3 Object Storage"></a>Characteristics of S3 Object Storage</h5><p>Among the three major storage types — <code>object storage</code>, <code>block storage</code>, and <code>file storage</code> — S3 is the classic example of <code>object storage</code>. Unlike the other two, S3 stores data as objects inside a flat container (in S3, this container is called a Bucket). Each object contains a key (name), data content, and metadata. The structure looks roughly like this:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Bucket</span><br><span class="line">  └── Object (key → file/blob + metadata)</span><br></pre></td></tr></table></figure>
+
+<p>Because of this design, S3 offers several advantages:</p>
+<ul>
+<li>Extremely strong scalability</li>
+<li>Very low cost for massive, infrequently modified data</li>
+</ul>
+<p>Of course, it also has limitations, such as:</p>
+<ul>
+<li>Not ideal for frequent random read&#x2F;write operations — you work at the whole-object level</li>
+<li>Relatively higher latency</li>
+</ul>
+<p>That is why <code>AWS S3</code> (or <code>Azure Blob Storage</code>) is a great fit for <code>backups</code>, <code>media files</code>, <code>logs</code>, and other <code>static data</code> scenarios. In more complex architectures, <code>S3</code> often works alongside high-performance storage services to form a <code>hot/cold multi-tier storage</code> design.</p>
+<p>In the AI era, this same pattern naturally extends to <code>vector storage</code>.</p>
+<h5 id="How-S3-Vector-Extends-S3"><a href="#How-S3-Vector-Extends-S3" class="headerlink" title="How S3 Vector Extends S3"></a>How S3 Vector Extends S3</h5><p>From a product positioning perspective, <code>S3 Vector</code> solves the same problem that <code>S3</code> solved in the traditional cloud era: store <code>more data</code> at a <code>lower cost</code>. The difference is that the data being stored is <code>vector data</code>.</p>
+<p>Of course, you could store raw semantic vectors directly in a classic <code>S3 Bucket</code>. But for AI applications, raw vector data alone is not very useful. What we actually need is similarity search over vectors — the foundation for building Agents or <code>RAG</code> systems.</p>
+<p>So <code>S3 Vector</code> keeps the familiar <code>Bucket</code> concept and introduces a new storage structure on top of it:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Vector bucket</span><br><span class="line">  └── Vector index</span><br><span class="line">        └── Vector (key → embedding + metadata)</span><br></pre></td></tr></table></figure>
+
+<p>The key difference is that <code>S3 Vector</code> introduces an <code>index</code> layer, where embeddings and metadata are stored as key-value pairs.</p>
+<p>You can still read an embedding by key, but in real AI applications, what you usually need is to search for information that is semantically closest to a query.</p>
+<p>That is the biggest difference from a classic <code>S3 Bucket</code>. Beyond storage, <code>S3 Vector</code> also manages underlying compute resources in a <code>Serverless</code> way. When a user query comes in, the service performs the search for you.</p>
+<p>This Serverless, pay-as-you-go compute model means resources are triggered only when APIs are accessed — not kept running while idle. That keeps compute costs as low as possible.</p>
+<p>Smart design, right? It is a strong fit for scenarios with massive vector storage, moderate access volume, and relaxed latency requirements — very much aligned with the design philosophy of <code>object storage</code>.</p>
+<p>Next, let’s walk through a simple example to see how <code>S3 Vector</code> works in practice.</p>
+<h2 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h2><h5 id="Create-a-Vector-Bucket"><a href="#Create-a-Vector-Bucket" class="headerlink" title="Create a Vector Bucket"></a>Create a Vector Bucket</h5><p>As you can see, <code>S3 Vector</code> has its own dedicated client:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> boto3</span><br><span class="line"></span><br><span class="line">session = boto3.Session()</span><br><span class="line">region = session.region_name</span><br><span class="line"></span><br><span class="line"><span class="comment"># Create a S3 Vectors client in the AWS Region of your choice.</span></span><br><span class="line">s3vectors = boto3.client(<span class="string">&quot;s3vectors&quot;</span>, region_name=region)</span><br><span class="line">bedrock = boto3.client(<span class="string">&quot;bedrock-runtime&quot;</span>, region_name=region)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Create a vector bucket</span></span><br><span class="line">s3vectors.create_vector_bucket(vectorBucketName=<span class="string">&quot;media-embeddings&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>The created <code>Vector Bucket</code> looks like this:</p>
+<img src="/images/vector-databases-too-expensive-s3-vector-might-be-your-answer/Pasted%20image%2020260901112340.png" alt="" >
+
+<h5 id="Create-a-Vector-Index"><a href="#Create-a-Vector-Index" class="headerlink" title="Create a Vector Index"></a>Create a Vector Index</h5><p>Next, let’s create a <code>Vector Index</code> inside the <code>Vector Bucket</code>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Create a vector index &quot;movies&quot; in the vector bucket &quot;media-embeddings&quot; with non-filterable metadata keys</span></span><br><span class="line">s3vectors.create_index(</span><br><span class="line">    vectorBucketName=<span class="string">&quot;media-embeddings&quot;</span>,</span><br><span class="line">    indexName=<span class="string">&quot;movies&quot;</span>,</span><br><span class="line">    dimension=<span class="number">1024</span>,</span><br><span class="line">    distanceMetric=<span class="string">&quot;cosine&quot;</span>,</span><br><span class="line">    dataType=<span class="string">&quot;float32&quot;</span>,</span><br><span class="line">    metadataConfiguration=&#123;<span class="string">&quot;nonFilterableMetadataKeys&quot;</span>: [<span class="string">&quot;source_text&quot;</span>]&#125;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>dimension</code> and <code>dataType</code> define the vector dimension and numeric type. These must match the embedding model you use later.</li>
+<li><code>distanceMetric</code> defines how vector distance is calculated. Since we are working with plain text in this article, <code>cosine</code> is a good choice.</li>
+<li><code>metadataConfiguration</code> controls metadata behavior. By default, metadata fields support filtering. But some fields are not ideal for filtering — for example, the original source text. That field is mainly there to provide context so you know what the search result actually is. So we mark <code>source_text</code> as non-filterable.</li>
+</ul>
+<img src="/images/vector-databases-too-expensive-s3-vector-might-be-your-answer/Pasted%20image%2020260901112509.png" alt="" >
+
+<p>The Vector Index details look like this:</p>
+<img src="/images/vector-databases-too-expensive-s3-vector-might-be-your-answer/Pasted%20image%2020260901112652.png" alt="" >
+
+<h5 id="Embedding-and-Data-Ingestion"><a href="#Embedding-and-Data-Ingestion" class="headerlink" title="Embedding and Data Ingestion"></a>Embedding and Data Ingestion</h5><p>Now we can ingest data. First, we choose <code>amazon.titan-embed-text-v2:0</code> as our embedding model.</p>
+<p>Then we call <code>put_vectors</code> to write embedding data into the index:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> json</span><br><span class="line"></span><br><span class="line"><span class="comment"># Texts to convert to embeddings.</span></span><br><span class="line">texts = [</span><br><span class="line">    <span class="string">&quot;Star Wars: A farm boy joins rebels to fight an evil empire in space&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Jurassic Park: Scientists create dinosaurs in a theme park that goes wrong&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Finding Nemo: A father fish searches the ocean to find his lost son&quot;</span></span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Generate vector embeddings.</span></span><br><span class="line">embeddings = []</span><br><span class="line"><span class="keyword">for</span> text <span class="keyword">in</span> texts:</span><br><span class="line">    response = bedrock.invoke_model(</span><br><span class="line">        modelId=<span class="string">&quot;amazon.titan-embed-text-v2:0&quot;</span>,</span><br><span class="line">        body=json.dumps(&#123;<span class="string">&quot;inputText&quot;</span>: text&#125;)</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Extract embedding from response.</span></span><br><span class="line">    response_body = json.loads(response[<span class="string">&quot;body&quot;</span>].read())</span><br><span class="line">    embeddings.append(response_body[<span class="string">&quot;embedding&quot;</span>])</span><br><span class="line"></span><br><span class="line"><span class="comment"># Write embeddings into vector index with metadata.</span></span><br><span class="line">s3vectors.put_vectors(</span><br><span class="line">    vectorBucketName=<span class="string">&quot;media-embeddings&quot;</span>,</span><br><span class="line">    indexName=<span class="string">&quot;movies&quot;</span>,</span><br><span class="line">    vectors=[</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="string">&quot;key&quot;</span>: <span class="string">&quot;Star Wars&quot;</span>,</span><br><span class="line">            <span class="string">&quot;data&quot;</span>: &#123;<span class="string">&quot;float32&quot;</span>: embeddings[<span class="number">0</span>]&#125;,</span><br><span class="line">            <span class="string">&quot;metadata&quot;</span>: &#123;<span class="string">&quot;source_text&quot;</span>: texts[<span class="number">0</span>], <span class="string">&quot;genre&quot;</span>: <span class="string">&quot;scifi&quot;</span>&#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="string">&quot;key&quot;</span>: <span class="string">&quot;Jurassic Park&quot;</span>,</span><br><span class="line">            <span class="string">&quot;data&quot;</span>: &#123;<span class="string">&quot;float32&quot;</span>: embeddings[<span class="number">1</span>]&#125;,</span><br><span class="line">            <span class="string">&quot;metadata&quot;</span>: &#123;<span class="string">&quot;source_text&quot;</span>: texts[<span class="number">1</span>], <span class="string">&quot;genre&quot;</span>: <span class="string">&quot;scifi&quot;</span>&#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="string">&quot;key&quot;</span>: <span class="string">&quot;Finding Nemo&quot;</span>,</span><br><span class="line">            <span class="string">&quot;data&quot;</span>: &#123;<span class="string">&quot;float32&quot;</span>: embeddings[<span class="number">2</span>]&#125;,</span><br><span class="line">            <span class="string">&quot;metadata&quot;</span>: &#123;<span class="string">&quot;source_text&quot;</span>: texts[<span class="number">2</span>], <span class="string">&quot;genre&quot;</span>: <span class="string">&quot;family&quot;</span>&#125;</span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>Pay attention to the structure of each vector entry:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;key&quot;</span><span class="punctuation">:</span> <span class="string">&quot;xxxx&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;data&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;float32&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="number">0.12</span><span class="punctuation">,</span> <span class="number">-0.34</span><span class="punctuation">,</span> ...<span class="punctuation">]</span><span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;metadata&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span><span class="attr">&quot;source_text&quot;</span><span class="punctuation">:</span> <span class="string">&quot;xxxx&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;genre&quot;</span><span class="punctuation">:</span> <span class="string">&quot;xxx&quot;</span><span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Notice that <code>float32</code> matches the type we defined when creating the index. The <code>source_text</code> field will not support filtering, while other metadata fields will.</p>
+<h5 id="Query-and-Search"><a href="#Query-and-Search" class="headerlink" title="Query and Search"></a>Query and Search</h5><p>As mentioned above, <code>S3 Vector</code> is more often used for similarity search via <code>query_vectors</code>, rather than reading an embedding by key.</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Query text to convert to an embedding.</span></span><br><span class="line">input_text = <span class="string">&quot;adventures in space&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Generate the vector embedding.</span></span><br><span class="line">response = bedrock.invoke_model(</span><br><span class="line">    modelId=<span class="string">&quot;amazon.titan-embed-text-v2:0&quot;</span>,</span><br><span class="line">    body=json.dumps(&#123;<span class="string">&quot;inputText&quot;</span>: input_text&#125;)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># Extract embedding from response.</span></span><br><span class="line">model_response = json.loads(response[<span class="string">&quot;body&quot;</span>].read())</span><br><span class="line">embedding = model_response[<span class="string">&quot;embedding&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># Query vector index with a metadata filter.</span></span><br><span class="line">response = s3vectors.query_vectors(</span><br><span class="line">    vectorBucketName=<span class="string">&quot;media-embeddings&quot;</span>,</span><br><span class="line">    indexName=<span class="string">&quot;movies&quot;</span>,</span><br><span class="line">    queryVector=&#123;<span class="string">&quot;float32&quot;</span>: embedding&#125;,</span><br><span class="line">    topK=<span class="number">3</span>,</span><br><span class="line">    <span class="built_in">filter</span>=&#123;<span class="string">&quot;genre&quot;</span>: <span class="string">&quot;scifi&quot;</span>&#125;,</span><br><span class="line">    returnDistance=<span class="literal">True</span>,</span><br><span class="line">    returnMetadata=<span class="literal">True</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(json.dumps(response[<span class="string">&quot;vectors&quot;</span>], indent=<span class="number">2</span>))</span><br></pre></td></tr></table></figure>
+
+<p>We also added a metadata filter on the <code>genre</code> field. The final result looks like this:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;distance&quot;</span><span class="punctuation">:</span> <span class="number">0.7918924689292908</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;key&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Star Wars&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;metadata&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;source_text&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Star Wars: A farm boy joins rebels to fight an evil empire in space&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;genre&quot;</span><span class="punctuation">:</span> <span class="string">&quot;scifi&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;distance&quot;</span><span class="punctuation">:</span> <span class="number">0.8599859476089478</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;key&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Jurassic Park&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;metadata&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;genre&quot;</span><span class="punctuation">:</span> <span class="string">&quot;scifi&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;source_text&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Jurassic Park: Scientists create dinosaurs in a theme park that goes wrong&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
+
+<p>Great, right? With just a few API calls, we get semantic search plus metadata filtering — a practical building block for cost-sensitive RAG systems.</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>S3 Vector combines S3’s low-cost storage with Serverless vector search. It is a strong option for building cost-sensitive RAG systems — especially when you have large volumes of vector data, moderate query traffic, and relaxed latency requirements.</p>
+<p>As I mentioned in my previous RAG articles, choosing the right vector store is always a trade-off. If your workload does not need millisecond-level retrieval on every query, S3 Vector is worth a closer look.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/AWS-S3-Vector-RAG-vector-database/" rel="tag"># AWS, S3 Vector, RAG, vector database</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/" rel="prev" title="Breaking Into Edge AI: Deconstructing the Transformer Autoregressive Loop with ONNX Small Models">
+                  <i class="fa fa-angle-left"></i> Breaking Into Edge AI: Deconstructing the Transformer Autoregressive Loop with ONNX Small Models
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
