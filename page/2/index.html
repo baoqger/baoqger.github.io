@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">71</span>
+          <span class="site-state-item-count">72</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">39</span>
+        <span class="site-state-item-count">40</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,135 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/11/02/external-sorting-one/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2022/11/02/external-sorting-one/" class="post-title-link" itemprop="url">External Mergesort: part one</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-11-02 16:44:29" itemprop="dateCreated datePublished" datetime="2022-11-02T16:44:29+08:00">2022-11-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>This article will examine one interesting question which I came across when reading the book <em><strong>Programming Pearls</strong></em>. This question simply goes like this: <code>How to sort a large disk file? The disk file has so much data that it cannot all fit into the main memory.</code> I considered this <code>algorithm</code> question for a while; but noticed that all the classic sorting algorithms, like <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Quicksort"><code>Quick sort</code></a> and <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Merge_sort"><code>merge sort</code></a>, can’t solve it easily. Then I did some research about it, and I will share what I learned in this article. I believe you can solve this problem as well, after reading this article.</p>
+<h3 id="Background-of-External-Algorithm"><a href="#Background-of-External-Algorithm" class="headerlink" title="Background of External Algorithm"></a>Background of External Algorithm</h3><p>Traditionally, computer scientists analyze the running time of an algorithm by counting the number of executed instructions, which is usually expressed as a function of the input size n, like the well-known <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Big_O_notation"><code>Big O notation</code></a>. This kind of algorithm complexity analysis is based on the <code>Random access machine(RAM)</code> model, which defines the following assumptions:</p>
+<ul>
+<li>A machine with an unbounded amount of available memory;</li>
+<li>Any desired memory location can be accessed in unit time;</li>
+<li>Every instruction takes the same amount of time.</li>
+</ul>
+<img src="/images/RAM-Model.png" title="Random access machine model" width="300px" height="200px">
+
+<p>This model works well when the amount of memory that the algorithm needs to use is smaller than the amount of memory in the computer running the code. </p>
+<p>But in the real world, some applications need to process data that are too large to fit into a computer’s main memory at once. And the algorithms used to solve such problems are called <code>external memory algorithms</code> or <code>disk-based algorithms</code>; since the input data are stored on an <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/External_storage"><code>external memory</code> storage device</a>.</p>
+<p>Instead of the <code>RAM</code> model, the <code>external memory algorithm</code> is analyzed based on the <code>external memory model</code>. The model consists of a CPU processor with an internal memory of bounded size, connected to an unbounded external memory. One I&#x2F;O operation consists of moving a block of contiguous elements from external to internal memory(this is called <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Page_cache"><code>page cache</code></a> and is managed by the kernel.). </p>
+<img src="/images/external-model.png" title="external memory model" width="400px" height="300px">
+
+<p>Compared with the main memory, the access speed of external memory is slower by <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Memory_hierarchy">several orders of magnitude</a>, even though modern storage techniques such as <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Solid-state_drive"><code>SSD</code></a> are already adopted. Thus, for external algorithms, the bottleneck of the performance is <code>disk IO</code> speed instead of the CPU cycles. </p>
+<p>In this section, we examined the computational model of the external memory algorithms. Next, let’s review one typical type of external memory algorithm: external sorting. </p>
+<h3 id="External-Mergesort"><a href="#External-Mergesort" class="headerlink" title="External Mergesort"></a>External Mergesort</h3><p>Similar to the traditional internal sorting algorithms, several different solutions are available for external sorting. In this article, I will focus on <code>external mergesort</code>.</p>
+<p>External mergesort is a straightforward generalization of internal mergesort. The algorithm starts by repeatedly loading M input items into the memory(since the memory buffer size is limited, can only store M input items at once), sorting them, and writing them back out to disk. This step divides the input file into some(or many, if the input file is very large) sorted runs, each with M items sorted. Then the algorithm repeatedly merges multiple sorted runs, until only a single sorted run containing all the input data remains. </p>
+<p>Let’s use the following example model to analyze this algorithm. First of all, assume the memory buffer is limited, and the size is one <code>page</code>. And the input file size is 8 <code>pages</code>. External mergesort can be divided into two phases: <code>sort phase</code> and <code>merge phase</code>.  </p>
+<img src="/images/external-mergesort.png" title="external mergesort" width="800px" height="600px">
+
+<p><em><strong>Sort phase</strong></em>:</p>
+<ul>
+<li>Divide the entire input file into 8 groups, each group size is one page(memory buffer capacity).</li>
+<li>Load each page into the memory, sort the items in the memory buffer(with an internal sorting algorithm), and save the sorted items in a temporary sub-file. Each sub-file is called a <code>run</code>.</li>
+</ul>
+<p>At the end of the sort phase, 8 temporary sorted 1-page runs will be created. This step can be marked as <em><strong>pass 0</strong></em>.</p>
+<p><em><strong>Merge phase</strong></em>: </p>
+<p>The 8 sorted runs in pass 0 will be merged into a single sorted file with 3 more passes.</p>
+<ul>
+<li>pass 1: Perform 4 runs for the merge. <ul>
+<li>Run 1: Merge the first two small 1-page runs into a big 2-page run. This merging step goes as follows: <ul>
+<li>Read the first two sorted sub-files (one item from each file).</li>
+<li>Find the smaller item, output it in the new sub-file, and the appropriate input sub-file is advanced. Repeat this cycle until the input sub-file is completed. <strong>This routine’s logic is the same as the internal mergesort algorithm.</strong></li>
+</ul>
+</li>
+<li>Run 2: Merge the next two 1-page runs into a 2-page run. </li>
+<li>Run 3 and 4: follow the same process.   </li>
+<li>At the end of <em><strong>pass 1</strong></em>, 4 temporary sorted 2-page runs will be created.</li>
+</ul>
+</li>
+<li>pass 2: Perform 2 runs for the merge. <ul>
+<li>At the end of <em><strong>pass 2</strong></em>, 2 temporary sorted 4-page runs will be created.</li>
+</ul>
+</li>
+<li>pass 3: Perform 1 run for the merge. <ul>
+<li>At the end of <em><strong>pass 3</strong></em>, the final 8-page run containing all the sorted items will be created.</li>
+</ul>
+</li>
+</ul>
+<p>Note: the above process may seem complicated at the first sight, but the logic is nearly the same as the internal merge sort. The only difference is internal merging is based on memory buffers, while external merging is based on disk files, and needs reading the item from disk to memory.</p>
+<p>Since we keep merging two small sub-files into a big one with doubled size, the above algorithm can be called <code>two-way</code> external merge sorting. We can generalize the idea to <code>multi-way</code> external merge sorting, which merges M runs into one.  </p>
+<p>Next, let’s analyze its complexity. Suppose the input file has <code>N</code> items and each page consists of <code>B</code> items. And <code>M</code> denotes the number of ways used in the merge phase, thus the number of passes should be: <b>log<sub>M</sub>(N&#x2F;B) + 1</b>, where plus one means the first pass in the sort phase. And each pass, each item is read and written once from and to the disk file. So the total number of disk I&#x2F;O is: <b>2N*(log<sub>M</sub>(N&#x2F;B) + 1)</b></p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined the abstract computational model of the external memory algorithm and analyzed the details of the external mergesort algorithm. Next article, let’s implement the code and evaluate the performance. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +339,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
     </span>
 
   
@@ -334,7 +463,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
     </span>
 
   
@@ -467,7 +596,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
     </span>
 
   
@@ -576,7 +705,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
     </span>
 
   
@@ -701,7 +830,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
     </span>
 
   
@@ -920,7 +1049,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
     </span>
 
   
@@ -1039,7 +1168,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
     </span>
 
   
@@ -1144,7 +1273,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
     </span>
 
   
@@ -1312,7 +1441,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
+      <time title="Modified: 2026-09-27 22:12:25" itemprop="dateModified" datetime="2026-09-27T22:12:25+08:00">2026-09-27</time>
     </span>
 
   
@@ -1373,81 +1502,6 @@
 <p>Now the sniffer can retrieve all the data packets received on the network card, no matter to which host the packets are addressed.</p>
 <h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>This article examined what <code>PF_PACKET</code> socket is, how it works and why the application can get raw Ethernet packets. Furthermore, we discussed how to bind the sniffer to one specific network interface and how can make the sniffer work in the promiscuous mode. The next article will examine how to implement the packet filter functionality, which is very useful to a network sniffer. </p>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/02/07/stack-smashing-detect-in-c/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/02/07/stack-smashing-detect-in-c/" class="post-title-link" itemprop="url">stack-smashing-detect-in-c</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2022-02-07 13:12:08" itemprop="dateCreated datePublished" datetime="2022-02-07T13:12:08+08:00">2022-02-07</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-26 23:02:13" itemprop="dateModified" datetime="2026-09-26T23:02:13+08:00">2026-09-26</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          
       
     </div>
 
