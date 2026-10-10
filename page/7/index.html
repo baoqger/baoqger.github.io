@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">72</span>
+          <span class="site-state-item-count">74</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-count">42</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,208 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2020/04/20/memoizedSelector/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/04/20/memoizedSelector/" class="post-title-link" itemprop="url">Understand NgRx memoizedSelector in source code level</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-04-20 20:15:50" itemprop="dateCreated datePublished" datetime="2020-04-20T20:15:50+08:00">2020-04-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p><code>Selector</code> is an essential part of the entire NgRx state management system, which is much more complicated than the <code>action</code> and <code>reducer</code> part based on my learning and development experience. Sometimes I feel it is like a black box, which hides many excellent designs and techniques. I spend some time and dig into the source code of NgRx to take a look at the internals of the black box. This post (and later posts) will share some interesting points I found during the process. </p>
+<p>When using NgRx, developers always do something like this: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">const</span> <span class="attr">animalListState</span>: <span class="title class_">MemoizedSelector</span>&lt;<span class="title class_">State</span>, <span class="title class_">Animal</span>[]&gt; = <span class="title function_">createSelector</span>(</span><br><span class="line">  rootState,</span><br><span class="line">  (<span class="attr">state</span>: <span class="title class_">RootState</span>): <span class="function"><span class="params">AnimalListState</span> =&gt;</span> state.<span class="property">animalList</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p><code>createSelector</code> method return a selector function, which can be passed into the <code>store.select()</code> method to get the desired state out of the store. </p>
+<p>By default, the type of the returned function from <code>createSelector</code> is <code>MemoizedSelector&lt;State, Result&gt;</code>. Have you ever notice that? This post will introduce what it is and how it works. </p>
+<h3 id="What-is-memoization"><a href="#What-is-memoization" class="headerlink" title="What is memoization?"></a>What is memoization?</h3><p>Memoization is a general concept in computer science. Wikipedia explains it as follows: </p>
+<blockquote>
+<p>In computing, memoization or memoisation is an optimization technique used primarily to speed up computer programs by storing the results of expensive function calls and returning the cached result when the same inputs occur again. </p>
+</blockquote>
+<p>You can find <a target="_blank" rel="noopener" href="https://dev.to/carlillo/understanding-javascripttypescript-memoization-o7k">many articles</a> online for explaining memoization with code examples. Simply speaking, a hash map is used for the cached result. Technically it’s not difficult at all. </p>
+<p>Memoization is a great optimization solution of pure function. Generally speaking, <code>A pure function is a function where the return value is only determined by its input values, without side effects</code>.</p>
+<p>As you may know, <code>Selector</code> is a pure function. <code>memoizedSelector</code> is just a normal selector function with memoization optimization. Next, let’s see how it works in the design of the NgRx library.</p>
+<h3 id="Source-code-of-memoizedSelector"><a href="#Source-code-of-memoizedSelector" class="headerlink" title="Source code of memoizedSelector"></a>Source code of memoizedSelector</h3><p>In the source code of <a target="_blank" rel="noopener" href="https://github.com/ngrx/platform/blob/master/modules/store/src/selector.ts"><code>NgRx</code></a>, you can find the <code>selector</code> related code in the path of <code>platform/modules/store/src/selector.ts</code>.  </p>
+<p><code>selector.ts</code> file is roughly 700 lines, which hold all the functionalities of it. There are many interesting points inside this module, which I can share in another article, but this post focus on memoization. So I pick up all the necessary code and put it as follows: </p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">type</span> <span class="title class_">AnyFn</span> = <span class="function">(<span class="params">...<span class="attr">args</span>: <span class="built_in">any</span>[]</span>) =&gt;</span> <span class="built_in">any</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">type</span> <span class="title class_">ComparatorFn</span> = <span class="function">(<span class="params"><span class="attr">a</span>: <span class="built_in">any</span>, <span class="attr">b</span>: <span class="built_in">any</span></span>) =&gt;</span> <span class="built_in">boolean</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">type</span> <span class="title class_">MemoizedProjection</span> = &#123;</span><br><span class="line">    <span class="attr">memoized</span>: <span class="title class_">AnyFn</span>;</span><br><span class="line">    <span class="attr">reset</span>: <span class="function">() =&gt;</span> <span class="built_in">void</span>;</span><br><span class="line">    <span class="attr">setResult</span>: <span class="function">(<span class="params"><span class="attr">result</span>?: <span class="built_in">any</span></span>) =&gt;</span> <span class="built_in">void</span>;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">isEqualCheck</span>(<span class="params"><span class="attr">a</span>: <span class="built_in">any</span>, <span class="attr">b</span>: <span class="built_in">any</span></span>): <span class="built_in">boolean</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> a === b;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">isArgumentsChanged</span>(<span class="params"></span></span><br><span class="line"><span class="params">    <span class="attr">args</span>: <span class="title class_">IArguments</span>,</span></span><br><span class="line"><span class="params">    <span class="attr">lastArguments</span>:<span class="title class_">IArguments</span>,</span></span><br><span class="line"><span class="params">    <span class="attr">comparator</span>: <span class="title class_">ComparatorFn</span></span></span><br><span class="line"><span class="params"></span>) &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; args.<span class="property">length</span> ; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!<span class="title function_">comparator</span>(args[i], lastArguments[i])) &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">defaultMemoize</span>(<span class="params"></span></span><br><span class="line"><span class="params">    <span class="attr">projectionFn</span>: <span class="title class_">AnyFn</span>,</span></span><br><span class="line"><span class="params">    isArgumentsEuqal = isEqualCheck,</span></span><br><span class="line"><span class="params">    isResultEqual = isEqualCheck</span></span><br><span class="line"><span class="params"></span>): <span class="title class_">MemoizedProjection</span> &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="attr">lastArguments</span>: <span class="literal">null</span> | <span class="title class_">IArguments</span> = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">let</span> <span class="attr">lastResult</span>: <span class="built_in">any</span> = <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">let</span> <span class="attr">overrideResult</span>: <span class="built_in">any</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">reset</span>(<span class="params"></span>) &#123;</span><br><span class="line">        lastArguments = <span class="literal">null</span>;</span><br><span class="line">        lastResult = <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">setResult</span>(<span class="params"><span class="attr">result</span>: <span class="built_in">any</span> = <span class="literal">undefined</span></span>) &#123;</span><br><span class="line">        overrideResult = result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">memoized</span>(<span class="params"></span>): <span class="built_in">any</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (overrideResult !== <span class="literal">undefined</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> overrideResult;</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">if</span> (!lastArguments) &#123;</span><br><span class="line">            lastResult = projectionFn.<span class="title function_">apply</span>(<span class="literal">null</span>, <span class="variable language_">arguments</span> <span class="keyword">as</span> <span class="built_in">any</span>);</span><br><span class="line">            lastArguments = <span class="variable language_">arguments</span>;</span><br><span class="line">            <span class="keyword">return</span> lastResult;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!<span class="title function_">isArgumentsChanged</span>(<span class="variable language_">arguments</span>, lastArguments, isArgumentsEuqal)) &#123;</span><br><span class="line">            <span class="keyword">return</span> lastResult;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">const</span> newResult = projectionFn.<span class="title function_">apply</span>(<span class="literal">null</span>, <span class="variable language_">arguments</span> <span class="keyword">as</span> <span class="built_in">any</span>);</span><br><span class="line">        lastArguments = <span class="variable language_">arguments</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (<span class="title function_">isResultEqual</span>(lastResult, newResult)) &#123;</span><br><span class="line">            <span class="keyword">return</span> lastResult;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        lastResult = newResult;</span><br><span class="line">        <span class="keyword">return</span> newResult;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> &#123; memoized, reset, setResult&#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>There are many interesting Typescript stuff in the above code block. But for memoization, you can focus on the method <code>defaultMemoize</code>. In the following section, I will show you how it can make your program run faster. </p>
+<h3 id="Explore-the-memoizedSelector-method"><a href="#Explore-the-memoizedSelector-method" class="headerlink" title="Explore the memoizedSelector method"></a>Explore the memoizedSelector method</h3><p>To show how memoization works, I create a simple method <code>slowFunction</code> as following, to simulate that a method running very slowly:  </p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">function</span> <span class="title function_">slowFunction</span>(<span class="params"><span class="attr">val</span>: <span class="built_in">number</span></span>): <span class="built_in">number</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> pre = <span class="keyword">new</span> <span class="title class_">Date</span>();</span><br><span class="line">    <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="keyword">const</span> now = <span class="keyword">new</span> <span class="title class_">Date</span>();</span><br><span class="line">        <span class="keyword">if</span> (now.<span class="title function_">valueOf</span>() - pre.<span class="title function_">valueOf</span>() &gt; <span class="number">2000</span>) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> val;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>And then test it with the following scripts: </p>
+<figure class="highlight typescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123; defaultMemoize &#125; <span class="keyword">from</span> <span class="string">&quot;./memoizedSelector&quot;</span>;</span><br><span class="line"><span class="keyword">import</span> &#123; slowFunction &#125; <span class="keyword">from</span> <span class="string">&quot;./slowFunction&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// run slowFunction without memoization</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;First call of slowFunction(2)&quot;</span>);</span><br><span class="line"><span class="keyword">let</span> pre = <span class="keyword">new</span> <span class="title class_">Date</span>();</span><br><span class="line"><span class="title function_">slowFunction</span>(<span class="number">2</span>);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;It takes&quot;</span> + ((<span class="keyword">new</span> <span class="title class_">Date</span>()).<span class="title function_">valueOf</span>() - pre.<span class="title function_">valueOf</span>())/<span class="number">1000</span> +  <span class="string">&quot;seconds \n&quot;</span>);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Second call of slowFunction(2)&quot;</span>);</span><br><span class="line">pre = <span class="keyword">new</span> <span class="title class_">Date</span>();</span><br><span class="line"><span class="title function_">slowFunction</span>(<span class="number">2</span>);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;It takes&quot;</span> + ((<span class="keyword">new</span> <span class="title class_">Date</span>()).<span class="title function_">valueOf</span>() - pre.<span class="title function_">valueOf</span>())/<span class="number">1000</span> +  <span class="string">&quot;seconds \n&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// run slowFunction with memoization</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> fastFunction = <span class="title function_">defaultMemoize</span>(slowFunction);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;First call of fastFunction(2)&quot;</span>);</span><br><span class="line">pre = <span class="keyword">new</span> <span class="title class_">Date</span>();</span><br><span class="line">fastFunction.<span class="title function_">memoized</span>(<span class="number">2</span>);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;It takes&quot;</span> + ((<span class="keyword">new</span> <span class="title class_">Date</span>()).<span class="title function_">valueOf</span>() - pre.<span class="title function_">valueOf</span>())/<span class="number">1000</span> +  <span class="string">&quot;seconds \n&quot;</span>);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;Second call of fastFunction(2)&quot;</span>);</span><br><span class="line">pre = <span class="keyword">new</span> <span class="title class_">Date</span>();</span><br><span class="line">fastFunction.<span class="title function_">memoized</span>(<span class="number">2</span>);</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&quot;It takes&quot;</span> + ((<span class="keyword">new</span> <span class="title class_">Date</span>()).<span class="title function_">valueOf</span>() - pre.<span class="title function_">valueOf</span>())/<span class="number">1000</span> +  <span class="string">&quot;seconds \n&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>The output goes as folllowing:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">$ ts-node index.ts</span><br><span class="line">First call of slowFunction(2)</span><br><span class="line">It takes2.001seconds</span><br><span class="line"></span><br><span class="line">Second call of slowFunction(2)</span><br><span class="line">It takes2.001seconds</span><br><span class="line"></span><br><span class="line">First call of fastFunction(2)</span><br><span class="line">It takes2.002seconds</span><br><span class="line"></span><br><span class="line">Second call of fastFunction(2)</span><br><span class="line">It takes0.001seconds</span><br></pre></td></tr></table></figure>
+
+<p>Compared with the original <code>slowFunction</code> method, the memoized method <code>fastFunction</code> can directly output the result for the same input. That’s the power of memoization, hope you can master it. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2020/04/12/rxjs-marble-testing/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/04/12/rxjs-marble-testing/" class="post-title-link" itemprop="url">Typical usage case of Marble Testing for RxJS</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-04-12 20:08:45" itemprop="dateCreated datePublished" datetime="2020-04-12T20:08:45+08:00">2020-04-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="What’s-Marble-Testing"><a href="#What’s-Marble-Testing" class="headerlink" title="What’s Marble Testing"></a>What’s Marble Testing</h3><p>RxJS is a powerful tool to handle various asynchronous tasks. Sometime RxJS observables are hard to test. In the community, there is one particular unit testing solution for RxJS observables called marble testing.</p>
+<p>For marble testing, you can refer to <a target="_blank" rel="noopener" href="https://medium.com/@bencabanes/marble-testing-observable-introduction-1f5ad39231c">these articles</a>. They all do an excellent job of introducing what it is. </p>
+<h3 id="A-real-case-to-show-Marble-Testing’s-power"><a href="#A-real-case-to-show-Marble-Testing’s-power" class="headerlink" title="A real case to show Marble Testing’s power"></a>A real case to show Marble Testing’s power</h3><p>Recently in my development work, I came across a case where I used marble testing properly to solve the issue. </p>
+<p>The background is for my application in the root <code>index.html</code> file, there is one third-party javascript library&#x2F;SDK. For some business reasons, after the third-party library is loaded, we bind some value to the global <code>window</code> object. </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">window</span>.<span class="property">onSecretLibraryLoad</span> = <span class="function">(<span class="params">res</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="variable language_">window</span>.<span class="property">SecretLibrary</span> = res; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>Before the loaded event is triggered, the <code>window.SecretLibary</code> was <code>undefiend</code>. After the event is triggered, it will be assigned some value. </p>
+<p>This global value is vital for my application since one of the UI components depends on it to determine to show or hide. </p>
+<p>Since the script was loaded with <code>async</code> flag for performance consideration, this component needs to check the <code>window.SecretLibrary</code> value repeatedly. </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">export</span> <span class="keyword">class</span> <span class="title class_">UIComponent</span> implements <span class="title class_">OnInit</span> &#123;</span><br><span class="line">    public <span class="attr">isSecretLibraryReady$</span>: <span class="title class_">Observable</span>&lt;boolean&gt;;</span><br><span class="line">    public <span class="title function_">ngOnInit</span>(): <span class="keyword">void</span> &#123;</span><br><span class="line">        <span class="variable language_">this</span>.<span class="property">isSecretLibraryReady$</span> = <span class="variable language_">this</span>.<span class="title function_">getSecretLibraryLoadStatus</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public <span class="title function_">getSecretLibraryLoadStatus</span>(): <span class="title class_">Observable</span>&lt;boolean&gt; &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="title function_">timer</span>(<span class="number">0</span>, <span class="number">500</span>).<span class="title function_">pipe</span>(</span><br><span class="line">            <span class="title function_">map</span>(<span class="function">(<span class="params">t</span>) =&gt;</span> (&#123;</span><br><span class="line">                <span class="attr">currentTimeTick</span>: t,</span><br><span class="line">                <span class="attr">isReady</span>: <span class="title class_">Boolean</span>((<span class="variable language_">window</span> <span class="keyword">as</span> any).<span class="property">SecretLibrary</span>)</span><br><span class="line">            &#125;)),</span><br><span class="line">            <span class="title function_">takeWhile</span>(</span><br><span class="line">                <span class="function">(<span class="params">val</span>) =&gt;</span> !val.<span class="property">isReady</span> &amp;&amp; val.<span class="property">currentTimeTick</span> &lt;= <span class="number">30000</span>/<span class="number">500</span>,</span><br><span class="line">                <span class="literal">true</span></span><br><span class="line">            ),</span><br><span class="line">            <span class="title function_">pluck</span>(<span class="string">&quot;isReady&quot;</span>)</span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The interesting part comes from the <code>getSecretLibraryLoadStatus</code> function. It utilizes the <code>timer</code>, <code>map</code>, <code>takeWhile</code>, and <code>pluck</code> operators of RxJS library to realize the repeatedly status checking and updating purpose. </p>
+<p>RxJS operator is not this article’s topic, so I will not dig deep into it. Just add one comment for the <code>takeWhile</code> part, which seems a little hard to understand at the first look. It defines two conditions to stop the observable: first case is the <code>window.SecretLibrary</code> value is not undefined, which means the script is loaded; the second case is it reaches the maximum time limit (30 seconds). </p>
+<h3 id="How-to-test-it-marble-testing"><a href="#How-to-test-it-marble-testing" class="headerlink" title="How to test it: marble testing"></a>How to test it: marble testing</h3><p>Traditionally we use <code>subscribe and assert</code> pattern to test RxJS observables. But for the case, as mentioned above: time-based observables, the traditional solution can’t handle it well. We can’t wait 30 seconds when we run the unit tests during local development or in CI pipeline. That’s unacceptable.</p>
+<p>Marble testing can fix this issue correctly by the concept of virtual time. For what is virtual time, you can refer to <a target="_blank" rel="noopener" href="https://medium.com/angular-in-depth/how-to-test-observables-a00038c7faad">these great articles</a>. I will not discuss it at a detailed level in this post. Simply speaking, virtual time empowers us to test asynchronous RxJS observable synchronously. In virtual time asynchronous functions like <code>setTimeout</code> and <code>setInterval</code> will use fake time instead of actual time. And the magic comes from the <code>TestScheduler</code> of RxJS. </p>
+<p>The marble testing solution as following: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">describe</span>(<span class="string">&quot;UIComponent&quot;</span>, <span class="function">() =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">let</span> <span class="attr">component</span>: <span class="title class_">UIComponent</span>;</span><br><span class="line">  <span class="keyword">let</span> <span class="attr">fixture</span>: <span class="title class_">ComponentFixture</span>&lt;<span class="title class_">UIComponent</span>&gt;;</span><br><span class="line">  <span class="keyword">let</span> <span class="attr">scheduler</span>: <span class="title class_">TestScheduler</span>;</span><br><span class="line"></span><br><span class="line">  <span class="title function_">beforeEach</span>(<span class="title function_">async</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="title class_">TestBed</span>.<span class="title function_">configureTestingModule</span>(&#123;</span><br><span class="line">      <span class="attr">declarations</span>: [<span class="title class_">UIComponent</span>],</span><br><span class="line">    &#125;).<span class="title function_">compileComponents</span>();</span><br><span class="line">  &#125;));</span><br><span class="line"></span><br><span class="line">  <span class="title function_">beforeEach</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    fixture = <span class="title class_">TestBed</span>.<span class="title function_">createComponent</span>(<span class="title class_">UIComponent</span>);</span><br><span class="line">    component = fixture.<span class="property">componentInstance</span>;</span><br><span class="line">    scheduler = <span class="keyword">new</span> <span class="title class_">TestScheduler</span>(<span class="function">(<span class="params">actual, expected</span>) =&gt;</span> <span class="title function_">expect</span>(actual).<span class="title function_">toEqual</span>(expected));</span><br><span class="line">    (<span class="variable language_">window</span> <span class="keyword">as</span> any).<span class="property">SecretLibrary</span> = <span class="literal">undefined</span>;</span><br><span class="line">  &#125;);</span><br><span class="line"></span><br><span class="line">  <span class="title function_">it</span>(<span class="string">&quot;getSecretLibraryLoadStatus method should return a boolean observable stream, for script load success case&quot;</span>, <span class="function">() =&gt;</span> &#123;</span><br><span class="line">    scheduler.<span class="title function_">run</span>(<span class="function">(<span class="params">&#123; expectObservable &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">      <span class="title function_">timer</span>(<span class="number">2</span> * <span class="number">1000</span>).<span class="title function_">subscribe</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">        (<span class="variable language_">window</span> <span class="keyword">as</span> any).<span class="property">SecretLibrary</span> = <span class="string">&quot;SecretLibrary&quot;</span>;</span><br><span class="line">      &#125;);</span><br><span class="line">      <span class="comment">// tricky point about marble test: a, b, c these placeholders account 1 frame of virtual time</span></span><br><span class="line">      <span class="title function_">expectObservable</span>(component.<span class="title function_">getSecretLibraryLoadStatus</span>()).<span class="title function_">toBe</span>(</span><br><span class="line">        <span class="string">&quot;a 499ms b 499ms c 499ms d 499ms (e|)&quot;</span>,</span><br><span class="line">        &#123;</span><br><span class="line">          <span class="attr">a</span>: <span class="literal">false</span>,</span><br><span class="line">          <span class="attr">b</span>: <span class="literal">false</span>,</span><br><span class="line">          <span class="attr">c</span>: <span class="literal">false</span>,</span><br><span class="line">          <span class="attr">d</span>: <span class="literal">false</span>,</span><br><span class="line">          <span class="attr">e</span>: <span class="literal">true</span></span><br><span class="line">        &#125;</span><br><span class="line">      );</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Let me emphasize several key points to understand the above testing case. <code>getSecretLibraryLoadStatus</code> will repeatedly check the status of <code>window.SecretLibrary</code> every 500 milliseconds and return a boolean value stream. </p>
+<p>I manually set the <code>window.SecretLibrary</code> value after 2 seconds by calling this: </p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">timer</span>(<span class="number">2</span> * <span class="number">1000</span>).<span class="title function_">subscribe</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">  (<span class="variable language_">window</span> <span class="keyword">as</span> any).<span class="property">SecretLibrary</span> = <span class="string">&quot;SecretLibrary&quot;</span>;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>So Let’s imagine what the result should be: the first four emit value will be <code>false</code>,  and the last value is <code>true</code>. That’s the expected observable. </p>
+<p>But please notice that <code>scheduler.run</code>, everything run inside the callback will use virtual time. So we didn’t wait 2 seconds for the <code>timer</code> operator. Instead, it runs synchronously. </p>
+<p>The second point needs to notice is the syntax of the marble string <code>a 499ms b 499ms c 499ms d 499ms (e|)</code>. Yes, it looks a little wired, but be careful that’s the correct way to represent marble. <strong>The alphanumeric values represent an actual emitted value, which advances time one virtual frame</strong>.</p>
+<p>Here I only show the case where the third-party script load successfully. Of course, to have full testing coverage, we need to consider the negative case where the script failed to load. You can figure it out. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this post, I didn’t go into the detailed syntax of marble testing. I think the reader can find the related document easily. I record a real usage case in the development where marble testing can show its power to handle async observables. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +412,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -310,7 +512,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -431,7 +633,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -549,7 +751,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -710,7 +912,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -843,7 +1045,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -970,7 +1172,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -1069,7 +1271,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -1101,213 +1303,6 @@
 <p>The attacker can replace the server’s public key with its own and send it to the client. The client doesn’t feel anything wrong and keeps using this public key as normal. The client encrypts the session key with the forged public key(the one from attackers) and sends it out. The attacker decrypts the session key with its private key, re-encrypt the session key with the server’s public key, and sends it to the server. As normal, the server decrypts the session key and agrees on it. But this session key is in the attacker’s hand too. The attacker can decrypt all the subsequent network traffic. </p>
 <p>The problem here is that the client blindly <strong>trusts</strong> that the public key belongs to the server. That’s the reason why we need the <code>certificates</code> to establish trust between clients and servers.</p>
 <h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we understand the importance of public-key cryptography and certificates. In the next article, we will take a deep look at the certificate.  </p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2019/02/22/https-handshake/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2019/02/22/https-handshake/" class="post-title-link" itemprop="url">How HTTPS works: part one - TLS handshake</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2019-02-22 11:04:58" itemprop="dateCreated datePublished" datetime="2019-02-22T11:04:58+08:00">2019-02-22</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>At present, everybody knows about the lock icon in the browser’s address bar indicating that the session is protected by <code>HTTPS</code>.In this series of articles, I’ll show you how HTTPS works based on my research. </p>
-<p>Simply speaking, <code>HTTPS = HTTP + SSL/TLS</code>. </p>
-<p>In the <code>HTTP</code> protocol, the client communicates with the server by transmitting the message over the network. But the message is in the original format known as plaintext. The bad guys (attackers) can easily eavesdrop on the message. That’s the reason why we need <code>SSL/TLS</code>. </p>
-<p>There are tons of <a target="_blank" rel="noopener" href="https://www.globalsign.com/en/blog/ssl-vs-tls-difference">articles</a> online describing the relationship between SSL and TLS. You can regard TLS as the modern and advanced version of SSL. By conversion, we generally put them together as the name of the network security protocol. </p>
-<p>In the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/OSI_model">OSI model</a>, the <code>HTTP</code> protocol is in <strong>layer 7</strong>, which is at the top of protocol stacks, how about <code>TLS</code> protocol. Although <code>TLS</code> is short for <code>Transport Layer Security</code>, it’s not in <strong>layer 4(transport layer)</strong>. You can roughly regard it as <strong>layer 5(session layer)</strong>. </p>
-<p>This means there is no nontrivial difference between <code>HTTP</code> and <code>HTTPS</code> in terms of message transmission. This series of articles will focus on the security part of <code>HTTPS</code>. If you want to understand HTTP itself, please read my other <a target="_blank" rel="noopener" href="https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/">articles</a>. </p>
-<p>As the first article of this series, I will talk about how to establish an <code>HTTPS</code> connection. This introduces a new concept: <strong>TLS handshake</strong>.</p>
-<h3 id="TLS-Handshake"><a href="#TLS-Handshake" class="headerlink" title="TLS Handshake"></a>TLS Handshake</h3><p>In my previous article, I wrote about <a target="_blank" rel="noopener" href="https://baoqger.github.io/2019/07/14/why-tcp-four-way-handshake/"><code>TCP three way handshake</code></a> to establish a TCP connection. For <code>HTTP</code> protocol, that’s all it needs to do. But <code>HTTPS</code> has to do <code>TLS handshake</code> as well. The process can be illustrated as follows: </p>
-<p><strong>Note</strong> TLS handshakes occur after a TCP connection has been opened via a TCP handshake.</p>
-<img src="/images/https-tls-handshake.png" title="tls handshake" width="600px" height="400px">
-
-<p><strong>Note</strong> to understand each detail of the above processing, you need to have some prerequisite knowledge such as <code>encryption/decryption</code>, <code>hash function</code>, <code>public key</code>, <code>private key</code>, and <code>digital certificate</code>.  If you don’t know, don’t worry. After reading this series of articles, you’ll have it under your belt. In this article, I’ll go through this process roughly and ignore the detail of each step. </p>
-<ul>
-<li><p><strong>Client hello message</strong>: the client starts the handshake by sending a “hello” message to the server. This “hello” message includes the TLS version and the <code>cipher suites</code> supported on the client-side. <code>cipher suites</code> is a fancy name for the set of encryption algorithms for use in establishing a secure connection.</p>
-</li>
-<li><p><strong>Server hello message</strong>: the server chooses the best(or suitable) SSL&#x2F;TLS version and encryption algorithm among the candidates sent by the client. The server’s chosen cipher suite and <code>certificate</code> are sent to the client. <code>certificate</code> makes SSL&#x2F;TLS encryption possible, which is critical to understand the entire process. For now, you need to know certificates contain the server’s <code>public key</code>  which is sent to the client. And the <code>private key</code> is kept secret on the server. </p>
-</li>
-<li><p><strong>Authentication</strong>: The client verifies the server’s certificate (I’ll investigate the certificate verification process at a very detailed level in another article). </p>
-</li>
-<li><p><strong>Encrypt the pre-master key</strong>: The client generates one random “pre-master” key, encrypts “pre-master” key with the server’s public key (extract from the certificate) and sends the encrypted “pre-master” key to the server.</p>
-</li>
-<li><p><strong>Decrypt the pre-master key</strong>: The server decrypts the “pre-master” key with its private key (The premaster key is encrypted with the public key and can only be decrypted with the private key by the server. This is called <code>asymmetric encryption</code>).</p>
-</li>
-<li><p><strong>Session key created</strong>: Both client and server will generate a <code>session key</code> based on the “pre-master” key. The <code>session key</code> should be the same on both sides.</p>
-</li>
-<li><p><strong>HTTP message encryption</strong>: Until the last step, the handshake is completed. The client and server will use the agreed <code>session key</code> to encrypt the following HTTP messages and continue the communication (since both sides use the same key, this is called <code>symmetric encryption</code>).</p>
-</li>
-</ul>
-<p>That’s all about <code>TLS handshake</code> process. </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>As the first article of this series, I go through the entire process of TLS handshake. In future articles, I’ll show you the mysteries of each part. </p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2018/12/14/why-tcp-four-way-handshake/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2018/12/14/why-tcp-four-way-handshake/" class="post-title-link" itemprop="url">Why TCP connection termination needs four-way handshake</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2018-12-14 16:34:58" itemprop="dateCreated datePublished" datetime="2018-12-14T16:34:58+08:00">2018-12-14</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In <code>TCP/IP</code> protocol stack, the <code>three way handshake</code> for connection establishment and <code>four way handshake</code> for connection termination are some concepts you must understand.</p>
-<p>But after I learned <code>TCP/IP</code> stack, one question coming to my mind is why the connection termination needs four-way handshake. In this article, I will focus on this topic. To understand the answer to this question, we need to first explain the details of these two processes and compare them to find the difference. </p>
-<h3 id="TCP-connection-establishment"><a href="#TCP-connection-establishment" class="headerlink" title="TCP connection establishment"></a>TCP connection establishment</h3><p>In contrast to <code>UDP</code>, TCP is a <code>connection-oriented</code> and <code>reliable full duplex</code> protocol, which requires a logical connection to be established between the two processes before data is exchanged. The connection must be maintained during the entire process that communication is taking place. And in TCP both sides can send data to its peer. </p>
-<p>So four things need to happen for fully establishing a TCP connection:</p>
-<ul>
-<li>Each node has send a <code>SYN</code> flag to its peer (that’s two things, one <code>SYN</code> in each direction)</li>
-<li>Each node has received a <code>ACK</code> flag of its own <code>SYN</code> flag from its peer  (that’s two things)</li>
-</ul>
-<p>Both <code>SYN</code> and <code>ACK</code> are properties in <code>TCP</code> header, where <code>SYN</code> means <code>synchronization</code> and <code>ACK</code> means <code>acknowledgement</code>. In detail the process goes as follows:</p>
-<p>Firstly, the client sends the <code>SYN: 1</code> packet to server to start the connection. When the server receives the packet, it will send the <code>ACK: 1</code> packet to client to confirm that. Since in the TCP protocol, the server can also send data to the client. So the server needs to send the <code>SYN: 1</code> packet to the client as well. Finally, when the client sends the <code>ACK: 1</code> packet to the server. The establishment process is done, which goes as follows: </p>
-<img src="/images/tcp-establishment-4-packets.png" title="tcp establishment with four packets" width="600px" height="400px">
-
-<p>Note that the server sends two packets: <code>ACK: 1</code> and <code>SYN: 1</code> in sequence. Why not combine these two packets into one to have a better network performance? So the common implementation of TCP protocol  goes as follows:</p>
-<img src="/images/tcp-establishment-3-packets.png" title="tcp establishment with three packets" width="600px" height="400px">
-
-<p><strong>Note</strong>: besides <code>SYN</code> and <code>ACK</code> flag, in the establishment stage there are other fields need to be set in TCP header such as: <code>sequence number</code> and <code>window</code>. I will discuss these important TCP header fields in other articles.</p>
-<h3 id="TCP-connection-termination"><a href="#TCP-connection-termination" class="headerlink" title="TCP connection termination"></a>TCP connection termination</h3><p>When the data stream transportation (I will not cover this part in this article) is over, we need to terminate the TCP connection. </p>
-<p>Same as above, four things need to happen for fully terminating a TCP connection:</p>
-<ul>
-<li>Each node has send a <code>FIN</code> flag to its peer (that’s two things, one <code>FIN</code> in each direction)</li>
-<li>Each node has received a <code>ACK</code> flag of its own <code>FIN</code> flag from its peer  (that’s two things)</li>
-</ul>
-<img src="/images/tcp_termination.png" title="tcp termination" width="600px" height="400px">
-
-<p>But the difference is that in most TCP implementation, four packets are used to terminate the connection. We didn’t combine the <code>ACK: 1</code> packet (marked as ②) and the <code>FIN: 1</code> packet (marked as ③) into one packet. </p>
-<p>The reason is <code>ACK: 1</code> packet (marked as ②) is send by TCP stack automatically. And the next <code>FIN: 1</code> packet (marked as ③) is controlled in application level by calling <code>close</code> socket API. Application has the control to terminate the connection. So in common case, we didn’t merge this two packets into one. </p>
-<p>It’s flexible for the application to control this process, for example, in this way the application can reuse existing TCP connection to reduce the overhead and improve the performance. In next article, I will talk about this topic.  </p>
 
       
     </div>

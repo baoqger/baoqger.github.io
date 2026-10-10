@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIn a previous article, I walked through the three most common OAuth 2.0 grant flows: Authorization Code Flow, PKCE Flow, and Device Flow. We looked at which scenarios and application types e">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OAuth 2.0 Token Exchange - Laying the Foundation for AI Agent Authorization">
+<meta property="og:url" content="https://organicprogrammer.com/2026/10/10/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn a previous article, I walked through the three most common OAuth 2.0 grant flows: Authorization Code Flow, PKCE Flow, and Device Flow. We looked at which scenarios and application types e">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/Securing_APIs_and_AI_Agents.png">
+<meta property="article:published_time" content="2026-10-10T04:00:00.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="OAuth, Token Exchange, AI Agent, security">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/Securing_APIs_and_AI_Agents.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2026/10/10/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2026/10/10/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/","path":"2026/10/10/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/","title":"OAuth 2.0 Token Exchange - Laying the Foundation for AI Agent Authorization"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OAuth 2.0 Token Exchange - Laying the Foundation for AI Agent Authorization | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>Project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-public-speak"><a href="/public-speak/" rel="section"><i class="fa fa-microphone fa-fw"></i>Public Speak</a></li><li class="menu-item menu-item-training"><a href="/training/" rel="section"><i class="fa fa-graduation-cap fa-fw"></i>Training</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Why-Do-We-Need-Token-Exchange"><span class="nav-number">2.</span> <span class="nav-text">Why Do We Need Token Exchange?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Impersonation-vs-Delegation"><span class="nav-number">3.</span> <span class="nav-text">Impersonation vs Delegation</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Impersonation"><span class="nav-number">3.1.</span> <span class="nav-text">Impersonation</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Delegation"><span class="nav-number">3.2.</span> <span class="nav-text">Delegation</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AI-Agent-Scenarios"><span class="nav-number">4.</span> <span class="nav-text">AI Agent Scenarios</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">74</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/10/10/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="OAuth 2.0 Token Exchange - Laying the Foundation for AI Agent Authorization | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OAuth 2.0 Token Exchange - Laying the Foundation for AI Agent Authorization
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-10-10 12:00:00 / Modified: 13:02:51" itemprop="dateCreated datePublished" datetime="2026-10-10T12:00:00+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In a previous article, I walked through the three most common OAuth 2.0 grant flows: <code>Authorization Code Flow</code>, <code>PKCE Flow</code>, and <code>Device Flow</code>. We looked at which scenarios and application types each one fits, what problems they solve, and how they differ in implementation.</p>
+<p>In this post, I will add another important flow: <code>Token Exchange</code>. After reading it, you should have a clearer picture of how token exchange works—and why that understanding pays off when you start thinking about <strong>AI Agent</strong> authorization. Let’s get started.</p>
+<img src="/images/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/Securing_APIs_and_AI_Agents.png" alt="" >
+## What Is Token Exchange?
+
+<p>The <code>Token Exchange (RFC 8693)</code> flow is straightforward at a high level: when a client already holds a token, it asks the authorization server (Authorization Server) to issue a <strong>new</strong> token that is better suited to another service or another security context. You exchange an old token for a new one—hence <strong>Token Exchange</strong>.</p>
+<h2 id="Why-Do-We-Need-Token-Exchange"><a href="#Why-Do-We-Need-Token-Exchange" class="headerlink" title="Why Do We Need Token Exchange?"></a>Why Do We Need Token Exchange?</h2><p>Modern systems are usually made of many services and applications. <code>Token Exchange</code> is especially valuable for service-to-service communication and cross-boundary scenarios. Suppose an upstream API receives the user’s token and then needs to call a downstream API. Instead of forwarding the original user token everywhere, the upstream API can exchange it for a <strong>new</strong> token that is meant only for the downstream API. That pattern helps in several ways:</p>
+<ul>
+<li><strong>Matching audience</strong>: A user token is often issued for one specific API. The receiver should align with the token’s <code>aud</code> (audience). Otherwise you are accepting a token that was not minted for you—a classic <strong>trust boundary</strong> problem.</li>
+<li><strong>Appropriate scope</strong>: The original user token may carry permissions intended for the first API. If every downstream API keeps using that same token, they often end up with more authority than they need—the <strong>least privilege</strong> problem.</li>
+<li><strong>Explicit actor</strong>: User tokens usually do not carry delegation metadata. Downstream services often need to know who delegated access (delegator) and who is actually performing the action (actor).</li>
+<li><strong>Controlled token forwarding</strong>: If every hop only forwards the original user token—for example, browser → API gateway → service A → service B → service C—then any compromise of one service exposes a token that still works elsewhere. That is the <strong>blast radius</strong> problem.</li>
+</ul>
+<p>So the concerns <code>Token Exchange</code> addresses line up closely with how we think about network security:</p>
+<ul>
+<li><strong>Least privilege</strong>: Every component gets only the access it needs.</li>
+<li><strong>Trust boundary</strong>: A token issued for Service A should not be automatically trusted by Service B.</li>
+<li><strong>Context</strong>: Do not only ask “Is this token valid?”—also ask “Valid <strong>for whom</strong>? <strong>For what</strong>?”</li>
+<li><strong>Defense in depth</strong>: Even if one token leaks, limit where it can be used.</li>
+<li><strong>Blast radius reduction</strong>: Keep token compromise as local as possible instead of spreading across the whole system.</li>
+<li><strong>Auditability and attribution</strong>: Know who the user is and which service is acting.</li>
+<li><strong>Explicit delegation</strong>: Make delegation visible; do not let one party silently inherit another’s rights.</li>
+</ul>
+<p>Unlike other OAuth flows, <code>Token Exchange</code> centers on a concept that matters a lot for AI agents: <strong>delegation</strong>. That is why I see it as groundwork for agent authorization.</p>
+<h2 id="Impersonation-vs-Delegation"><a href="#Impersonation-vs-Delegation" class="headerlink" title="Impersonation vs Delegation"></a>Impersonation vs Delegation</h2><p>The <code>Token Exchange</code> specification spends considerable effort distinguishing <strong>impersonation</strong> from <strong>delegation</strong>. Let’s walk through a concrete example.</p>
+<p>Assume this setup:</p>
+<ul>
+<li>User: <code>Alice</code></li>
+<li>Frontend service: <code>orders-web</code></li>
+<li>Backend service: <code>inventory-api</code></li>
+<li>Authorization server: <code>auth.example.com</code></li>
+</ul>
+<p>Alice uses the frontend. <code>orders-web</code> holds Alice’s token but needs a <strong>new</strong> token scoped for <code>inventory-api</code>. <code>Token Exchange</code> covers two patterns: <strong>impersonation</strong> and <strong>delegation</strong>.</p>
+<h4 id="Impersonation"><a href="#Impersonation" class="headerlink" title="Impersonation"></a>Impersonation</h4><p>In the <strong>impersonation</strong> case, <code>orders-web</code> requests a token that lets it <strong>act as Alice</strong> when calling <code>inventory-api</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">POST /token HTTP/1.1</span><br><span class="line">Host: auth.example.com</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Authorization: Basic b3JkZXJzLXdlYjpzZWNyZXQ=</span><br><span class="line"></span><br><span class="line">grant_type=urn:ietf:params:oauth:grant-type:token-exchange&amp;</span><br><span class="line">subject_token=user-access-token&amp;</span><br><span class="line">subject_token_type=urn:ietf:params:oauth:token-type:access_token&amp;</span><br><span class="line">audience=inventory-api</span><br></pre></td></tr></table></figure>
+
+<p><code>subject_token</code> is the subject’s token—in our story, Alice’s original user token. That identity shows up in the new token’s <code>sub</code> claim. <code>audience</code> is the intended recipient API, here <code>inventory-api</code>.</p>
+<p>Key claims in the new token:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;sub&quot;</span><span class="punctuation">:</span> <span class="string">&quot;alice&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;aud&quot;</span><span class="punctuation">:</span> <span class="string">&quot;inventory-api&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scope&quot;</span><span class="punctuation">:</span> <span class="string">&quot;inventory.read&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>From <code>inventory-api</code>‘s perspective, the token is <strong>about Alice</strong>. It has no signal that <code>orders-web</code> is the caller. That is why this pattern is called <strong>impersonation</strong>.</p>
+<h4 id="Delegation"><a href="#Delegation" class="headerlink" title="Delegation"></a>Delegation</h4><p>In the <strong>delegation</strong> case, <code>orders-web</code> sends a slightly richer request:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">POST /token HTTP/1.1</span><br><span class="line">Host: auth.example.com</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Authorization: Basic b3JkZXJzLXdlYjpzZWNyZXQ=</span><br><span class="line"></span><br><span class="line">grant_type=urn:ietf:params:oauth:grant-type:token-exchange&amp;</span><br><span class="line">subject_token=user-access-token&amp;</span><br><span class="line">subject_token_type=urn:ietf:params:oauth:token-type:access_token&amp;</span><br><span class="line">actor_token=orders-web-service-token&amp;</span><br><span class="line">actor_token_type=urn:ietf:params:oauth:token-type:access_token&amp;</span><br><span class="line">audience=inventory-api</span><br></pre></td></tr></table></figure>
+
+<p>Besides <code>subject_token</code>, the client also supplies <code>actor_token</code>—the token for the acting party, <code>orders-web</code>. That relationship appears in the <code>act</code> claim:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;sub&quot;</span><span class="punctuation">:</span> <span class="string">&quot;alice&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;aud&quot;</span><span class="punctuation">:</span> <span class="string">&quot;inventory-api&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scope&quot;</span><span class="punctuation">:</span> <span class="string">&quot;inventory.read&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;act&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;sub&quot;</span><span class="punctuation">:</span> <span class="string">&quot;orders-web&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Now <code>inventory-api</code> can see: the request concerns Alice, and <strong>orders-web</strong> is the actor performing the call on her behalf. That is <strong>delegation</strong>.</p>
+<p>Great—once delegation is clear, the next question is natural: what does this mean for <strong>AI Agent</strong> authorization?</p>
+<h2 id="AI-Agent-Scenarios"><a href="#AI-Agent-Scenarios" class="headerlink" title="AI Agent Scenarios"></a>AI Agent Scenarios</h2><p>Compared with traditional apps, AI agents stand out because of <strong>autonomy</strong>: an agent can decide its own next steps. One client application may host <strong>multiple</strong> agents, each able to act on its own. For AI agents, an explicit delegation chain is not a nice-to-have—it is often required. That is a big reason many agent authorization designs lean on <strong>Token Exchange</strong>.</p>
+<p>For example, <strong>AWS AgentCore</strong> and <strong>Azure Foundry Agent</strong> both support <strong>On-Behalf-Of Token Exchange</strong>-style authorization. I will dig into how those implementations work in upcoming posts—stay tuned!</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/OAuth-Token-Exchange-AI-Agent-security/" rel="tag"># OAuth, Token Exchange, AI Agent, security</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/09/27/low-level-genai-apis-too-heavy-a-higher-level-net-path-to-plug-local-small-models-into-agents/" rel="prev" title="Low-Level GenAI APIs Too Heavy - A Higher-Level .NET Path to Plug Local Small Models into Agents">
+                  <i class="fa fa-angle-left"></i> Low-Level GenAI APIs Too Heavy - A Higher-Level .NET Path to Plug Local Small Models into Agents
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/10/10/one-ietf-draft-two-old-flows-how-oauth-could-delegate-to-a-specific-agent/" rel="next" title="One IETF Draft, Two Old Flows - How OAuth Could Delegate to a Specific Agent">
+                  One IETF Draft, Two Old Flows - How OAuth Could Delegate to a Specific Agent <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

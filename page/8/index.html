@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">72</span>
+          <span class="site-state-item-count">74</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-count">42</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,213 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2019/02/22/https-handshake/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2019/02/22/https-handshake/" class="post-title-link" itemprop="url">How HTTPS works: part one - TLS handshake</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-02-22 11:04:58" itemprop="dateCreated datePublished" datetime="2019-02-22T11:04:58+08:00">2019-02-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>At present, everybody knows about the lock icon in the browser’s address bar indicating that the session is protected by <code>HTTPS</code>.In this series of articles, I’ll show you how HTTPS works based on my research. </p>
+<p>Simply speaking, <code>HTTPS = HTTP + SSL/TLS</code>. </p>
+<p>In the <code>HTTP</code> protocol, the client communicates with the server by transmitting the message over the network. But the message is in the original format known as plaintext. The bad guys (attackers) can easily eavesdrop on the message. That’s the reason why we need <code>SSL/TLS</code>. </p>
+<p>There are tons of <a target="_blank" rel="noopener" href="https://www.globalsign.com/en/blog/ssl-vs-tls-difference">articles</a> online describing the relationship between SSL and TLS. You can regard TLS as the modern and advanced version of SSL. By conversion, we generally put them together as the name of the network security protocol. </p>
+<p>In the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/OSI_model">OSI model</a>, the <code>HTTP</code> protocol is in <strong>layer 7</strong>, which is at the top of protocol stacks, how about <code>TLS</code> protocol. Although <code>TLS</code> is short for <code>Transport Layer Security</code>, it’s not in <strong>layer 4(transport layer)</strong>. You can roughly regard it as <strong>layer 5(session layer)</strong>. </p>
+<p>This means there is no nontrivial difference between <code>HTTP</code> and <code>HTTPS</code> in terms of message transmission. This series of articles will focus on the security part of <code>HTTPS</code>. If you want to understand HTTP itself, please read my other <a target="_blank" rel="noopener" href="https://baoqger.github.io/2021/12/01/understand-http-1-1-client-golang/">articles</a>. </p>
+<p>As the first article of this series, I will talk about how to establish an <code>HTTPS</code> connection. This introduces a new concept: <strong>TLS handshake</strong>.</p>
+<h3 id="TLS-Handshake"><a href="#TLS-Handshake" class="headerlink" title="TLS Handshake"></a>TLS Handshake</h3><p>In my previous article, I wrote about <a target="_blank" rel="noopener" href="https://baoqger.github.io/2019/07/14/why-tcp-four-way-handshake/"><code>TCP three way handshake</code></a> to establish a TCP connection. For <code>HTTP</code> protocol, that’s all it needs to do. But <code>HTTPS</code> has to do <code>TLS handshake</code> as well. The process can be illustrated as follows: </p>
+<p><strong>Note</strong> TLS handshakes occur after a TCP connection has been opened via a TCP handshake.</p>
+<img src="/images/https-tls-handshake.png" title="tls handshake" width="600px" height="400px">
+
+<p><strong>Note</strong> to understand each detail of the above processing, you need to have some prerequisite knowledge such as <code>encryption/decryption</code>, <code>hash function</code>, <code>public key</code>, <code>private key</code>, and <code>digital certificate</code>.  If you don’t know, don’t worry. After reading this series of articles, you’ll have it under your belt. In this article, I’ll go through this process roughly and ignore the detail of each step. </p>
+<ul>
+<li><p><strong>Client hello message</strong>: the client starts the handshake by sending a “hello” message to the server. This “hello” message includes the TLS version and the <code>cipher suites</code> supported on the client-side. <code>cipher suites</code> is a fancy name for the set of encryption algorithms for use in establishing a secure connection.</p>
+</li>
+<li><p><strong>Server hello message</strong>: the server chooses the best(or suitable) SSL&#x2F;TLS version and encryption algorithm among the candidates sent by the client. The server’s chosen cipher suite and <code>certificate</code> are sent to the client. <code>certificate</code> makes SSL&#x2F;TLS encryption possible, which is critical to understand the entire process. For now, you need to know certificates contain the server’s <code>public key</code>  which is sent to the client. And the <code>private key</code> is kept secret on the server. </p>
+</li>
+<li><p><strong>Authentication</strong>: The client verifies the server’s certificate (I’ll investigate the certificate verification process at a very detailed level in another article). </p>
+</li>
+<li><p><strong>Encrypt the pre-master key</strong>: The client generates one random “pre-master” key, encrypts “pre-master” key with the server’s public key (extract from the certificate) and sends the encrypted “pre-master” key to the server.</p>
+</li>
+<li><p><strong>Decrypt the pre-master key</strong>: The server decrypts the “pre-master” key with its private key (The premaster key is encrypted with the public key and can only be decrypted with the private key by the server. This is called <code>asymmetric encryption</code>).</p>
+</li>
+<li><p><strong>Session key created</strong>: Both client and server will generate a <code>session key</code> based on the “pre-master” key. The <code>session key</code> should be the same on both sides.</p>
+</li>
+<li><p><strong>HTTP message encryption</strong>: Until the last step, the handshake is completed. The client and server will use the agreed <code>session key</code> to encrypt the following HTTP messages and continue the communication (since both sides use the same key, this is called <code>symmetric encryption</code>).</p>
+</li>
+</ul>
+<p>That’s all about <code>TLS handshake</code> process. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>As the first article of this series, I go through the entire process of TLS handshake. In future articles, I’ll show you the mysteries of each part. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2018/12/14/why-tcp-four-way-handshake/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2018/12/14/why-tcp-four-way-handshake/" class="post-title-link" itemprop="url">Why TCP connection termination needs four-way handshake</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2018-12-14 16:34:58" itemprop="dateCreated datePublished" datetime="2018-12-14T16:34:58+08:00">2018-12-14</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In <code>TCP/IP</code> protocol stack, the <code>three way handshake</code> for connection establishment and <code>four way handshake</code> for connection termination are some concepts you must understand.</p>
+<p>But after I learned <code>TCP/IP</code> stack, one question coming to my mind is why the connection termination needs four-way handshake. In this article, I will focus on this topic. To understand the answer to this question, we need to first explain the details of these two processes and compare them to find the difference. </p>
+<h3 id="TCP-connection-establishment"><a href="#TCP-connection-establishment" class="headerlink" title="TCP connection establishment"></a>TCP connection establishment</h3><p>In contrast to <code>UDP</code>, TCP is a <code>connection-oriented</code> and <code>reliable full duplex</code> protocol, which requires a logical connection to be established between the two processes before data is exchanged. The connection must be maintained during the entire process that communication is taking place. And in TCP both sides can send data to its peer. </p>
+<p>So four things need to happen for fully establishing a TCP connection:</p>
+<ul>
+<li>Each node has send a <code>SYN</code> flag to its peer (that’s two things, one <code>SYN</code> in each direction)</li>
+<li>Each node has received a <code>ACK</code> flag of its own <code>SYN</code> flag from its peer  (that’s two things)</li>
+</ul>
+<p>Both <code>SYN</code> and <code>ACK</code> are properties in <code>TCP</code> header, where <code>SYN</code> means <code>synchronization</code> and <code>ACK</code> means <code>acknowledgement</code>. In detail the process goes as follows:</p>
+<p>Firstly, the client sends the <code>SYN: 1</code> packet to server to start the connection. When the server receives the packet, it will send the <code>ACK: 1</code> packet to client to confirm that. Since in the TCP protocol, the server can also send data to the client. So the server needs to send the <code>SYN: 1</code> packet to the client as well. Finally, when the client sends the <code>ACK: 1</code> packet to the server. The establishment process is done, which goes as follows: </p>
+<img src="/images/tcp-establishment-4-packets.png" title="tcp establishment with four packets" width="600px" height="400px">
+
+<p>Note that the server sends two packets: <code>ACK: 1</code> and <code>SYN: 1</code> in sequence. Why not combine these two packets into one to have a better network performance? So the common implementation of TCP protocol  goes as follows:</p>
+<img src="/images/tcp-establishment-3-packets.png" title="tcp establishment with three packets" width="600px" height="400px">
+
+<p><strong>Note</strong>: besides <code>SYN</code> and <code>ACK</code> flag, in the establishment stage there are other fields need to be set in TCP header such as: <code>sequence number</code> and <code>window</code>. I will discuss these important TCP header fields in other articles.</p>
+<h3 id="TCP-connection-termination"><a href="#TCP-connection-termination" class="headerlink" title="TCP connection termination"></a>TCP connection termination</h3><p>When the data stream transportation (I will not cover this part in this article) is over, we need to terminate the TCP connection. </p>
+<p>Same as above, four things need to happen for fully terminating a TCP connection:</p>
+<ul>
+<li>Each node has send a <code>FIN</code> flag to its peer (that’s two things, one <code>FIN</code> in each direction)</li>
+<li>Each node has received a <code>ACK</code> flag of its own <code>FIN</code> flag from its peer  (that’s two things)</li>
+</ul>
+<img src="/images/tcp_termination.png" title="tcp termination" width="600px" height="400px">
+
+<p>But the difference is that in most TCP implementation, four packets are used to terminate the connection. We didn’t combine the <code>ACK: 1</code> packet (marked as ②) and the <code>FIN: 1</code> packet (marked as ③) into one packet. </p>
+<p>The reason is <code>ACK: 1</code> packet (marked as ②) is send by TCP stack automatically. And the next <code>FIN: 1</code> packet (marked as ③) is controlled in application level by calling <code>close</code> socket API. Application has the control to terminate the connection. So in common case, we didn’t merge this two packets into one. </p>
+<p>It’s flexible for the application to control this process, for example, in this way the application can reuse existing TCP connection to reduce the overhead and improve the performance. In next article, I will talk about this topic.  </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +417,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -285,7 +492,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   

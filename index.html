@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">72</span>
+          <span class="site-state-item-count">74</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-count">42</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,308 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/10/10/one-ietf-draft-two-old-flows-how-oauth-could-delegate-to-a-specific-agent/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/10/10/one-ietf-draft-two-old-flows-how-oauth-could-delegate-to-a-specific-agent/" class="post-title-link" itemprop="url">One IETF Draft, Two Old Flows - How OAuth Could Delegate to a Specific Agent</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-10-10 13:00:00 / Modified: 13:02:52" itemprop="dateCreated datePublished" datetime="2026-10-10T13:00:00+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <img src="/images/one-ietf-draft-two-old-flows-how-oauth-could-delegate-to-a-specific-agent/Why_AI_Agents_Need_OAuth%201.png" alt="" >
+## Why AI Agents Need a New OAuth Extension
+
+<p>OAuth 2.0 was designed in an era where the main security question was straightforward: how can a user authorize an application to access a protected resource? That model still works well for traditional web apps and APIs, but AI agents introduce a new kind of actor into the system. An AI agent is not just a browser, not just a backend service, and not merely a normal client application. It is a decision-making component that can interpret user goals, choose actions, and call tools or APIs with a degree of autonomy. That shift matters for authorization.</p>
+<p>To understand why a new OAuth extension is needed for AI agents, it helps to start with the two existing patterns: the standard Authorization Code Flow and OAuth Token Exchange. Both solve important problems. But neither fully captures what it means for a specific AI agent to act on behalf of a user.</p>
+<h3 id="1-What-the-Standard-Authorization-Code-Flow-Solves"><a href="#1-What-the-Standard-Authorization-Code-Flow-Solves" class="headerlink" title="1. What the Standard Authorization Code Flow Solves"></a>1. What the Standard Authorization Code Flow Solves</h3><p>The standard Authorization Code Flow for a server-side web app is built around a simple trust model.</p>
+<p>A user is redirected to the authorization server, signs in, and grants consent. The authorization server then returns an authorization code to the application. The backend redeems that code using its <code>client_id</code> and <code>client_secret</code>, and receives tokens. The basic meaning of this flow is clear:</p>
+<ul>
+<li>the user approved access</li>
+<li>the application proved its identity as the registered client</li>
+<li>the authorization server issued tokens based on that combination</li>
+</ul>
+<p>This is a strong design for classic web applications because it binds user approval to a trusted confidential client. It also protects the token exchange step by requiring the backend to authenticate itself with a <code>client_secret</code> or similar credential.</p>
+<p>However, this model only really understands two important parties:</p>
+<ul>
+<li>the <code>user</code></li>
+<li>the <code>client application</code></li>
+</ul>
+<p>That was enough when the client application was assumed to be the only meaningful actor. But in an AI system, that assumption starts to break down.</p>
+<h3 id="2-Why-the-Standard-Authorization-Code-Flow-Is-Not-Enough-for-AI-Agents"><a href="#2-Why-the-Standard-Authorization-Code-Flow-Is-Not-Enough-for-AI-Agents" class="headerlink" title="2. Why the Standard Authorization Code Flow Is Not Enough for AI Agents"></a>2. Why the Standard Authorization Code Flow Is Not Enough for AI Agents</h3><img src="/images/one-ietf-draft-two-old-flows-how-oauth-could-delegate-to-a-specific-agent/Pasted%20image%2020260609211837.png" alt="" >
+
+<p>Inside an AI application, there may be multiple internal agents with very different behaviors and risk profiles. One agent may summarize emails. Another may send messages. Another may create financial reports or call external systems. From a security point of view, those are not all the same thing.</p>
+<p>But standard Authorization Code Flow has no native way to express that distinction.</p>
+<p>When the user consents in the classic flow, the consent screen can say:</p>
+<ul>
+<li>this application wants access</li>
+<li>these scopes are requested</li>
+</ul>
+<p>What it cannot clearly say is:</p>
+<ul>
+<li>this specific agent inside the app wants to act for you</li>
+<li>this agent may read your calendar but not send email</li>
+<li>this agent is the one that will perform the next step autonomously</li>
+</ul>
+<p>In other words, the standard flow gives consent to the client, not to the internal actor. That creates a visibility gap. The authorization server knows which app received consent, but it does not know which agent inside that app is actually going to act. The resource server later sees a token, but it may only know the user and the client, not the specific agent making decisions.</p>
+<p>That gap becomes important because AI agents are not passive code paths. They can choose actions dynamically. They can chain tools together. They can operate across multiple hops. If the protocol cannot identify the acting agent, then user delegation becomes too coarse. The user is effectively authorizing the whole application, even if only one specific agent should be trusted for a given task.</p>
+<p>Fixing that gap might require richer delegation in the token, not just a better consent screen — which is why Token Exchange is often discussed alongside agents. </p>
+<h3 id="3-What-OAuth-Token-Exchange-Solves"><a href="#3-What-OAuth-Token-Exchange-Solves" class="headerlink" title="3. What OAuth Token Exchange Solves"></a>3. What OAuth Token Exchange Solves</h3><img src="/images/one-ietf-draft-two-old-flows-how-oauth-could-delegate-to-a-specific-agent/Token_Exchange_Security_Overview.png" alt="" >
+
+<p>OAuth Token Exchange, described in RFC 8693, addresses a similar problem in micro service architectures.</p>
+<p>It starts from the idea that one token is often the wrong token for the next hop. A frontend service may receive a user token, but a downstream API may need a different token with a different audience, narrower scope, or explicit delegation context. Instead of blindly forwarding the original token, the service can exchange it for a new one better suited for the downstream service.</p>
+<p>This is valuable for several reasons:</p>
+<ul>
+<li>it reduces scope</li>
+<li>it enforces correct audience boundaries</li>
+<li>it improves trust separation between services</li>
+<li>it can preserve delegation semantics using actor-related claims such as <code>act</code></li>
+</ul>
+<p>This is already much closer to the AI-agent problem than classic Authorization Code Flow is. Token Exchange understands that the entity presenting a token and the subject represented by that token may not be the same party. It gives us a more precise model for multi-hop systems.</p>
+<p>That is why Token Exchange feels like an important building block for agent security.</p>
+<h3 id="4-Why-Token-Exchange-Still-Is-Not-Enough-for-AI-Agents"><a href="#4-Why-Token-Exchange-Still-Is-Not-Enough-for-AI-Agents" class="headerlink" title="4. Why Token Exchange Still Is Not Enough for AI Agents"></a>4. Why Token Exchange Still Is Not Enough for AI Agents</h3><p>Even though Token Exchange is closer to what AI agents need, it still does not fully solve the problem.</p>
+<p>The biggest reason is that Token Exchange is mainly a back-channel mechanism. It assumes the calling service already has some token or authority and now wants to transform it into a different token for another context. That works well in service-to-service architectures. But AI-agent delegation often needs something more: explicit user consent in the front channel.</p>
+<p>An AI agent may decide that it now needs permission to access a new resource or perform a higher-risk action. At that moment, the system should not simply assume that the client can translate existing authority into agent authority. The user may need to be asked directly:</p>
+<ul>
+<li>do you allow this specific agent to act for you?</li>
+<li>do you allow it for these scopes?</li>
+<li>do you allow it in this context?</li>
+</ul>
+<p>Plain Token Exchange does not define that consent step. It helps you transform authority, but it does not define how the user approves a particular internal agent in the first place.</p>
+<p>There is also another limitation: Token Exchange can model delegation, but it does not make the AI agent a first-class identity in the end-to-end flow. In many AI systems, the real security question is not just “does the application have permission?” but “which exact agent is exercising that permission right now?” If that identity is not explicitly captured and verified, then the protocol cannot strongly bind user approval to the acting agent.</p>
+<h3 id="5-The-Core-Problem-AI-Agents-Create-a-New-Security-Boundary"><a href="#5-The-Core-Problem-AI-Agents-Create-a-New-Security-Boundary" class="headerlink" title="5. The Core Problem: AI Agents Create a New Security Boundary"></a>5. The Core Problem: AI Agents Create a New Security Boundary</h3><p>Traditional OAuth assumes the client application is the relevant unit of trust. In an AI system, that is no longer always true.</p>
+<p>The client is still important, but now there is a second boundary inside the client:</p>
+<ul>
+<li>the <code>client</code> is the application boundary</li>
+<li>the <code>agent</code> is the decision-making boundary</li>
+</ul>
+<p>That distinction matters because the agent is often the component that interprets intent and chooses actions. It is the one deciding whether to query a calendar, send a message, call a database, or invoke another tool. If the security system only sees the outer client, it misses the actual actor driving the behavior.</p>
+<p>This creates several risks:</p>
+<ul>
+<li>the user may consent to an application without understanding which agent will act</li>
+<li>one agent may misuse permissions intended for another agent</li>
+<li>the authorization server may be unable to verify that the same agent approved in the consent step is the one redeeming the delegation</li>
+<li>the resource server may be unable to audit which specific agent performed the action</li>
+</ul>
+<p>In short, AI agents introduce a new layer of autonomy, and that autonomy needs to become visible to the authorization system.</p>
+<h3 id="6-What-the-New-OAuth-Extension-Adds"><a href="#6-What-the-New-OAuth-Extension-Adds" class="headerlink" title="6. What the New OAuth Extension Adds"></a>6. What the New OAuth Extension Adds</h3><p>Although OAuth has not yet published a formal RFC for AI-agent authorization, the OAuth working group and individual developers have already contributed a number of approaches. This article walks through one such proposal as an example; other drafts and designs are worth exploring separately.</p>
+<p>That proposal is the draft OAuth 2.0 Extension: On-Behalf-Of User Authorization for AI Agents. <a target="_blank" rel="noopener" href="https://www.ietf.org/archive/id/draft-oauth-ai-agents-on-behalf-of-user-01.html">https://www.ietf.org/archive/id/draft-oauth-ai-agents-on-behalf-of-user-01.html</a></p>
+<img src="/images/one-ietf-draft-two-old-flows-how-oauth-could-delegate-to-a-specific-agent/Delegated_AI_for_Agent_Security.png" alt="" >
+
+<p>The new OAuth extension for AI agents addresses this by combining the strengths of the two older models.</p>
+<p>From Authorization Code Flow, it keeps the front-channel consent model. The user is still redirected to the authorization server and can still approve access interactively.</p>
+<p>From Token Exchange, it borrows the delegation mindset. The final token should not merely represent “the app acting for the user.” It should represent “this specific agent acting for the user through this client.”</p>
+<p>To make that work, the extension adds new protocol elements such as:</p>
+<ul>
+<li>a <code>requested_actor</code> parameter in the authorization request</li>
+<li>an <code>actor_token</code> in the token request</li>
+<li>an <code>act</code> claim in the resulting access token</li>
+</ul>
+<p>These additions matter because they create a full chain of authorization meaning:</p>
+<ol>
+<li>The client tells the authorization server which agent is requesting delegation.</li>
+<li>The user consents not only to the app and scope, but also to that specific agent.</li>
+<li>The agent proves its identity later using an <code>actor_token</code>.</li>
+<li>The authorization server verifies that the actor redeeming the flow is the same actor the user approved.</li>
+<li>The resulting access token records both the user and the agent.</li>
+</ol>
+<p>That closes the gap that exists in both older flows.</p>
+<h3 id="7-Why-This-Is-Better-Than-Reusing-the-Old-Flows-As-Is"><a href="#7-Why-This-Is-Better-Than-Reusing-the-Old-Flows-As-Is" class="headerlink" title="7. Why This Is Better Than Reusing the Old Flows As-Is"></a>7. Why This Is Better Than Reusing the Old Flows As-Is</h3><p>Without the new extension, a system would have to improvise.</p>
+<p>If it used only Authorization Code Flow, it could authenticate the app and capture user consent, but it would not clearly identify the internal agent. The user’s approval would be too broad.</p>
+<p>If it used only Token Exchange, it could model delegation better, but it would miss the front-channel consent experience needed for user-approved agent behavior. The protocol would know how to transform authority, but not how to get the user’s explicit approval for a specific agent.</p>
+<p>The new extension is needed because AI-agent security requires both:</p>
+<ul>
+<li>explicit user consent</li>
+<li>explicit actor identity</li>
+</ul>
+<p>Standard Authorization Code Flow gives you the first, but not the second. Token Exchange gives you pieces of the second, but not the first in the right form. The extension combines them into a model that fits agent systems.</p>
+<h3 id="8-The-Bigger-Security-Meaning"><a href="#8-The-Bigger-Security-Meaning" class="headerlink" title="8. The Bigger Security Meaning"></a>8. The Bigger Security Meaning</h3><p>At a deeper level, this is not just a protocol convenience. It is a shift in security thinking.</p>
+<p>Older OAuth patterns mostly answer the question: can this application access this resource for this user?</p>
+<p>Agent-based systems force us to ask a more precise question: which autonomous actor inside the application is acting for the user, and did the user explicitly approve that delegation?</p>
+<p>That is a more demanding requirement, but it matches the reality of AI systems. AI agents are not just UI features. They are operational actors. They need explicit identity, explicit delegation, and explicit auditability.</p>
+<h3 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h3><p>The new OAuth extension for AI agents is needed because AI changes the unit of trust.</p>
+<p>Standard Authorization Code Flow assumes the client application is the meaningful actor. Token Exchange assumes delegated authority can be transformed across service boundaries. But AI agents sit between those two models: they need fresh user consent like an interactive client flow, and they need explicit delegation semantics like a multi-hop service flow.</p>
+<p>That is why a new extension makes sense. It allows OAuth to move from a world where “an app gets a token for a user” to a world where “a specific agent is delegated limited authority to act for a user, and every party in the system can see and verify that fact.”</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/10/10/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/10/10/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/" class="post-title-link" itemprop="url">OAuth 2.0 Token Exchange - Laying the Foundation for AI Agent Authorization</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-10-10 12:00:00 / Modified: 13:02:52" itemprop="dateCreated datePublished" datetime="2026-10-10T12:00:00+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In a previous article, I walked through the three most common OAuth 2.0 grant flows: <code>Authorization Code Flow</code>, <code>PKCE Flow</code>, and <code>Device Flow</code>. We looked at which scenarios and application types each one fits, what problems they solve, and how they differ in implementation.</p>
+<p>In this post, I will add another important flow: <code>Token Exchange</code>. After reading it, you should have a clearer picture of how token exchange works—and why that understanding pays off when you start thinking about <strong>AI Agent</strong> authorization. Let’s get started.</p>
+<img src="/images/oauth-2-0-token-exchange-laying-the-foundation-for-ai-agent-authorization/Securing_APIs_and_AI_Agents.png" alt="" >
+## What Is Token Exchange?
+
+<p>The <code>Token Exchange (RFC 8693)</code> flow is straightforward at a high level: when a client already holds a token, it asks the authorization server (Authorization Server) to issue a <strong>new</strong> token that is better suited to another service or another security context. You exchange an old token for a new one—hence <strong>Token Exchange</strong>.</p>
+<h2 id="Why-Do-We-Need-Token-Exchange"><a href="#Why-Do-We-Need-Token-Exchange" class="headerlink" title="Why Do We Need Token Exchange?"></a>Why Do We Need Token Exchange?</h2><p>Modern systems are usually made of many services and applications. <code>Token Exchange</code> is especially valuable for service-to-service communication and cross-boundary scenarios. Suppose an upstream API receives the user’s token and then needs to call a downstream API. Instead of forwarding the original user token everywhere, the upstream API can exchange it for a <strong>new</strong> token that is meant only for the downstream API. That pattern helps in several ways:</p>
+<ul>
+<li><strong>Matching audience</strong>: A user token is often issued for one specific API. The receiver should align with the token’s <code>aud</code> (audience). Otherwise you are accepting a token that was not minted for you—a classic <strong>trust boundary</strong> problem.</li>
+<li><strong>Appropriate scope</strong>: The original user token may carry permissions intended for the first API. If every downstream API keeps using that same token, they often end up with more authority than they need—the <strong>least privilege</strong> problem.</li>
+<li><strong>Explicit actor</strong>: User tokens usually do not carry delegation metadata. Downstream services often need to know who delegated access (delegator) and who is actually performing the action (actor).</li>
+<li><strong>Controlled token forwarding</strong>: If every hop only forwards the original user token—for example, browser → API gateway → service A → service B → service C—then any compromise of one service exposes a token that still works elsewhere. That is the <strong>blast radius</strong> problem.</li>
+</ul>
+<p>So the concerns <code>Token Exchange</code> addresses line up closely with how we think about network security:</p>
+<ul>
+<li><strong>Least privilege</strong>: Every component gets only the access it needs.</li>
+<li><strong>Trust boundary</strong>: A token issued for Service A should not be automatically trusted by Service B.</li>
+<li><strong>Context</strong>: Do not only ask “Is this token valid?”—also ask “Valid <strong>for whom</strong>? <strong>For what</strong>?”</li>
+<li><strong>Defense in depth</strong>: Even if one token leaks, limit where it can be used.</li>
+<li><strong>Blast radius reduction</strong>: Keep token compromise as local as possible instead of spreading across the whole system.</li>
+<li><strong>Auditability and attribution</strong>: Know who the user is and which service is acting.</li>
+<li><strong>Explicit delegation</strong>: Make delegation visible; do not let one party silently inherit another’s rights.</li>
+</ul>
+<p>Unlike other OAuth flows, <code>Token Exchange</code> centers on a concept that matters a lot for AI agents: <strong>delegation</strong>. That is why I see it as groundwork for agent authorization.</p>
+<h2 id="Impersonation-vs-Delegation"><a href="#Impersonation-vs-Delegation" class="headerlink" title="Impersonation vs Delegation"></a>Impersonation vs Delegation</h2><p>The <code>Token Exchange</code> specification spends considerable effort distinguishing <strong>impersonation</strong> from <strong>delegation</strong>. Let’s walk through a concrete example.</p>
+<p>Assume this setup:</p>
+<ul>
+<li>User: <code>Alice</code></li>
+<li>Frontend service: <code>orders-web</code></li>
+<li>Backend service: <code>inventory-api</code></li>
+<li>Authorization server: <code>auth.example.com</code></li>
+</ul>
+<p>Alice uses the frontend. <code>orders-web</code> holds Alice’s token but needs a <strong>new</strong> token scoped for <code>inventory-api</code>. <code>Token Exchange</code> covers two patterns: <strong>impersonation</strong> and <strong>delegation</strong>.</p>
+<h4 id="Impersonation"><a href="#Impersonation" class="headerlink" title="Impersonation"></a>Impersonation</h4><p>In the <strong>impersonation</strong> case, <code>orders-web</code> requests a token that lets it <strong>act as Alice</strong> when calling <code>inventory-api</code>:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">POST /token HTTP/1.1</span><br><span class="line">Host: auth.example.com</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Authorization: Basic b3JkZXJzLXdlYjpzZWNyZXQ=</span><br><span class="line"></span><br><span class="line">grant_type=urn:ietf:params:oauth:grant-type:token-exchange&amp;</span><br><span class="line">subject_token=user-access-token&amp;</span><br><span class="line">subject_token_type=urn:ietf:params:oauth:token-type:access_token&amp;</span><br><span class="line">audience=inventory-api</span><br></pre></td></tr></table></figure>
+
+<p><code>subject_token</code> is the subject’s token—in our story, Alice’s original user token. That identity shows up in the new token’s <code>sub</code> claim. <code>audience</code> is the intended recipient API, here <code>inventory-api</code>.</p>
+<p>Key claims in the new token:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;sub&quot;</span><span class="punctuation">:</span> <span class="string">&quot;alice&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;aud&quot;</span><span class="punctuation">:</span> <span class="string">&quot;inventory-api&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scope&quot;</span><span class="punctuation">:</span> <span class="string">&quot;inventory.read&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>From <code>inventory-api</code>‘s perspective, the token is <strong>about Alice</strong>. It has no signal that <code>orders-web</code> is the caller. That is why this pattern is called <strong>impersonation</strong>.</p>
+<h4 id="Delegation"><a href="#Delegation" class="headerlink" title="Delegation"></a>Delegation</h4><p>In the <strong>delegation</strong> case, <code>orders-web</code> sends a slightly richer request:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">POST /token HTTP/1.1</span><br><span class="line">Host: auth.example.com</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line">Authorization: Basic b3JkZXJzLXdlYjpzZWNyZXQ=</span><br><span class="line"></span><br><span class="line">grant_type=urn:ietf:params:oauth:grant-type:token-exchange&amp;</span><br><span class="line">subject_token=user-access-token&amp;</span><br><span class="line">subject_token_type=urn:ietf:params:oauth:token-type:access_token&amp;</span><br><span class="line">actor_token=orders-web-service-token&amp;</span><br><span class="line">actor_token_type=urn:ietf:params:oauth:token-type:access_token&amp;</span><br><span class="line">audience=inventory-api</span><br></pre></td></tr></table></figure>
+
+<p>Besides <code>subject_token</code>, the client also supplies <code>actor_token</code>—the token for the acting party, <code>orders-web</code>. That relationship appears in the <code>act</code> claim:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;sub&quot;</span><span class="punctuation">:</span> <span class="string">&quot;alice&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;aud&quot;</span><span class="punctuation">:</span> <span class="string">&quot;inventory-api&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scope&quot;</span><span class="punctuation">:</span> <span class="string">&quot;inventory.read&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;act&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;sub&quot;</span><span class="punctuation">:</span> <span class="string">&quot;orders-web&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Now <code>inventory-api</code> can see: the request concerns Alice, and <strong>orders-web</strong> is the actor performing the call on her behalf. That is <strong>delegation</strong>.</p>
+<p>Great—once delegation is clear, the next question is natural: what does this mean for <strong>AI Agent</strong> authorization?</p>
+<h2 id="AI-Agent-Scenarios"><a href="#AI-Agent-Scenarios" class="headerlink" title="AI Agent Scenarios"></a>AI Agent Scenarios</h2><p>Compared with traditional apps, AI agents stand out because of <strong>autonomy</strong>: an agent can decide its own next steps. One client application may host <strong>multiple</strong> agents, each able to act on its own. For AI agents, an explicit delegation chain is not a nice-to-have—it is often required. That is a big reason many agent authorization designs lean on <strong>Token Exchange</strong>.</p>
+<p>For example, <strong>AWS AgentCore</strong> and <strong>Azure Foundry Agent</strong> both support <strong>On-Behalf-Of Token Exchange</strong>-style authorization. I will dig into how those implementations work in upcoming posts—stay tuned!</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -202,9 +504,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2026-09-27 10:00:00 / Modified: 22:13:47" itemprop="dateCreated datePublished" datetime="2026-09-27T10:00:00+08:00">2026-09-27</time>
+      <time title="Created: 2026-09-27 10:00:00" itemprop="dateCreated datePublished" datetime="2026-09-27T10:00:00+08:00">2026-09-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -308,7 +616,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -450,7 +758,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -600,7 +908,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -749,7 +1057,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -830,7 +1138,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -939,7 +1247,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -1123,7 +1431,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -1173,260 +1481,6 @@
 </ul>
 <h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>As the first post of this series, I examined the background of the red-black tree bit by bit. I hope you can understand what’s self-balancing binary search tree and why we need it. In the next post, I will start to examine the behavior and property of the red-black tree. </p>
 
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2023/01/01/bst-deletion-issue/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/01/01/bst-deletion-issue/" class="post-title-link" itemprop="url">Deletion operation in Binary Search Tree: successor or predecessor</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2023-01-01 12:10:04" itemprop="dateCreated datePublished" datetime="2023-01-01T12:10:04+08:00">2023-01-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>Today, in this article I want to examine one concrete topic: how to delete a node from a <code>binary search tree</code>. This question is important for understanding other tree data structures, like the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/AVL_tree">AVL tree</a>, and the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Red%E2%80%93black_tree">Red-Black tree</a>. </p>
-<p>As is common with many data structures, <code>deletion</code> is always the hardest operation. For example, to delete a specific element from the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Array">array</a>, we need to shift all the elements after it by one index. And to delete one node from the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Linked_list">linked list</a>, we need to reset the pointer of the previous node (if it’s a doubled linked list, we need to reset more points, which is a more complex case). This is the same for the binary search tree as well. Let’s see in the following section. </p>
-<p>Note: the idea of this article is inspired by the book <em><strong>Data Structures and Algorithm Analysis in C</strong></em> written by <a target="_blank" rel="noopener" href="http://users.cs.fiu.edu/~weiss/">Mark Allen Weiss</a>. The demo code shown in the following section is from this book. And I made some changes based on it. I highly recommend this great book to readers.  </p>
-<h3 id="Deletion-of-the-binary-search-tree"><a href="#Deletion-of-the-binary-search-tree" class="headerlink" title="Deletion of the binary search tree"></a>Deletion of the binary search tree</h3><p>Before we can examine the deletion operation in depth, let’s quickly review the concept of the binary search tree as follows:</p>
-<ul>
-<li>Binary search tree: is a binary tree holding the following property that for every node, X, in the tree, the values of all the keys in its left subtree are smaller than the key value in X, and the values of all the keys in its right subtree are larger than the key value in X.</li>
-</ul>
-<p>Simply speaking, the binary search tree is a binary tree satisfying the <code>binary search</code> property. So each node of a binary search tree can have two children subtrees at most. When we need to delete one node from the binary search tree, then it’s necessary to consider the following 3 cases. </p>
-<p>If the node is a <code>leaf</code>, then it can be deleted immediately. For example, to delete node <code>1</code> from the following binary search tree: </p>
-<img src="/images/left-node-deletion.png" title="Delete leaf node from binary search tree" width="400px" height="500px">
-
-<p>I will show you how to implement it at the code level later, which summarizes all the cases. </p>
-<p>If the node has only <code>one child subtree</code>, the node can be deleted after we reset its parent’s pointer to bypass the node and point to its child node. For example, to delete node <code>4</code> as follows: </p>
-<img src="/images/onechild-node-deletion.png" title="Delete leaf node from binary search tree" width="400px" height="500px">
-
-<p>In the above example, node <code>4</code> has only one left child node <code>3</code>. Let’s consider the symmetric scenario, imagine what will happen when it has only one right child node. The answer is it doesn’t influence how we handle the deleted node here and the result is the same. I will not draw the diagram here and leave it for you to explore. </p>
-<p>The complicated case is how to deal with a node with <code>two children</code>. Before we introduce the solution, let’s clarify one concept about the binary search tree: <code>successor</code>: </p>
-<ul>
-<li>Successor: is the node with the <code>minimum</code> value in the <code>right</code> subtree of any node.</li>
-</ul>
-<img src="/images/twochildren-delete-origin.png" title="Delete leaf node from binary search tree" width="200px" height="300px">
-
-<p>Let’s take node <code>16</code> in the above binary search tree as an example, the <code>successor</code> is node <code>17</code>. All right! Based on this concept, the solution to delete a node with two children is straightforward:</p>
-<ul>
-<li>Replace the data of the deleted node with the value of the <code>successor</code> and recursively delete the <code>successor</code> from the <code>right</code> subtree.</li>
-</ul>
-<p>Let’s try to analyze this solution. Firstly, replacing the data of the node with the value of the <code>successor</code> can keep the <code>binary search</code> property after the deletion operation. Secondly, since the <code>successor</code> has the minimum value of the subtree, which means it cannot have a left child. So the <code>successor</code> is either a leaf node without any child node or a node with only one right child node. So recursively deleting the <code>successor</code> can be resolved by the two simple cases we discussed above, it’s perfect, right?  For instance, the deletion of node <code>16</code> goes as follows: </p>
-<img src="/images/twochildren-delete-after.png" title="Delete leaf node from binary search tree" width="500px" height="600px">
-
-<p>As we mentioned above, node <code>16</code>‘s <code>successor</code> is node <code>17</code>. So replace the value with 17 and delete node <code>17</code> from the right subtree, where node <code>17</code> is just a leaf node. Next, let’s implement the node deletion operation. </p>
-<h3 id="Code-implementation"><a href="#Code-implementation" class="headerlink" title="Code implementation"></a>Code implementation</h3><p>In this article, I will only show the codes related to the deletion operation rather than the complete implementation of a binary search tree. If you want to know how to write a BST from scratch, please refer to this GitHub <a target="_blank" rel="noopener" href="https://github.com/baoqger/data-structures-and-algorithm-analysis-in-c-practice/tree/main/trees/BinarySearchTree">repo</a>.</p>
-<p>Firstly, let’s examine the header file, which contains the data type definitions and function declarations. </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;utility.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">ifndef</span> _BST_H</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> _BST_H</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">typedef</span> <span class="type">int</span> ET;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">TreeNode</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">TreeNode</span> *<span class="title">Position</span>;</span></span><br><span class="line"><span class="keyword">typedef</span> Position BST;</span><br><span class="line"></span><br><span class="line">BST <span class="title function_">delete</span><span class="params">(ET, BST)</span>;</span><br><span class="line">Position <span class="title function_">findMinBST</span><span class="params">(BST)</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// code omitted here</span></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
-
-<p>You can notice that besides the <code>delete</code> function, we also define a helper function <code>findMinBST</code> which is used to find the <code>successor</code> node. </p>
-<p>Next, let’s examine the function definitions as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">BST</span><br><span class="line"><span class="title function_">delete</span><span class="params">(ET elem, BST T)</span></span><br><span class="line">&#123;</span><br><span class="line">    Position tmpCell;</span><br><span class="line">  </span><br><span class="line">    <span class="keyword">if</span> (T == <span class="literal">NULL</span>)</span><br><span class="line">        fatal(<span class="string">&quot;Element not found&quot;</span>);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (elem &lt; T-&gt;Element)</span><br><span class="line">        T-&gt;Left = delete(elem, T-&gt;Left);</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (elem &gt; T-&gt;Element)</span><br><span class="line">        T-&gt;Right = delete(elem, T-&gt;Right);</span><br><span class="line">    <span class="keyword">else</span> <span class="comment">// we found the element to be deleted</span></span><br><span class="line">    <span class="keyword">if</span> (T-&gt;Left != <span class="literal">NULL</span> &amp;&amp; T-&gt;Right != <span class="literal">NULL</span>) <span class="comment">// two children</span></span><br><span class="line">    &#123;</span><br><span class="line">        tmpCell = findMinBST(T-&gt;Right);</span><br><span class="line">        T-&gt;Element = tmpCell-&gt;Element;</span><br><span class="line">        T-&gt;Right = delete(T-&gt;Element, T-&gt;Right);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="comment">// one or zero children, change the pointer T pointing to new address(NULl or the child node)</span></span><br><span class="line">    &#123;</span><br><span class="line">        tmpCell = T;</span><br><span class="line">        <span class="comment">// for leaf node, T will be reset to null</span></span><br><span class="line">        <span class="keyword">if</span> (T-&gt;Right == <span class="literal">NULL</span>)</span><br><span class="line">            T = T-&gt;Left;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (T-&gt;Left == <span class="literal">NULL</span>)</span><br><span class="line">            T = T-&gt;Right;</span><br><span class="line">        <span class="built_in">free</span>(tmpCell);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> T;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">Position</span><br><span class="line"><span class="title function_">findMinBST</span><span class="params">(BST T)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> (T == <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">  <span class="keyword">else</span> <span class="keyword">if</span> (T-&gt;Left == <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">return</span> T;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    <span class="keyword">return</span> findMinBST(T-&gt;Left);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>I add some comments in the above code block which can help your understanding of this recursive algorithm. Please go ahead and think hard about it. </p>
-<p>In the next section, we’ll have some open discussions about this solution. Let’s see whether there is any other solution. And what’re the potential issues of the current solution? </p>
-<h3 id="Open-discussion"><a href="#Open-discussion" class="headerlink" title="Open discussion"></a>Open discussion</h3><h4 id="successor-vs-predecessor"><a href="#successor-vs-predecessor" class="headerlink" title="successor vs predecessor"></a>successor vs predecessor</h4><p>Firstly, in the above solution, we delete the node with two children based on the <code>successor</code>. And there is the other concept called <code>predecessor</code>: </p>
-<ul>
-<li>Predecessor: is the node with the <code>maximum</code> value in the left subtree of any node.</li>
-</ul>
-<p>So similarly, the alternative solution to delete the node with two children is: </p>
-<ul>
-<li>Replace the data of the deleted node with the value of the <code>predecessor</code> and recursively delete the <code>predecessor</code> from the <code>left</code> subtree.</li>
-</ul>
-<p>We can do this by writing another helper function <code>findMaxBST</code> as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Position</span><br><span class="line"><span class="title function_">findMaxBST</span><span class="params">(BST T)</span></span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span> (T != <span class="literal">NULL</span>)</span><br><span class="line">    <span class="keyword">while</span> (T-&gt;Right != <span class="literal">NULL</span>)</span><br><span class="line">      T = T-&gt;Right;</span><br><span class="line">  <span class="keyword">return</span> T;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Does it work? The answer is yes. But the performance of the solution based on the <code>predecessor</code> is worse than the one based on the <code>successor</code>. Because the <code>predecessor</code> has the maximum value of the left subtree, it means that the <code>predecessor</code> can have two children. Then when we delete the <code>predecessor</code> recursively, the worst-case time complexity can reach <code>O(logN)</code> while the solution based on the <code>successor</code> only requires constant(<code>O(1)</code>) time. That’s the difference. </p>
-<h4 id="balanced-vs-unbalanced"><a href="#balanced-vs-unbalanced" class="headerlink" title="balanced vs unbalanced"></a>balanced vs unbalanced</h4><p>Although the above solution can work, it exposes a serious performance issue. The reason why people invent binary search tree data structures is that we can get <code>O(logN)</code> level performance for searching operations. But imagine what will happen if we keep inserting and deleting nodes in the binary search tree in the way we mentioned here. The depth of the tree will become <code>unbalanced</code>. The left subtree grows deeper than the right subtree because we are always replacing a deleted node with the <code>successor</code>(which is from the right subtree, right?) </p>
-<p>The following image is borrowed from Mark’s great book I mentioned above, which clearly shows that the tree becomes <code>unbalanced</code> after many rounds of insertion and deletion. If you want to know about it in theory, please refer to the book.  </p>
-<img src="/images/bst-unbalanced.png" title="Unbalanced binary search tree" width="800px" height="1000px">
-
-<p>For an unbalanced BST, the worst-case time complexity can be degraded to <code>O(n)</code>. To keep the desired performance, people invent a more advanced data structure <code>self-balancing binary search tree</code>, like the <code>AVL tree</code> and <code>Red-black tree</code>. I will share about them in the coming articles, please keep watching my blog. </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined various solutions to delete a node from the binary search tree and evaluated their performance. We also discussed some open questions about BST, which prove why we need more advanced data structures like the red-black tree. </p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/12/06/external-sorting-two/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/12/06/external-sorting-two/" class="post-title-link" itemprop="url">External Mergesort: part two</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2022-12-06 11:11:06" itemprop="dateCreated datePublished" datetime="2022-12-06T11:11:06+08:00">2022-12-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In this last <a href="https://organicprogrammer.com/2022/11/02/external-sorting-one/">article</a>, we examined how <code>external mergesort</code> works in theory, let’s implement it now. </p>
-<p>First, you can find all the source codes of this implementation in this Github <a target="_blank" rel="noopener" href="https://github.com/baoqger/external-merge-sort">repo</a>. In this repo, I implemented both <code>two-way</code> and <code>multi-way</code> solutions, which are tracked in different branches, please be aware of this. But for the sake of simplicity, I will focus on the generalized <code>multi-way</code> mergesort solution in this article. </p>
-<h3 id="Data-Preparation"><a href="#Data-Preparation" class="headerlink" title="Data Preparation"></a>Data Preparation</h3><p>Before diving into the code, let’s define the problem we need to solve here. I will generate an input file containing several millions of seven digits random numbers, from 1,000,000 to 9,999,999. The random numbers can be duplicated, and each number is stored in one new line of the input file. The input file can be prepared with the following Bash script which calls GNU <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Shuf">shuf</a> : </p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#!/usr/bin/bash </span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Author: Chris Bao</span></span><br><span class="line"><span class="comment"># Generate millions of seven digits random integers</span></span><br><span class="line"><span class="comment"># based on shuf utility</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">shuf</span> -i 1000000-9999999 -n 7777777 &gt; ./input.txt</span><br></pre></td></tr></table></figure>
-
-<p>The generated input file is roughly <code>60 MB</code> in size. For modern computers, it can be loaded to memory easily. But since we are working external memory algorithm, so let’s assume we are running the algorithm on an old computer, which has only <code>100000 Byte</code> memory. Based on this assumed restriction, we need to sort the numbers in the input file and save the result in a new file. </p>
-<h3 id="Implementation"><a href="#Implementation" class="headerlink" title="Implementation"></a>Implementation</h3><p>Let’s define some global constants in this algorithm:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">ifndef</span> CONSTANT_H</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CONSTANT_H</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MEMORY_LIMIT 100000</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> RECORD_SIZE 4</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> MULTI_WAY_NUMBER 2</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">endif</span> </span></span><br></pre></td></tr></table></figure>
-
-<p><code>MEMORY_LIMIT</code> denotes the <code>100000 bytes</code> memory limit; In C, we can use the type <code>unsigned int</code> to store an integer in the range from 1,000,000 to 9,999,999. So <code>RECORD_SIZE</code> means each record(or integer) will take up 4 bytes of memory.</p>
-<p>And by default, the algorithm will use the <code>two-way</code> merge, but the user can pass an argument to run a <code>multi-way</code> merge too. </p>
-<h5 id="Sort-phase"><a href="#Sort-phase" class="headerlink" title="Sort phase"></a>Sort phase</h5><p>The sort phase is implemented inside the <code>separationSort</code> function as follows:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Goes through a given file and separates that file into sorted 1MB files using (internal) mergeSort algorithm</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">separationSort</span><span class="params">(FILE *input)</span> &#123;</span><br><span class="line">    FILE *fp;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> *buffer = <span class="built_in">malloc</span>(<span class="keyword">sizeof</span>(<span class="type">unsigned</span> <span class="type">int</span>)*(MEMORY_LIMIT/RECORD_SIZE));</span><br><span class="line">    <span class="type">char</span> *line = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">size_t</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="type">ssize_t</span> nread;</span><br><span class="line">    <span class="type">int</span> count = <span class="number">0</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Sort phase start.\n&quot;</span>);</span><br><span class="line">    <span class="keyword">while</span>((nread = getline(&amp;line, &amp;len, input)) != <span class="number">-1</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (count &lt; MEMORY_LIMIT/RECORD_SIZE) &#123;</span><br><span class="line">            buffer[count++] = (<span class="type">unsigned</span> <span class="type">int</span>)strtoul(line, <span class="literal">NULL</span>, <span class="number">10</span>); </span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            mergeSort(buffer, count); <span class="comment">// sort records</span></span><br><span class="line">            </span><br><span class="line">            <span class="comment">// output sorted to file</span></span><br><span class="line">            <span class="keyword">if</span> (fileNum == <span class="number">1</span>) &#123; <span class="comment">// create the dir</span></span><br><span class="line">                <span class="type">int</span> status;</span><br><span class="line">                <span class="comment">// create tmp directory</span></span><br><span class="line">                <span class="keyword">if</span> ((status = mkdir(<span class="string">&quot;./tmp&quot;</span>, S_IRWXU | S_IRWXU | S_IROTH | S_IXOTH)) == <span class="number">-1</span>) &#123;</span><br><span class="line">                    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create tmp directory.\n&quot;</span>);</span><br><span class="line">                    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// create pass0 directory for sort phase</span></span><br><span class="line">                <span class="keyword">if</span> ((status = mkdir(<span class="string">&quot;./tmp/pass0&quot;</span>, S_IRWXU | S_IRWXU | S_IROTH | S_IXOTH)) == <span class="number">-1</span>) &#123;</span><br><span class="line">                    <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create pass0 directory.\n&quot;</span>);</span><br><span class="line">                    <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">                &#125;</span><br><span class="line"> </span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="type">char</span> fileName[<span class="number">20</span>];</span><br><span class="line">            <span class="built_in">sprintf</span>(fileName, <span class="string">&quot;./tmp/pass0/%d.txt&quot;</span>, fileNum);</span><br><span class="line">            <span class="keyword">if</span> ((fp = fopen(fileName, <span class="string">&quot;w+&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">                <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create file: %s.\n&quot;</span>, fileName);</span><br><span class="line">                <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            outputToFile(buffer, count, fp);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Reset memory buffer(zero-out the entire array)</span></span><br><span class="line">            <span class="built_in">memset</span>(buffer, <span class="number">0</span>, <span class="keyword">sizeof</span>(<span class="type">unsigned</span> <span class="type">int</span>)*(MEMORY_LIMIT/RECORD_SIZE));</span><br><span class="line">            count = <span class="number">0</span>;</span><br><span class="line">            fileNum++;</span><br><span class="line">            buffer[count++] = (<span class="type">unsigned</span> <span class="type">int</span>)strtoul(line, <span class="literal">NULL</span>, <span class="number">10</span>); <span class="comment">// add the current record into new buffer&#x27;s as first element</span></span><br><span class="line">            </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// sort the last and final file</span></span><br><span class="line">    mergeSort(buffer, count);</span><br><span class="line">    <span class="type">char</span> fileName[<span class="number">20</span>];</span><br><span class="line">    <span class="built_in">sprintf</span>(fileName, <span class="string">&quot;./tmp/pass0/%d.txt&quot;</span>, fileNum);</span><br><span class="line">    <span class="keyword">if</span> ((fp = fopen(fileName, <span class="string">&quot;w+&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create file: %s.\n&quot;</span>, fileName);</span><br><span class="line">        <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">    &#125;</span><br><span class="line">    outputToFile(buffer, count, fp);</span><br><span class="line">    </span><br><span class="line">    <span class="built_in">free</span>(buffer);</span><br><span class="line">    <span class="built_in">free</span>(line);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Sort phase done. %d tmp sorted files are produced.\n&quot;</span>, fileNum);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>The logic is not difficult. The function takes the input file descriptor as a parameter and reads each line(via the <code>getline</code> method) in a loop until reaches the end of the file. The numbers will be read into the memory buffer before hitting the memory limit. When the memory buffer is full(100000 bytes), the numbers are sorted with the function <code>mergeSort</code>. </p>
-<p>The function <code>mergeSort</code> is defined inside the file <a target="_blank" rel="noopener" href="https://github.com/baoqger/external-merge-sort/blob/multi-way-with-pass/internal_sort.c"><code>internal_sort.c</code></a>, which implements the classic internal <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Merge_sort"><code>merge sorting</code></a> algorithm. I will not cover it in this article, since you can find many documents about it online. If you don’t know about it, please spend some time learning about it. Of course, you can replace it with other sorting algorithms like <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Quicksort"><code>quick sort</code></a> too. I leave this for the readers. </p>
-<p>After sorting, the numbers are saved in the temporary files in the directory of <code>./tmp/pass0</code>. The filename is just the run number. </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Output sorted record to given file(of)</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span> <span class="title function_">outputToFile</span><span class="params">(<span class="type">unsigned</span> <span class="type">int</span> *buffer, <span class="type">int</span> size, FILE *of)</span> &#123;</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(of, <span class="string">&quot;%u\n&quot;</span>, buffer[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    fclose(of);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>We can verify the result of the sort phase as follows: </p>
-<img src="/images/pass0.png" title="Random access machine model" width="600px" height="400px">
-
-<p>You can see each file contains up to <code>25000</code> (equal to <code>MEMORY_LIMIT/RECORD_SIZE</code>) numbers and 312 files are created in pass0. </p>
-<p>Note that I will not examine the details about how to make a new directory and how to open a new file to read or write. You can learn such Linux file I&#x2F;O concepts by yourself. </p>
-<h5 id="Merge-phase"><a href="#Merge-phase" class="headerlink" title="Merge phase"></a>Merge phase</h5><p>The <code>exMerge</code> function controls the passes in the merge phase starting from <code>pass1</code>. </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">exMerge</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="comment">/* some code omitted ... */</span></span><br><span class="line">    <span class="type">int</span> pass = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">while</span> (fileNum &gt; <span class="number">1</span>) &#123;</span><br><span class="line">        exMergeSort(pass, fileNum);</span><br><span class="line">        <span class="type">int</span> remainer = fileNum % ways;</span><br><span class="line">        fileNum = fileNum / ways;</span><br><span class="line">        <span class="keyword">if</span> (remainer &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            fileNum++;</span><br><span class="line">        &#125; </span><br><span class="line">        pass++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* some code omitted ... */</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>The variable <code>fileNum</code> stores the <code>run</code> number in each pass. And the variable <code>ways</code> denotes the number of multi-way. Thus, the <code>run</code> number of the next pass should be calculated as <code>fileNum / ways</code>.</p>
-<p>The detailed merging logic is inside the function <code>exMergeSort</code>, which takes two parameters. <code>pass</code> means the current pass number(starting from 1), while <code>nums</code> means how many runs(or sub-files) in the last pass need to be merged. </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">exMergeSort</span><span class="params">(<span class="type">int</span> pass, <span class="type">int</span> nums)</span> &#123;</span><br><span class="line">    <span class="comment">/* some code omitted ... */</span></span><br><span class="line">    <span class="type">int</span> inputFileNum = <span class="number">0</span>; </span><br><span class="line">    <span class="type">int</span> run = <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">for</span> (; inputFileNum &lt; nums;) &#123; </span><br><span class="line">        </span><br><span class="line">        <span class="comment">// create the dir for current pass</span></span><br><span class="line">        <span class="keyword">if</span> (inputFileNum == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="type">int</span> status;</span><br><span class="line">            <span class="type">char</span> dirName[<span class="number">20</span>];</span><br><span class="line">            <span class="built_in">sprintf</span>(dirName, <span class="string">&quot;./tmp/pass%d&quot;</span>, pass);</span><br><span class="line">            <span class="keyword">if</span> ((status = mkdir(dirName, S_IRWXU | S_IRWXU | S_IROTH | S_IXOTH)) == <span class="number">-1</span>) &#123;</span><br><span class="line">                <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;Failed to create tmp directory %s.\n&quot;</span>, dirName);</span><br><span class="line">                <span class="built_in">exit</span>(EXIT_FAILURE);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// open new file to merge in each run</span></span><br><span class="line">        FILE *fm; </span><br><span class="line">        <span class="type">char</span> mergedFileName[<span class="number">20</span>];</span><br><span class="line">        <span class="built_in">sprintf</span>(mergedFileName, <span class="string">&quot;./tmp/pass%d/%d.txt&quot;</span>, pass, run);</span><br><span class="line">        <span class="keyword">if</span> ((fm = fopen(mergedFileName, <span class="string">&quot;w+&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, strerror(errno));</span><br><span class="line">            <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;merged file %s: can&#x27;t create or open.\n&quot;</span>, mergedFileName);</span><br><span class="line">        &#125;</span><br><span class="line">        run++;</span><br><span class="line">        <span class="comment">/* some code omitted ... */</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>The above code creates a temp directory for each pass and a temp file for each run. </p>
-<p>Next, we create an array of the input files for each run. And the input file is inside the temp directory of the last pass. Each run merges multiple files in the <code>for</code> loop. The only trick logic here is that the remaining files in the last run may be less than the number of ways declared, we need to handle that properly (line 5 of the below code block).  </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Rewind the sorted files in previous pass, each run merge way_numbers numbers of files</span></span><br><span class="line"><span class="comment">// Merge the sorted files with multi ways in N runs. </span></span><br><span class="line"><span class="comment">// In the first N - 1 runs, each run merge ways numbers of files</span></span><br><span class="line"><span class="comment">// In the last run, merge the remaining files. </span></span><br><span class="line"><span class="type">int</span> way_numbers = run * ways &lt;= nums ? ways : nums - inputFileNum;</span><br><span class="line">FILE *fiarr[way_numbers];</span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; way_numbers; i++) &#123;</span><br><span class="line">   <span class="type">char</span> inputFileName[<span class="number">20</span>];</span><br><span class="line">   inputFileNum++; <span class="comment">// start from 0 to nums</span></span><br><span class="line">   <span class="built_in">sprintf</span>(inputFileName, <span class="string">&quot;./tmp/pass%d/%d.txt&quot;</span>, pass - <span class="number">1</span>, inputFileNum);</span><br><span class="line">   <span class="keyword">if</span> ((fiarr[i] = fopen(inputFileName, <span class="string">&quot;r&quot;</span>)) == <span class="literal">NULL</span>) &#123;</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;%s\n&quot;</span>, strerror(errno));</span><br><span class="line">        <span class="built_in">fprintf</span>(<span class="built_in">stderr</span>, <span class="string">&quot;input file %s: can&#x27;t create or open.\n&quot;</span>, inputFileName);</span><br><span class="line">   &#125;</span><br><span class="line">   rewind(fiarr[i]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Next, we need to read one number from every input file until only one file is not run out. Find the smallest one and save it in the temp output run file. And for the last remaining file, remember to put the rest numbers into the output file too.  </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// get and compare records until files runs out of records</span></span><br><span class="line"><span class="type">char</span> *records[way_numbers]; </span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; way_numbers; i++) &#123;</span><br><span class="line">    records[i] = getRecord(fiarr[i]);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// loop until only one file is not run-out</span></span><br><span class="line"><span class="keyword">while</span>(validateRecords(records, way_numbers )) &#123;</span><br><span class="line">    <span class="type">int</span> index = getMinRecordIndex(records, way_numbers);</span><br><span class="line">    <span class="built_in">fprintf</span>(fm, <span class="string">&quot;%s&quot;</span>, records[index]); <span class="comment">// print record to new merged file</span></span><br><span class="line">    <span class="built_in">free</span>(records[index]); <span class="comment">// free the memory allocated by getline in getRecord function</span></span><br><span class="line">    records[index] = getRecord(fiarr[index]); <span class="comment">// Get new record from the file</span></span><br><span class="line">&#125;</span><br><span class="line">       </span><br><span class="line"><span class="comment">// put the rest record in the last remaining file into new file </span></span><br><span class="line"><span class="type">int</span> lastIndex = getLastRemainRecordIndex(records, way_numbers);</span><br><span class="line"><span class="keyword">while</span>(records[lastIndex]) &#123;</span><br><span class="line">    <span class="built_in">fprintf</span>(fm, <span class="string">&quot;%s&quot;</span>, records[lastIndex]);</span><br><span class="line">    <span class="built_in">free</span>(records[lastIndex]);</span><br><span class="line">    records[lastIndex] = getRecord(fiarr[lastIndex]);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>The above code bock utilizes several methods like <code>getRecord</code>, <code>validateRecords</code>, <code>getMinRecordIndex</code> and <code>getLastRemainRecordIndex</code> as follows, and these functions are easy to understand. </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Returns a copy of the record</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">char</span>* <span class="title function_">getRecord</span><span class="params">(FILE *ifp)</span> &#123;</span><br><span class="line">    <span class="type">char</span> *line = <span class="literal">NULL</span>;</span><br><span class="line">    <span class="type">size_t</span> len = <span class="number">0</span>;</span><br><span class="line">    <span class="type">ssize_t</span> nread;</span><br><span class="line">    <span class="keyword">while</span> ((nread = getline(&amp;line, &amp;len, ifp)) != <span class="number">-1</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> line;       </span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Validate whether at least two records are non-zero</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">bool</span> <span class="title function_">validateRecords</span><span class="params">(<span class="type">char</span> **records, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="type">int</span> count = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (records[i] != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            count++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> count &gt;= <span class="number">2</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Get the min valid record&#x27;s index</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">getMinRecordIndex</span><span class="params">(<span class="type">char</span> **records, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="type">int</span> index = <span class="number">0</span>;</span><br><span class="line">    <span class="type">unsigned</span> <span class="type">int</span> min = (<span class="type">int</span>)INFINITY;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (records[i] == <span class="literal">NULL</span>) &#123; <span class="comment">// pass invalid run-out record files</span></span><br><span class="line">            <span class="keyword">continue</span>;</span><br><span class="line">        &#125; </span><br><span class="line">        <span class="keyword">if</span> (strtoul(records[i], <span class="literal">NULL</span>, <span class="number">10</span>) &lt; min) &#123;</span><br><span class="line">            min = strtoul(records[i], <span class="literal">NULL</span>, <span class="number">10</span>);</span><br><span class="line">            index = i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> index;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Get the last remainer of the records</span></span><br><span class="line"><span class="comment"> * */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">getLastRemainRecordIndex</span><span class="params">(<span class="type">char</span> **records, <span class="type">int</span> size)</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; size; i++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (records[i] != <span class="literal">NULL</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> i;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>In detail, you can refer to the source code of this <a target="_blank" rel="noopener" href="https://github.com/baoqger/external-merge-sort/blob/multi-way-with-pass/main.c">github repo</a>. Next, let’s evaluate the performance of this algorithm by tuning the number of ways for merging. </p>
-<h3 id="Performance-Evaluation"><a href="#Performance-Evaluation" class="headerlink" title="Performance Evaluation"></a>Performance Evaluation</h3><p>We’ll use the Linux <code>time</code> utility to measure the running time of this algorithm. </p>
-<p>The result of two-way mergesort is: </p>
-<img src="/images/two-way-merge.png" title="two way merge sort" width="600px" height="400px">
-
-<p>while six-way mergesort can complete with a shorter runtime. </p>
-<img src="/images/multi-way-merge.png" title="two way merge sort" width="600px" height="400px">
       
     </div>
 

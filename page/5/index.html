@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">72</span>
+          <span class="site-state-item-count">74</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">40</span>
+        <span class="site-state-item-count">42</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,189 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/06/29/hystrix-circuit-breaker-part4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/06/29/hystrix-circuit-breaker-part4/" class="post-title-link" itemprop="url">Circuit breaker and Hystrix: part four - error rate</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-06-29 17:19:53" itemprop="dateCreated datePublished" datetime="2021-06-29T17:19:53+08:00">2021-06-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/06/18/hystrix-circuit-breaker-part3/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/06/18/hystrix-circuit-breaker-part3/" class="post-title-link" itemprop="url">Circuit breaker and Hystrix: part three - timeout</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-06-18 15:54:02" itemprop="dateCreated datePublished" datetime="2021-06-18T15:54:02+08:00">2021-06-18</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <p>In the <a target="_blank" rel="noopener" href="https://baoqger.github.io/2021/05/30/hystrix-circuit-breaker-part2/">previous article</a>, we reviewed the <code>max concurrent request number</code> service degradation strategy. But some detailed techniques are not explained very clearly, which will be talked about in this article. And we will analyze <code>timeout</code> strategy as well.</p>
+<h3 id="Timeout"><a href="#Timeout" class="headerlink" title="Timeout"></a>Timeout</h3><p>Compared with <code>max concurrent request number</code> strategy, <code>timeout</code> is very straightforward to understand. </p>
+<p>As we mentioned in the previous article, the core logic of <code>hystrix</code> is inside the <code>GoC</code> function. <code>GoC</code> function internally runs two goroutines. You already see that the first goroutine contains the logic to send request to the target service and the strategy of <code>max concurrent request number</code>. How about the second goroutine? Let’s review it as follows:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	timer := time.NewTimer(getSettings(name).Timeout)</span><br><span class="line">	<span class="keyword">defer</span> timer.Stop()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">select</span> &#123;</span><br><span class="line">	<span class="keyword">case</span> &lt;-cmd.finished:</span><br><span class="line">		<span class="comment">// returnOnce has been executed in another goroutine</span></span><br><span class="line">	<span class="keyword">case</span> &lt;-ctx.Done():</span><br><span class="line">		returnOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			returnTicket()</span><br><span class="line">			cmd.errorWithFallback(ctx, ctx.Err())</span><br><span class="line">			reportAllEvent()</span><br><span class="line">		&#125;)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	<span class="keyword">case</span> &lt;-timer.C:</span><br><span class="line">		returnOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			returnTicket()</span><br><span class="line">			cmd.errorWithFallback(ctx, ErrTimeout)</span><br><span class="line">			reportAllEvent()</span><br><span class="line">		&#125;)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;()</span><br></pre></td></tr></table></figure>
+
+<p>Note that A <strong>Timer</strong> is created with the timeout duration value from the settings. And a <code>select</code> statement lets this goroutine wait until one <code>case</code> condition receives value from the channel. The <strong>timeout</strong> case is just the 3nd one (when the first two cases are not triggered), which will run fallback logic with <strong>ErrTimeout</strong> error message. </p>
+<p>So far you should be clear about the main structure and functionalities of these two goroutines. But in detail, there are two Golang techniques need your attention: <code>sync.Once</code> and <code>sync.Cond</code>.  </p>
+<h3 id="sync-Once"><a href="#sync-Once" class="headerlink" title="sync.Once"></a>sync.Once</h3><p>You may already notice the following code block, which is repeated several times inside <code>GoC</code> function. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">returnOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	returnTicket()</span><br><span class="line">	cmd.errorWithFallback(ctx, ErrTimeout) <span class="comment">// with various error types </span></span><br><span class="line">	reportAllEvent()</span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+
+<p><strong>returnOnce</strong> is type of <code>sync.Once</code>, which makes sure that the callback function of <code>Do</code> method only runs once among different goroutines. </p>
+<p>In this specific case, it can guarantee that both <strong>returnTicket()</strong> and <strong>reportAllEvent()</strong> execute only once. This really makes sense, because if <strong>returnTicket()</strong> runs multiple times for one <code>GoC</code> call, then the current concurrent request number will not be correct, right? </p>
+<p>I wrote another article about <code>sync.Once</code> in detail, you can refer to <a target="_blank" rel="noopener" href="https://baoqger.github.io/2021/05/11/golang-sync-once/">that article</a> for more in-depth explanation. </p>
+<h3 id="sync-Cond"><a href="#sync-Cond" class="headerlink" title="sync.Cond"></a>sync.Cond</h3><p>The implementation of <strong>returnTicket</strong> function goes as follows:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">ticketCond := sync.NewCond(cmd)</span><br><span class="line">ticketChecked := <span class="literal">false</span></span><br><span class="line">returnTicket := <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	cmd.Lock()</span><br><span class="line">	<span class="keyword">for</span> !ticketChecked &#123;</span><br><span class="line">		ticketCond.Wait() <span class="comment">// hang the current goroutine</span></span><br><span class="line">	&#125;</span><br><span class="line">	cmd.circuit.executorPool.Return(cmd.ticket)</span><br><span class="line">	cmd.Unlock()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>ticketCond</strong> is a condition variable, and in Golang it is type of <code>sync.Cond</code>. </p>
+<p>Condition variable is useful in communication between different goroutines. Concretely, <code>Wait</code> method of <code>sync.Cond</code>will hung the current goroutine, and <code>Signal</code> method will wake up the blocking goroutine to continue executing. </p>
+<p>In <code>hystrix</code> case , when <strong>ticketChecked</strong> is <strong>false</strong>, which means the current <code>GoC</code> call is not finished and the <strong>ticket</strong> should not be returned yet. So <strong>ticketCond.Wait()</strong> is called to block this goroutine and wait until the <code>GoC</code> call is completed which is notified by <code>Signal</code> method. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ticketChecked = <span class="literal">true</span></span><br><span class="line">ticketCond.Signal()</span><br></pre></td></tr></table></figure>
+
+<p>Note that the above two lines of code are always called together. <strong>ticketChecked</strong> is set to <strong>true</strong> means that the current <code>GoC</code> call is finished and the <strong>ticket</strong> is ready to return. Moreover, the <code>Wait</code> method to hang the goroutine is placed inside a <strong>for</strong> loop, which is also a best practise technique. </p>
+<p>For more explanation about <code>sync.Cond</code>, please refer to my <a target="_blank" rel="noopener" href="https://baoqger.github.io/2021/05/14/golang-sync-cond/">another article</a>.</p>
+<h3 id="Fallback"><a href="#Fallback" class="headerlink" title="Fallback"></a>Fallback</h3><p>Finally, let’s see how <strong>fallback</strong> function is called when the target service is not responsive. </p>
+<p>Let’s recall that each <code>GoC</code> call will create a new <strong>command</strong> instance. And <strong>fallback</strong> function will be assigned to the field with the same name, which will be used later. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">cmd := &amp;command&#123;</span><br><span class="line">	run:      run,</span><br><span class="line">	fallback: fallback, <span class="comment">// fallback logic here</span></span><br><span class="line">	start:    time.Now(),</span><br><span class="line">	errChan:  <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">error</span>, <span class="number">1</span>),</span><br><span class="line">	finished: <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">bool</span>, <span class="number">1</span>),</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>As we see in above sections, <strong>errorWithFallback</strong> method is triggered when <code>timeout</code> or <code>max concurrent request number</code> threshold is met.   </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *command)</span></span> errorWithFallback(ctx context.Context, err <span class="type">error</span>) &#123;</span><br><span class="line">	eventType := <span class="string">&quot;failure&quot;</span></span><br><span class="line">	<span class="keyword">if</span> err == ErrCircuitOpen &#123;</span><br><span class="line">		eventType = <span class="string">&quot;short-circuit&quot;</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> err == ErrMaxConcurrency &#123;</span><br><span class="line">		eventType = <span class="string">&quot;rejected&quot;</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> err == ErrTimeout &#123;</span><br><span class="line">		eventType = <span class="string">&quot;timeout&quot;</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> err == context.Canceled &#123;</span><br><span class="line">		eventType = <span class="string">&quot;context_canceled&quot;</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> err == context.DeadlineExceeded &#123;</span><br><span class="line">		eventType = <span class="string">&quot;context_deadline_exceeded&quot;</span></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	c.reportEvent(eventType)</span><br><span class="line">	fallbackErr := c.tryFallback(ctx, err)</span><br><span class="line">	<span class="keyword">if</span> fallbackErr != <span class="literal">nil</span> &#123;</span><br><span class="line">		c.errChan &lt;- fallbackErr</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>errorWithFallback</strong> method will run the fallback by calling <strong>tryFallback</strong> and report the metric events such as <strong>fallback-failure</strong> and <strong>fallback-success</strong>(will discuss metric collection in next article).</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *command)</span></span> tryFallback(ctx context.Context, err <span class="type">error</span>) <span class="type">error</span> &#123;</span><br><span class="line">	<span class="keyword">if</span> c.fallback == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> err</span><br><span class="line">	&#125;</span><br><span class="line">	fallbackErr := c.fallback(ctx, err) <span class="comment">// execute the fallback logic here</span></span><br><span class="line">	<span class="keyword">if</span> fallbackErr != <span class="literal">nil</span> &#123;</span><br><span class="line">		c.reportEvent(<span class="string">&quot;fallback-failure&quot;</span>)</span><br><span class="line">		<span class="keyword">return</span> fmt.Errorf(<span class="string">&quot;fallback failed with &#x27;%v&#x27;. run error was &#x27;%v&#x27;&quot;</span>, fallbackErr, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	c.reportEvent(<span class="string">&quot;fallback-success&quot;</span>)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we talked about the <code>timeout</code> strategy which is the simplest one among all the strategies provided by <code>hystrix</code>. Some detailed Golang techniques are reviewed as well to have a better understand the complex code logic. </p>
+<p>In the next article let’s see how to collect metrics in <code>hystrix</code> to realize the <code>error rate</code> strategy. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +393,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -362,7 +545,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -467,7 +650,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -542,7 +725,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -653,7 +836,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -762,7 +945,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -909,7 +1092,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -1035,7 +1218,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
+      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
     </span>
 
   
@@ -1049,225 +1232,6 @@
     
     <div class="post-body" itemprop="articleBody">
           
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/02/20/fabio-golang-best-practise/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/02/20/fabio-golang-best-practise/" class="post-title-link" itemprop="url">Fabio source code study part 2</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2021-02-20 11:01:08" itemprop="dateCreated datePublished" datetime="2021-02-20T11:01:08+08:00">2021-02-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>Golang concurrent pattens:</p>
-<p>channels</p>
-<p>sync.Mutex</p>
-<p>sync.Waitgroup</p>
-<p>sync.Once</p>
-<p>sync.Pool</p>
-<p>Select</p>
-<p>atomic.Value</p>
-<p>Others:</p>
-<p>byte.Buffer</p>
-<p>bufferio</p>
-<p>type assertion of interface</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/02/06/golang-package-module/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/02/06/golang-package-module/" class="post-title-link" itemprop="url">Golang package</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2021-02-06 06:55:52" itemprop="dateCreated datePublished" datetime="2021-02-06T06:55:52+08:00">2021-02-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-09-27 22:13:47" itemprop="dateModified" datetime="2026-09-27T22:13:47+08:00">2026-09-27</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In this post, I’ll talk about Golang package based on my learning and use experience. </p>
-<p>You’ll learn the following topics in this post:</p>
-<ul>
-<li>Basics about Go package</li>
-<li>How to use and import a Go package</li>
-<li>Demo with real-world Go package</li>
-</ul>
-<h2 id="Basics-about-Go-package"><a href="#Basics-about-Go-package" class="headerlink" title="Basics about Go package"></a>Basics about Go package</h2><h4 id="What’s-Go-package"><a href="#What’s-Go-package" class="headerlink" title="What’s Go package"></a>What’s Go package</h4><p>Simply speaking, <code>Go package</code> provides a solution to the requirement of <code>code reuse</code>, which is an important part of software engineering. </p>
-<p>In Golang’s official document, the definition of packages goes as following: </p>
-<blockquote>
-<p>Go programs are organized into packages. A package is a collection of source files in the same directory that are compiled together. Functions, types, variables, and constants defined in one source file are visible to all other source files within the same package.</p>
-</blockquote>
-<p>There are several critical points in the definition let’s review them one by one. </p>
-<ul>
-<li><p>First, one package can contain <code>more than one</code> source files. This is different from other languages, for example in <code>Javascript</code> , each source file is an independent module that exports variables to other files to import.</p>
-</li>
-<li><p>Second, all the source files for a package are organized inside a directory. The package name must be the same as the directory name. </p>
-</li>
-<li><p>Third, the files inside the subdirectories should be excluded. Each subdirectory is another package.</p>
-</li>
-</ul>
-<p>To have a better understanding about these three points, let’s check the structure of the <code>net</code> package in the Go standard library. </p>
-<p><img src="/images/go-package-std.png" alt="net-package"></p>
-<p>All the <code>.go</code> source files directly under the <code>net</code> directory contain the following pacakge declaration on the top of the file: </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> net</span><br></pre></td></tr></table></figure>
-
-<p>This means that it is part of the net package. </p>
-<p>There are several subdirectories under <code>net</code> directoy, and each of these subdirectory is an independant package. For example, the <code>net/http</code> package consists of all the files inside the <code>http</code> subdirectory. If you open the files inside <code>http</code> directory, the package declaration is:  </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> http</span><br></pre></td></tr></table></figure>
-<h4 id="Types-of-Go-package"><a href="#Types-of-Go-package" class="headerlink" title="Types of Go package"></a>Types of Go package</h4><p>Generally speaking, there are two types of packages: <code>library package</code> and <code>main package</code>. After build, the main package will be compiled into an executable file. While a library package is not self-executable, instead, it provides the utility functions.</p>
-<h4 id="Member-visibility-of-Go-package"><a href="#Member-visibility-of-Go-package" class="headerlink" title="Member visibility of Go package"></a>Member visibility of Go package</h4><p>Different from other language like Javascript, Golang package doesn’t provide keyword such as <code>export</code>, <code>public</code>, <code>private</code> and so on to explicitly export members to the outside world. </p>
-<p>Instead, the visibility of member inside one package is determined by the casing of the first letter. If the first letter is upper case then it can be impoted by other packages. </p>
-<h4 id="Lifecycle-of-package"><a href="#Lifecycle-of-package" class="headerlink" title="Lifecycle of package"></a>Lifecycle of package</h4><p>For the library package we mentioned above, when it’s imported the <code>init</code> method will be called automatically. You can do some package initialization work inside it. </p>
-<p>For the main pacakge, it must provide the <code>main</code> method as the entry point when it’s running. </p>
-<h2 id="Use-and-Import-Go-package"><a href="#Use-and-Import-Go-package" class="headerlink" title="Use and Import Go package"></a>Use and Import Go package</h2><p>Before <code>Go Module</code> was introduced, the development of Golang application is based on the <code>Go workspace</code>. In this post, I’ll focus on the solutions based on <code>Go workspace</code>. Go module is another topic I will talk about in a future post. </p>
-<h4 id="Go-workspace"><a href="#Go-workspace" class="headerlink" title="Go workspace"></a>Go workspace</h4><p>By convention, all your Go code and the code(or the packages) you import, must reside in a single workspace. A workspace is nothing but a directory in your file system whose path is stored in the environment variable <code>GOPATH</code>.</p>
-<p>As a new comer into the Golang world, at the beginning the <code>GOPATH</code> workspace configuration confused me a lot. </p>
-<p>For example, you want to use third-party library Consol in your application. After you run </p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go get github.com/hashicorp/consul</span><br></pre></td></tr></table></figure>
-
-<p>The library is installed on your local machine. The code would be cloned on disk at <code>$GOPATH/src/github.com/hashicorp/consul</code></p>
-<p>In your application, you will import this library in the following way:</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;github.com/hashicorp/consul&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
-<p>Thanks to the GOPATH mechanics, this import can be resolved on disk and Go tool can locate, build and test the code. Simply speaking, the package name maps to the real location of the package on your local machine. </p>
-<p>But of course, this mechanics has many limitation such as package version control, workspace constrains an so on. That’s the motivation why we need Go module. </p>
-<h4 id="Ways-to-import-Golang-package"><a href="#Ways-to-import-Golang-package" class="headerlink" title="Ways to import Golang package"></a>Ways to import Golang package</h4><p>Beside the default way, there are several ways to import a package based on your usage. </p>
-<p><strong>Import as alias</strong>: this is useful when two packages have the same name. You can give any alias for an imported package as below:</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	consulapi <span class="string">&quot;github.com/hashicorp/consul/api&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
-<p><strong>Import for side effect</strong>: when reading source code of popular open source projects, you can see many package import in the following way:</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;database/sql&quot;</span></span><br><span class="line"></span><br><span class="line">	_ <span class="string">&quot;github.com/lib/pq&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>It’s widely used when all you need from the imported package is running the <code>init</code> method.</p>
-<p>For example in the above case, library <code>pq</code> is imported in this way. You can check the source code for <code>pq</code> library and its <code>init</code> method call <code>sql.Register</code> method for registration as below:</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">init</span><span class="params">()</span></span> &#123;</span><br><span class="line">	sql.Register(<span class="string">&quot;postgres&quot;</span>, &amp;Driver&#123;&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><strong>Internal package</strong>: this is an interesting feature to learn. <code>Internal</code> is a special directory name recognized by the Go tool which will prevent the package from being imported by any other packages unless both share the same ancestor directory. The packages in an <code>internal</code> directory are said to be internal packages. In detail you can refer to <a target="_blank" rel="noopener" href="https://dave.cheney.net/2019/10/06/use-internal-packages-to-reduce-your-public-api-surface">this artical</a>.</p>
-
       
     </div>
 
