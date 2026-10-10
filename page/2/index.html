@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">74</span>
+          <span class="site-state-item-count">75</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,117 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2023/02/13/note-on-red-black-tree/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/02/13/note-on-red-black-tree/" class="post-title-link" itemprop="url">Understand Red Black Tree: part one - background</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-02-13 07:51:56" itemprop="dateCreated datePublished" datetime="2023-02-13T07:51:56+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In this series of articles, I want to examine an important data structure: the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Red%E2%80%93black_tree">red-black tree</a>. The <code>red-black tree</code> is an advanced data structure that is difficult to fully understand. Maybe you have some wonders and confusion about it as follows:</p>
+<ul>
+<li>What is the meaning of <code>red</code> and <code>black</code> here?</li>
+<li>The <code>red-black tree</code> is known as a self-balancing binary search tree. But what’s the difference between it and others? </li>
+<li>Where is it used or applied?</li>
+</ul>
+<p>If you want to know the answer to the above questions, then this article is just for you. I will cover the following topics:</p>
+<ul>
+<li>Why do we need the red-black tree and what is its advantage? </li>
+<li>How does a red-black tree work?</li>
+<li>How to write a red-black tree from scratch?</li>
+</ul>
+<h3 id="Background-of-Red-Black-Tree"><a href="#Background-of-Red-Black-Tree" class="headerlink" title="Background of Red-Black Tree"></a>Background of Red-Black Tree</h3><p>In this section, let’s review the history of the red-black tree. During this process, I will show you why it was invented and what kind of advantages it can provide compared with other tree data structures. </p>
+<p>First thing first, let’s define the red-black tree as follows: </p>
+<ul>
+<li>Red-Black Tree is a <code>self-balancing</code> <code>binary</code> <code>search</code> <code>tree</code>.</li>
+</ul>
+<p>Let’s analyze this definition step by step: </p>
+<ul>
+<li><p>Tree: A tree is a <code>nonlinear</code> data structure, compared to <code>arrays</code>, <code>linked lists</code>, <code>stacks</code> and <code>queues</code> which are <code>linear</code> data structures. A tree is a data structure consisting of one node called the <code>root</code> and zero or one or more <code>subtrees</code>. One disadvantage of <code>linear</code> data structures is the time required to search a <code>linear</code> list is proportional to the size of the data set, which means that the time complexity is <code>O(n)</code>. That’s why more efficient data structures like trees are invented to <code>store</code> and <code>search</code> data. </p>
+</li>
+<li><p>General Tree: A general tree is a tree where each node may have zero or more children. </p>
+</li>
+<li><p>Binary Tree: A binary tree is a specialized case of a general tree, where each node can have no more than <code>two</code> children. </p>
+</li>
+<li><p>Binary Search Tree: A binary tree satisfying the <code>binary search</code> property is called a <code>binary search tree(BST)</code>. To build a BST, the node with a key greater than any particular node is stored on the <code>right</code> sub-trees and the one equal to or less than is stored on the <code>left</code> sub-tree.</p>
+</li>
+</ul>
+<p>The <code>average</code> search time complexity of BST is <code>O(logN)</code>, but in the <code>worst case</code>, it will be degraded to <code>O(N)</code>. It happens when we insert the nodes one by one in order. For example, if we insert the elements in array <code>[1, 2, 3, 4, 5, 6]</code> into RST in order, what we get is as follows: </p>
+<img src="/images/bst-degraded.png" title="arp spoofing detection" width="200px" height="200px">
+
+<p>This kind of <code>unbalanced BST</code> is degraded to a single linked list. So the BST needs to keep balanced during the insert and delete of the node.  That’s where the <code>self-balancing</code> binary search tree comes from. </p>
+<ul>
+<li>Self-Balancing Binary Search Tree: it’s a binary search tree that automatically keeps its height small in the face of arbitrary item insertions and deletions. And the red-black tree is just one type of it.</li>
+</ul>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>As the first post of this series, I examined the background of the red-black tree bit by bit. I hope you can understand what’s self-balancing binary search tree and why we need it. In the next post, I will start to examine the behavior and property of the red-black tree. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +321,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -343,7 +454,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -464,7 +575,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -593,7 +704,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -717,7 +828,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -850,7 +961,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -959,7 +1070,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -1084,7 +1195,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -1303,7 +1414,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -1360,111 +1471,6 @@
 
 <p>Now you can see that the <code>hello world</code> is loaded into the kernel correctly. And it can be removed dynamically as well. Great. </p>
 <h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examine how to write a kernel module, how to build it and how to install it into the kernel dynamically. Next article we can work on the mini-firewall as a <code>Netfilter</code> module. </p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/05/04/how-to-write-a-netfilter-firewall-part1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/05/04/how-to-write-a-netfilter-firewall-part1/" class="post-title-link" itemprop="url">Write a Linux firewall from scratch based on Netfilter: part one- Netfilter and Kernel Modules</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2022-05-04 18:06:50" itemprop="dateCreated datePublished" datetime="2022-05-04T18:06:50+08:00">2022-05-04</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p><code>Firewalls</code> are an important tool that can be configured to protect your servers and infrastructure. Firewalls’ main functionalities are filtering data, redirecting traffic, and protecting against network attacks. There are both hardware-based firewalls and software-based firewalls. I will not discuss too much about the background here, since you can find many online documents about <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Firewall_(computing)">it</a>.</p>
-<p>Have you ever thought of implementing a simple firewall from scratch? Sounds crazy? But with the power of Linux, you can do that. After you read this series of articles, you will find that actually, it is quite simple. </p>
-<p>You may once use various firewalls on Linux such as <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Iptables">iptables</a>, <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Nftables">nftables</a>, <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Uncomplicated_Firewall">UFW</a>, etc. All of these firewall tools are user-space utility programs, and they are all relying on <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Netfilter"><code>Netfilter</code></a>. <code>Netfilter</code> is the Linux kernel subsystem that allows various networking-related operations to be implemented. <code>Netfilter</code> allows you to develop your firewall using the <code>Linux Kernel Module</code>.  If you don’t know the techniques such as the Linux Kernel module and Netfilter, don’t worry. In this article, let’s write a Linux firewall from scratch based on Netfilter. You can learn the following interesting points:</p>
-<ul>
-<li>Linux kernel module development.</li>
-<li>Linux kernel network programming. </li>
-<li>Netfilter module development.</li>
-</ul>
-<h3 id="Netfilter-and-Kernel-modules"><a href="#Netfilter-and-Kernel-modules" class="headerlink" title="Netfilter and Kernel modules"></a>Netfilter and Kernel modules</h3><h4 id="Basics-of-Netfilter"><a href="#Basics-of-Netfilter" class="headerlink" title="Basics of Netfilter"></a>Basics of Netfilter</h4><p><code>Netfilter</code> can be considered to be the third generation of <code>firewall</code> on Linux. Before <code>Netfilter</code>was introduced in Linux Kernel 2.4, there are two older generations of firewalls on Linux as follows: </p>
-<ul>
-<li>The first generation was a port of an early version of BSD UNIX’s <code>ipfw</code> to Linux 1.1. </li>
-<li>The second generation was <code>ipchains</code> developed in the 2.2 series of Linux Kernel.</li>
-</ul>
-<p>As we mentioned above, <code>Netfilter</code> was designed to provide the infrastructure inside the Linux kernel for various networking operations. So <code>firewall</code> is just one of the multiple functionalities provided by <code>Netfilter</code> as follows:</p>
-<img src="/images/netfilter-arch.png" title="Netfilter architecture" width="600px" height="400px">
-
-<ul>
-<li><strong>Packet filtering</strong>: is in charge of filtering the packets based on the rules. It is also the topic of this article. </li>
-<li><strong>NAT (Network address translation)</strong>: is in charge of translating the IP address of network packets. <code>NAT</code> is an important protocol, which has become a popular and essential tool in <code>conserving global address space in the face of IPv4 address exhaustion</code>. If you don’t know <code>NAT</code> protocol, you can refer to other <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Network_address_translation">documents</a>. I will examine it in other future articles. </li>
-<li><strong>Packet mangling</strong>: is in charge of modifying the packet content(In fact, <code>NAT</code> is one kind of packet mangling, which modifies the source or destination IP address). For example, <code>MSS (Maximum Segment Size)</code> value of TCP SYN packets can be altered to allow large-size packets transported over the network.</li>
-</ul>
-<p>Note: this article will focus on building a simple firewall to filter packets based on Netfilter. So the <code>NAT</code> and <code>Packet Mangling</code> parts are not in the scope of this article. </p>
-<p>Packet filtering can only be done inside the Linux kernel (Netfilter’s code is in the kernel as well), if we want to write a mini firewall, it has to run in the kernel space. Right? Does it mean we need to add our code into the kernel and recompile the kernel? Imagine you have to recompile the kernel each time you want to add a new packet filtering rule. That’s a bad idea. The good news is that <code>Netfilter</code> allows you to add extensions using the <a target="_blank" rel="noopener" href="https://wiki.archlinux.org/title/Kernel_module"><code>Linux kernel modules</code></a>. </p>
-<h4 id="Basics-of-Linux-Kernel-modules"><a href="#Basics-of-Linux-Kernel-modules" class="headerlink" title="Basics of Linux Kernel modules"></a>Basics of Linux Kernel modules</h4><p>Although Linux is a <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Monolithic_kernel"><code>monolithic kernel</code></a>, it can be extended using kernel modules. Modules can be inserted into the kernel and removed on demand. Linux isolates the kernel but allows you to add specific functionality on the fly through modules. In this way, Linux keeps a balance between stability and usability. </p>
-<p>I want to examine one confusing point about the kernel module here: what is the difference between <code>driver</code> and <code>module</code>:</p>
-<ul>
-<li>A driver is a bit of code that runs in the kernel to talk to some hardware device. It drives the hardware. Standard practice is to build drivers as kernel modules where possible, rather than link them statically to the kernel since that gives more flexibility. </li>
-<li>A kernel module may not be a device driver at all.</li>
-</ul>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In the first post of this series, we examine the basics of Netfilter and Linux kernel modules. In the next post, let’s start implementing the mini firewall. </p>
 
       
     </div>

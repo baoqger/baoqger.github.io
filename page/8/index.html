@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">74</span>
+          <span class="site-state-item-count">75</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">42</span>
+        <span class="site-state-item-count">43</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,100 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2019/02/25/https-certificate/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2019/02/25/https-certificate/" class="post-title-link" itemprop="url">How HTTPS works: part two - why we need public key and certificate</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-02-25 16:00:47" itemprop="dateCreated datePublished" datetime="2019-02-25T16:00:47+08:00">2019-02-25</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the first article of this series, I gave a high-level overview of <code>TLS handshake</code>. It covers many complex concepts like <code>encryption/decryption</code> <code>hash function</code> <code>public key</code> <code>private key</code>  and <code>digital certificate</code>. These concepts are defined in the framework of <code>Public Key Infrastructure (PKI)</code>.</p>
+<p>Let’ continue exploring the PKI. This article focuses on understanding the <code>certificates</code> used to establish trust between clients and servers.  </p>
+<h3 id="Symmetric-plus-Asymmetric"><a href="#Symmetric-plus-Asymmetric" class="headerlink" title="Symmetric plus Asymmetric"></a>Symmetric plus Asymmetric</h3><p><a href="https://organicprogrammer.com/2019/02/22/https-handshake/">Last post</a> examined the <code>TLS handshake</code>. What is remarkable in this process is both <code>symmetric encryption</code> and <code>asymmetric encryption</code> are used. </p>
+<p><code>symmetric encryption</code> and <code>asymmetric encryption</code> are the two broad categories of cryptographic algorithms. </p>
+<p>Symmetric key encryption uses the same key on both sides of the communication channel to encrypt or decrypt data. In <code>HTTPS</code> case, the client and server agree upon new keys to use for symmetric encryption, called <strong>session key</strong>. The HTTP messages are encrypted by this symmetric session key. </p>
+<p>It has the advantage of being very fast with low overhead. In this way, it can minimize the performance impact <code>TLS</code> will have on the network communications. </p>
+<p>But the real challenge of symmetric encryption is <strong>how to keep the key private and secure!</strong> The client and server must exchange keys without letting an interested eavesdropper see them. This seems like a <strong>chicken and egg problem</strong>; you can’t establish keys over an insecure channel, and you can’t establish a secure channel without keys. Right? </p>
+<p>This key management turns out to be the most difficult part of encryption operations and is where asymmetric or public-key cryptography enters. </p>
+<p>Simply speaking, <strong>a secure channel is firstly established with asymmetric cryptography and then the symmetric session key is exchanged through this secure channel</strong>. </p>
+<p><strong>Note</strong>: Cryptography is a complex topic, which isn’t in the scope of this series of articles. You can find <a target="_blank" rel="noopener" href="https://opensource.com/article/19/6/cryptography-basics-openssl-part-2">tons</a> of documents on the internet about it for deeper understanding. You can regard it as a block box and ignore the details. This doesn’t influence your understanding of <code>HTTPS</code> in high level </p>
+<h3 id="Why-do-we-need-certificates"><a href="#Why-do-we-need-certificates" class="headerlink" title="Why do we need certificates"></a>Why do we need certificates</h3><p>Now we know public-key cryptography is needed to establish a secure channel. Can we directly transmit the public key from servers to clients? Why do we need a certificate as the carrier to pass the public key? Can we exchange the public key without certificates as follows: </p>
+<img src="/images/https_wo_certificate.png" title="public key without certificate" width="600px" height="400px">
+
+<p>But the ultimate question is how you(as the client) know that the public key can be trusted as authentic? Assume that an attacker can not only view traffic, but also can intercept and modify it. Then the attacker can carry out <code>man-in-the-middle</code> attack as follows:  </p>
+<img src="/images/https_mitm.png" title="man in the middle attack" width="800px" height="600px">
+
+<p>The attacker can replace the server’s public key with its own and send it to the client. The client doesn’t feel anything wrong and keeps using this public key as normal. The client encrypts the session key with the forged public key(the one from attackers) and sends it out. The attacker decrypts the session key with its private key, re-encrypt the session key with the server’s public key, and sends it to the server. As normal, the server decrypts the session key and agrees on it. But this session key is in the attacker’s hand too. The attacker can decrypt all the subsequent network traffic. </p>
+<p>The problem here is that the client blindly <strong>trusts</strong> that the public key belongs to the server. That’s the reason why we need the <code>certificates</code> to establish trust between clients and servers.</p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we understand the importance of public-key cryptography and certificates. In the next article, we will take a deep look at the certificate.  </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +304,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -315,7 +409,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -417,7 +511,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
@@ -492,7 +586,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:02:52" itemprop="dateModified" datetime="2026-10-10T13:02:52+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
     </span>
 
   
