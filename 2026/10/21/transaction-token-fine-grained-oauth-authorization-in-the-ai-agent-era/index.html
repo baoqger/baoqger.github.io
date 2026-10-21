@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIn this article, I will continue the thread from my earlier post on the OAuth 2.0 Token Exchange authorization flow and dive into a more challenging piece of the puzzle: Transaction Token. W">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Transaction Token - Fine-Grained OAuth Authorization in the AI Agent Era">
+<meta property="og:url" content="https://organicprogrammer.com/2026/10/21/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn this article, I will continue the thread from my earlier post on the OAuth 2.0 Token Exchange authorization flow and dive into a more challenging piece of the puzzle: Transaction Token. W">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Transaction_Tokens_for_AI_Agents.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021105117.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021110633.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021111553.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021113406.png">
+<meta property="article:published_time" content="2026-10-21T07:00:00.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="OAuth, Transaction Token, AI Agent, security">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Transaction_Tokens_for_AI_Agents.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2026/10/21/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2026/10/21/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/","path":"2026/10/21/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/","title":"Transaction Token - Fine-Grained OAuth Authorization in the AI Agent Era"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Transaction Token - Fine-Grained OAuth Authorization in the AI Agent Era | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>Project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-public-speak"><a href="/public-speak/" rel="section"><i class="fa fa-microphone fa-fw"></i>Public Speak</a></li><li class="menu-item menu-item-training"><a href="/training/" rel="section"><i class="fa fa-graduation-cap fa-fw"></i>Training</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#The-OAuth-2-0-Transaction-Token-Proposal"><span class="nav-number">2.</span> <span class="nav-text">The OAuth 2.0 Transaction Token Proposal</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Why-Do-We-Need-Transaction-Tokens"><span class="nav-number">3.</span> <span class="nav-text">Why Do We Need Transaction Tokens?</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Castle-and-moat"><span class="nav-number">3.1.</span> <span class="nav-text">Castle and moat</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Token-Exchange"><span class="nav-number">3.2.</span> <span class="nav-text">Token Exchange</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#How-Transaction-Tokens-Work"><span class="nav-number">4.</span> <span class="nav-text">How Transaction Tokens Work</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#External-call"><span class="nav-number">4.1.</span> <span class="nav-text">External call</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Exchanging-for-a-transaction-token"><span class="nav-number">4.2.</span> <span class="nav-text">Exchanging for a transaction token</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#What-is-inside-the-transaction-token"><span class="nav-number">4.3.</span> <span class="nav-text">What is inside the transaction token?</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Propagation-and-verification"><span class="nav-number">4.4.</span> <span class="nav-text">Propagation and verification</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#What-Transaction-Tokens-Buy-You"><span class="nav-number">5.</span> <span class="nav-text">What Transaction Tokens Buy You</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Agentic-AI"><span class="nav-number">6.</span> <span class="nav-text">Agentic AI</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">44</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/10/21/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Transaction Token - Fine-Grained OAuth Authorization in the AI Agent Era | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Transaction Token - Fine-Grained OAuth Authorization in the AI Agent Era
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-10-21 15:00:00 / Modified: 15:03:53" itemprop="dateCreated datePublished" datetime="2026-10-21T15:00:00+08:00">2026-10-21</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In this article, I will continue the thread from my earlier post on the OAuth 2.0 <strong>Token Exchange</strong> authorization flow and dive into a more challenging piece of the puzzle: <strong>Transaction Token</strong>. We will look at why it exists, what problems it solves, and why those problems matter even more in the AI Agent era.</p>
+<p>This post mixes big-picture security context with protocol details, so buckle up—it is a bit of a ride. After reading it, you should understand how txn-tokens fit into Zero Trust and multi-hop service calls.</p>
+<img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Transaction_Tokens_for_AI_Agents.png" alt="" >
+
+<h2 id="The-OAuth-2-0-Transaction-Token-Proposal"><a href="#The-OAuth-2-0-Transaction-Token-Proposal" class="headerlink" title="The OAuth 2.0 Transaction Token Proposal"></a>The OAuth 2.0 Transaction Token Proposal</h2><p><strong>Transaction Token</strong> (txn-token for short) is still an <strong>Internet Draft</strong>. It comes from the <strong>OAuth working group</strong>, not a single author, and is already at <strong>draft version 11</strong>, which tells you how actively it is being reviewed and revised. It is not an RFC yet, but it has drawn a lot of attention in the community.</p>
+<p>So what is the proposal trying to say? Let’s walk through it step by step.</p>
+<h2 id="Why-Do-We-Need-Transaction-Tokens"><a href="#Why-Do-We-Need-Transaction-Tokens" class="headerlink" title="Why Do We Need Transaction Tokens?"></a>Why Do We Need Transaction Tokens?</h2><p>Modern systems are usually made of many services and apps. When a request enters your network from the Internet, it often fans out across several internal services. At that point, you have a few common ways to validate tokens.</p>
+<h5 id="Castle-and-moat"><a href="#Castle-and-moat" class="headerlink" title="Castle and moat"></a>Castle and moat</h5><p>In this pattern, you validate the token at the network edge—typically the API gateway. Once that check passes, internal services call each other <strong>without</strong> repeating authentication or authorization.</p>
+<img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021105117.png" alt="" >
+
+<p>That is the classic <strong>castle-and-moat</strong> model: the corporate network is the castle, and the perimeter is the moat. Outsiders cannot get in; but once you cross the boundary—say, after login or VPN access—users and devices are often treated as fully trusted and can move freely inside the castle.</p>
+<p>Cloud and SaaS broke that model. The replacement many teams adopt is <strong>Zero Trust</strong>: <strong>never trust, always verify</strong>. Whether the caller is inside or outside the corporate network, every access request should be authenticated and authorized.</p>
+<p>That is why teams moved toward the approach below.</p>
+<h5 id="Token-Exchange"><a href="#Token-Exchange" class="headerlink" title="Token Exchange"></a>Token Exchange</h5><img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021110633.png" alt="" >
+
+<p>Service-to-service traffic still needs identity and permissions. A common shortcut is to <strong>reuse the user’s access token</strong>. But OAuth 2.0 was designed around an interactive flow while the user is present, granting the client a relatively static set of scopes up front. Passing the user token deep into the call graph greatly increases the risk of <strong>over-privileged leakage</strong>.</p>
+<p>As I mentioned in the previous article, you can use the <strong>Token Exchange</strong> grant (RFC 8693): exchange the user token for one with a <strong>narrower, more appropriate scope</strong>, then pass that token to downstream services.</p>
+<img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021111553.png" alt="" >
+
+<p>Even Token Exchange, however, leaves a meaningful <strong>attack surface</strong>:</p>
+<ul>
+<li><strong>Spurious invocation</strong>: a compromised internal service calls downstream APIs when there is no real user-driven request.</li>
+<li><strong>Identity impersonation</strong>: the caller crafts the request and pretends to be another user.</li>
+<li><strong>Parameter tampering</strong>: a compromised middle tier changes fields in the JSON body (for example, order quantity).</li>
+<li><strong>Token theft and replay</strong>: an attacker steals a bearer token from logs or memory and replays it until it expires.</li>
+</ul>
+<p><strong>Transaction Token</strong> is meant to remove—or at least shrink—that attack surface.</p>
+<h2 id="How-Transaction-Tokens-Work"><a href="#How-Transaction-Tokens-Work" class="headerlink" title="How Transaction Tokens Work"></a>How Transaction Tokens Work</h2><img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021113406.png" alt="" >
+
+<p>As the name suggests, a txn-token scopes authorization to a single <strong>transaction</strong>. “Transaction” here is <strong>not</strong> only a database transaction or a payment. It is a <strong>logical unit of work</strong> along one end-to-end business path. Because authorization is bound to that unit, txn-tokens are <strong>short-lived</strong>—often just a few minutes. You shrink the attack surface in <strong>time</strong> and in <strong>scope</strong>.</p>
+<p>Next, let’s unpack the flow using a stock-trading example.</p>
+<h5 id="External-call"><a href="#External-call" class="headerlink" title="External call"></a>External call</h5><p>The client sends a normal user access token to the API gateway:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">POST /trade HTTP/1.1</span><br><span class="line">Authorization: Bearer &lt;oauth-access-token&gt;</span><br><span class="line">Content-Type: application/json</span><br><span class="line"></span><br><span class="line">&#123; &quot;action&quot;: &quot;BUY&quot;, &quot;ticker&quot;: &quot;MSFT&quot;, &quot;quantity&quot;: &quot;100&quot; &#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="Exchanging-for-a-transaction-token"><a href="#Exchanging-for-a-transaction-token" class="headerlink" title="Exchanging for a transaction token"></a>Exchanging for a transaction token</h5><p>The API gateway calls a <strong>Transaction Token Server (TTS)</strong>. You can use the same interfaces and conventions as <strong>Token Exchange</strong>, because txn-token issuance is fundamentally another form of token exchange. In OAuth terms, the <strong>Authorization Server</strong> can act as the TTS.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">POST /txn-token-service/token_endpoint HTTP/1.1</span><br><span class="line">Host: txn-token-service.trust-domain.example</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line"></span><br><span class="line">grant_type=urn:ietf:params:oauth:grant-type:token-exchange</span><br><span class="line">&amp;requested_token_type=urn:ietf:params:oauth:token-type:txn_token</span><br><span class="line">&amp;audience=trust-domain.example</span><br><span class="line">&amp;scope=trade.stocks</span><br><span class="line">&amp;subject_token=eyJhbGciOiJFUzI1NiIsImtpZC...</span><br><span class="line">&amp;subject_token_type=urn:ietf:params:oauth:token-type:access_token</span><br><span class="line">&amp;request_context=&#123;&quot;req_ip&quot;:&quot;69.151.72.123&quot;,&quot;authn&quot;:&quot;urn:ietf:rfc:6749&quot;&#125;</span><br><span class="line">&amp;request_details=&#123;&quot;action&quot;:&quot;BUY&quot;,&quot;ticker&quot;:&quot;MSFT&quot;,&quot;quantity&quot;:&quot;100&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The exchange carries <strong>context</strong> and <strong>details</strong> via <code>request_context</code> and <code>request_details</code>. Notice that <code>audience</code> is no longer a single downstream API—it represents the <strong>trust boundary</strong> for this transaction.</p>
+<h5 id="What-is-inside-the-transaction-token"><a href="#What-is-inside-the-transaction-token" class="headerlink" title="What is inside the transaction token?"></a>What is inside the transaction token?</h5><p>The txn-token is a signed JWT. The TTS derives claims from the <strong>subject token</strong> (the user access token) and from the request, including <code>request_details</code> and <code>request_context</code>, and adds further attributes as policy allows.</p>
+<p>A typical txn-token <strong>header</strong> looks like this:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;typ&quot;</span><span class="punctuation">:</span> <span class="string">&quot;txntoken+jwt&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;alg&quot;</span><span class="punctuation">:</span> <span class="string">&quot;RS256&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;kid&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tts-2026-q2&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>The type is <code>txntoken+jwt</code>. <code>kid</code> identifies the public key downstream services use to verify the signature.</p>
+<p>The <strong>payload</strong> might look like this:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;iat&quot;</span><span class="punctuation">:</span> <span class="number">1686536226</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;aud&quot;</span><span class="punctuation">:</span> <span class="string">&quot;trust-domain.example&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;exp&quot;</span><span class="punctuation">:</span> <span class="number">1686536586</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;txn&quot;</span><span class="punctuation">:</span> <span class="string">&quot;97053963-771d-49cc-a4e3-20aad399c312&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;sub&quot;</span><span class="punctuation">:</span> <span class="string">&quot;d084sdrt234fsaw34tr23t&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;req_wl&quot;</span><span class="punctuation">:</span> <span class="string">&quot;apigateway.trust-domain.example&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scope&quot;</span><span class="punctuation">:</span> <span class="string">&quot;trade.stocks&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;rctx&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;req_ip&quot;</span><span class="punctuation">:</span> <span class="string">&quot;69.151.72.123&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;authn&quot;</span><span class="punctuation">:</span> <span class="string">&quot;urn:ietf:rfc:6749&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;tctx&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;action&quot;</span><span class="punctuation">:</span> <span class="string">&quot;BUY&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;ticker&quot;</span><span class="punctuation">:</span> <span class="string">&quot;MSFT&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;quantity&quot;</span><span class="punctuation">:</span> <span class="string">&quot;100&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;customer_type&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;geo&quot;</span><span class="punctuation">:</span> <span class="string">&quot;US&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;level&quot;</span><span class="punctuation">:</span> <span class="string">&quot;VIP&quot;</span> <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Key fields:</p>
+<ul>
+<li><strong><code>sub</code></strong>: user identifier, taken from the subject token.</li>
+<li><strong><code>aud</code></strong>: the trust boundary; the token is only meaningful inside that boundary.</li>
+<li><strong><code>exp</code></strong>: short lifetime—on the order of minutes.</li>
+<li><strong><code>txn</code></strong>: unique id for this transaction.</li>
+<li><strong><code>req_wl</code></strong>: who initiated the exchange (often the gateway).</li>
+<li><strong><code>scope</code></strong>: same idea as in ordinary access tokens.</li>
+<li><strong><code>rctx</code></strong>: request context (for example, client IP).</li>
+<li><strong><code>tctx</code></strong>: <strong>transaction context</strong>. Important: the TTS should <strong>not</strong> blindly copy the request body into <code>tctx</code>; that would be easy to abuse. The TTS decides what may be bound into <code>tctx</code>.</li>
+</ul>
+<p>The TTS signs the JWT with its private key and returns it as <code>access_token</code> in the Token Exchange response—exactly as RFC 8693 defines.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Content-Type: application/json</span><br><span class="line">Cache-Control: no-store</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  &quot;token_type&quot;: &quot;N_A&quot;,</span><br><span class="line">  &quot;issued_token_type&quot;: &quot;urn:ietf:params:oauth:token-type:txn_token&quot;,</span><br><span class="line">  &quot;access_token&quot;: &quot;eyJ0eXAiOiJ0eG50b2tlbitqd3QiLCJhbGciOiJSUzI1NiIsImtpZCI6InR0cy0yMDI2LXEyIn0...&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="Propagation-and-verification"><a href="#Propagation-and-verification" class="headerlink" title="Propagation and verification"></a>Propagation and verification</h5><p>Downstream calls should send the txn-token in the <strong><code>Txn-Token</code></strong> HTTP header, because <strong><code>Authorization</code></strong> is reserved for ordinary access tokens:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">POST /orders HTTP/1.1</span><br><span class="line">Host: order-service.trust-domain.example</span><br><span class="line">Txn-Token: eyJ0eXAiOiJ0eG50b2tlbitqd3QiLC...</span><br><span class="line">Content-Type: application/json</span><br><span class="line"></span><br><span class="line">&#123;&quot;action&quot;: &quot;BUY&quot;, &quot;ticker&quot;: &quot;MSFT&quot;, &quot;quantity&quot;: 100&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The downstream service typically verifies:</p>
+<ul>
+<li><strong>Signature</strong>: validate with the TTS public key so the payload cannot be altered.</li>
+<li><strong><code>aud</code></strong>: matches this deployment’s trust boundary (usually configuration).</li>
+<li><strong><code>exp</code></strong>: token is still valid; lifetimes are short by design.</li>
+<li><strong><code>tctx</code></strong>: this is the txn-token superpower. A compromised service might change the body from “buy 100 shares” to “buy 1000 shares,” but <strong><code>tctx</code> is inside the signed JWT</strong>—downstream code should trust <code>tctx</code>, not the mutable body. Smart design, right?</li>
+</ul>
+<h2 id="What-Transaction-Tokens-Buy-You"><a href="#What-Transaction-Tokens-Buy-You" class="headerlink" title="What Transaction Tokens Buy You"></a>What Transaction Tokens Buy You</h2><p>Now that we have walked through the flow, let’s map txn-tokens back to the four attack patterns:</p>
+<ul>
+<li><strong>Spurious invocation</strong>: only the TTS can mint a valid txn-token. A compromised service cannot forge one; downstream verification fails fast.</li>
+<li><strong>User impersonation</strong>: <code>sub</code> is part of the signed JWT and cannot be rewritten in transit.</li>
+<li><strong>Parameter tampering</strong>: business parameters live in <strong><code>tctx</code></strong>. Verifiers read authoritative data from the token, not from attacker-controlled JSON.</li>
+<li><strong>Token theft and replay</strong>: txn-tokens are tied to a <strong>single audience</strong> (one trust boundary), carry <strong>minimal scope</strong>, expire quickly, and include a unique <strong><code>txn</code></strong> id so you can enforce <strong>one-time use</strong> with a cache. Even if theft happens, the window is tiny.</li>
+</ul>
+<h2 id="Agentic-AI"><a href="#Agentic-AI" class="headerlink" title="Agentic AI"></a>Agentic AI</h2><p>Rolling out transaction tokens is real engineering work—it can feel heavy for classic three-tier apps. For <strong>agentic AI</strong> systems, though, where tool calls, delegation, and multi-hop workflows are the norm and behavior is harder to predict, tightening the authorization attack surface is often worth the investment.</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/OAuth-Transaction-Token-AI-Agent-security/" rel="tag"># OAuth, Transaction Token, AI Agent, security</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/10/10/running-onnx-genai-model-on-gpu-how-to-set-up-driver-cuda-13-cudnn-and-nuget/" rel="prev" title="Running ONNX GenAI Model on GPU - How to Set Up Driver, CUDA 13, cuDNN, and NuGet">
+                  <i class="fa fa-angle-left"></i> Running ONNX GenAI Model on GPU - How to Set Up Driver, CUDA 13, cuDNN, and NuGet
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

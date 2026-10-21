@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">75</span>
+          <span class="site-state-item-count">76</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">43</span>
+        <span class="site-state-item-count">44</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,153 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/10/21/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/10/21/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/" class="post-title-link" itemprop="url">Transaction Token - Fine-Grained OAuth Authorization in the AI Agent Era</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-10-21 15:00:00 / Modified: 15:03:54" itemprop="dateCreated datePublished" datetime="2026-10-21T15:00:00+08:00">2026-10-21</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In this article, I will continue the thread from my earlier post on the OAuth 2.0 <strong>Token Exchange</strong> authorization flow and dive into a more challenging piece of the puzzle: <strong>Transaction Token</strong>. We will look at why it exists, what problems it solves, and why those problems matter even more in the AI Agent era.</p>
+<p>This post mixes big-picture security context with protocol details, so buckle up—it is a bit of a ride. After reading it, you should understand how txn-tokens fit into Zero Trust and multi-hop service calls.</p>
+<img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Transaction_Tokens_for_AI_Agents.png" alt="" >
+
+<h2 id="The-OAuth-2-0-Transaction-Token-Proposal"><a href="#The-OAuth-2-0-Transaction-Token-Proposal" class="headerlink" title="The OAuth 2.0 Transaction Token Proposal"></a>The OAuth 2.0 Transaction Token Proposal</h2><p><strong>Transaction Token</strong> (txn-token for short) is still an <strong>Internet Draft</strong>. It comes from the <strong>OAuth working group</strong>, not a single author, and is already at <strong>draft version 11</strong>, which tells you how actively it is being reviewed and revised. It is not an RFC yet, but it has drawn a lot of attention in the community.</p>
+<p>So what is the proposal trying to say? Let’s walk through it step by step.</p>
+<h2 id="Why-Do-We-Need-Transaction-Tokens"><a href="#Why-Do-We-Need-Transaction-Tokens" class="headerlink" title="Why Do We Need Transaction Tokens?"></a>Why Do We Need Transaction Tokens?</h2><p>Modern systems are usually made of many services and apps. When a request enters your network from the Internet, it often fans out across several internal services. At that point, you have a few common ways to validate tokens.</p>
+<h5 id="Castle-and-moat"><a href="#Castle-and-moat" class="headerlink" title="Castle and moat"></a>Castle and moat</h5><p>In this pattern, you validate the token at the network edge—typically the API gateway. Once that check passes, internal services call each other <strong>without</strong> repeating authentication or authorization.</p>
+<img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021105117.png" alt="" >
+
+<p>That is the classic <strong>castle-and-moat</strong> model: the corporate network is the castle, and the perimeter is the moat. Outsiders cannot get in; but once you cross the boundary—say, after login or VPN access—users and devices are often treated as fully trusted and can move freely inside the castle.</p>
+<p>Cloud and SaaS broke that model. The replacement many teams adopt is <strong>Zero Trust</strong>: <strong>never trust, always verify</strong>. Whether the caller is inside or outside the corporate network, every access request should be authenticated and authorized.</p>
+<p>That is why teams moved toward the approach below.</p>
+<h5 id="Token-Exchange"><a href="#Token-Exchange" class="headerlink" title="Token Exchange"></a>Token Exchange</h5><img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021110633.png" alt="" >
+
+<p>Service-to-service traffic still needs identity and permissions. A common shortcut is to <strong>reuse the user’s access token</strong>. But OAuth 2.0 was designed around an interactive flow while the user is present, granting the client a relatively static set of scopes up front. Passing the user token deep into the call graph greatly increases the risk of <strong>over-privileged leakage</strong>.</p>
+<p>As I mentioned in the previous article, you can use the <strong>Token Exchange</strong> grant (RFC 8693): exchange the user token for one with a <strong>narrower, more appropriate scope</strong>, then pass that token to downstream services.</p>
+<img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021111553.png" alt="" >
+
+<p>Even Token Exchange, however, leaves a meaningful <strong>attack surface</strong>:</p>
+<ul>
+<li><strong>Spurious invocation</strong>: a compromised internal service calls downstream APIs when there is no real user-driven request.</li>
+<li><strong>Identity impersonation</strong>: the caller crafts the request and pretends to be another user.</li>
+<li><strong>Parameter tampering</strong>: a compromised middle tier changes fields in the JSON body (for example, order quantity).</li>
+<li><strong>Token theft and replay</strong>: an attacker steals a bearer token from logs or memory and replays it until it expires.</li>
+</ul>
+<p><strong>Transaction Token</strong> is meant to remove—or at least shrink—that attack surface.</p>
+<h2 id="How-Transaction-Tokens-Work"><a href="#How-Transaction-Tokens-Work" class="headerlink" title="How Transaction Tokens Work"></a>How Transaction Tokens Work</h2><img src="/images/transaction-token-fine-grained-oauth-authorization-in-the-ai-agent-era/Pasted%20image%2020261021113406.png" alt="" >
+
+<p>As the name suggests, a txn-token scopes authorization to a single <strong>transaction</strong>. “Transaction” here is <strong>not</strong> only a database transaction or a payment. It is a <strong>logical unit of work</strong> along one end-to-end business path. Because authorization is bound to that unit, txn-tokens are <strong>short-lived</strong>—often just a few minutes. You shrink the attack surface in <strong>time</strong> and in <strong>scope</strong>.</p>
+<p>Next, let’s unpack the flow using a stock-trading example.</p>
+<h5 id="External-call"><a href="#External-call" class="headerlink" title="External call"></a>External call</h5><p>The client sends a normal user access token to the API gateway:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">POST /trade HTTP/1.1</span><br><span class="line">Authorization: Bearer &lt;oauth-access-token&gt;</span><br><span class="line">Content-Type: application/json</span><br><span class="line"></span><br><span class="line">&#123; &quot;action&quot;: &quot;BUY&quot;, &quot;ticker&quot;: &quot;MSFT&quot;, &quot;quantity&quot;: &quot;100&quot; &#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="Exchanging-for-a-transaction-token"><a href="#Exchanging-for-a-transaction-token" class="headerlink" title="Exchanging for a transaction token"></a>Exchanging for a transaction token</h5><p>The API gateway calls a <strong>Transaction Token Server (TTS)</strong>. You can use the same interfaces and conventions as <strong>Token Exchange</strong>, because txn-token issuance is fundamentally another form of token exchange. In OAuth terms, the <strong>Authorization Server</strong> can act as the TTS.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">POST /txn-token-service/token_endpoint HTTP/1.1</span><br><span class="line">Host: txn-token-service.trust-domain.example</span><br><span class="line">Content-Type: application/x-www-form-urlencoded</span><br><span class="line"></span><br><span class="line">grant_type=urn:ietf:params:oauth:grant-type:token-exchange</span><br><span class="line">&amp;requested_token_type=urn:ietf:params:oauth:token-type:txn_token</span><br><span class="line">&amp;audience=trust-domain.example</span><br><span class="line">&amp;scope=trade.stocks</span><br><span class="line">&amp;subject_token=eyJhbGciOiJFUzI1NiIsImtpZC...</span><br><span class="line">&amp;subject_token_type=urn:ietf:params:oauth:token-type:access_token</span><br><span class="line">&amp;request_context=&#123;&quot;req_ip&quot;:&quot;69.151.72.123&quot;,&quot;authn&quot;:&quot;urn:ietf:rfc:6749&quot;&#125;</span><br><span class="line">&amp;request_details=&#123;&quot;action&quot;:&quot;BUY&quot;,&quot;ticker&quot;:&quot;MSFT&quot;,&quot;quantity&quot;:&quot;100&quot;&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The exchange carries <strong>context</strong> and <strong>details</strong> via <code>request_context</code> and <code>request_details</code>. Notice that <code>audience</code> is no longer a single downstream API—it represents the <strong>trust boundary</strong> for this transaction.</p>
+<h5 id="What-is-inside-the-transaction-token"><a href="#What-is-inside-the-transaction-token" class="headerlink" title="What is inside the transaction token?"></a>What is inside the transaction token?</h5><p>The txn-token is a signed JWT. The TTS derives claims from the <strong>subject token</strong> (the user access token) and from the request, including <code>request_details</code> and <code>request_context</code>, and adds further attributes as policy allows.</p>
+<p>A typical txn-token <strong>header</strong> looks like this:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;typ&quot;</span><span class="punctuation">:</span> <span class="string">&quot;txntoken+jwt&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;alg&quot;</span><span class="punctuation">:</span> <span class="string">&quot;RS256&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;kid&quot;</span><span class="punctuation">:</span> <span class="string">&quot;tts-2026-q2&quot;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>The type is <code>txntoken+jwt</code>. <code>kid</code> identifies the public key downstream services use to verify the signature.</p>
+<p>The <strong>payload</strong> might look like this:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;iat&quot;</span><span class="punctuation">:</span> <span class="number">1686536226</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;aud&quot;</span><span class="punctuation">:</span> <span class="string">&quot;trust-domain.example&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;exp&quot;</span><span class="punctuation">:</span> <span class="number">1686536586</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;txn&quot;</span><span class="punctuation">:</span> <span class="string">&quot;97053963-771d-49cc-a4e3-20aad399c312&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;sub&quot;</span><span class="punctuation">:</span> <span class="string">&quot;d084sdrt234fsaw34tr23t&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;req_wl&quot;</span><span class="punctuation">:</span> <span class="string">&quot;apigateway.trust-domain.example&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scope&quot;</span><span class="punctuation">:</span> <span class="string">&quot;trade.stocks&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;rctx&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;req_ip&quot;</span><span class="punctuation">:</span> <span class="string">&quot;69.151.72.123&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;authn&quot;</span><span class="punctuation">:</span> <span class="string">&quot;urn:ietf:rfc:6749&quot;</span></span><br><span class="line">  <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;tctx&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;action&quot;</span><span class="punctuation">:</span> <span class="string">&quot;BUY&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;ticker&quot;</span><span class="punctuation">:</span> <span class="string">&quot;MSFT&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;quantity&quot;</span><span class="punctuation">:</span> <span class="string">&quot;100&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;customer_type&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span> <span class="attr">&quot;geo&quot;</span><span class="punctuation">:</span> <span class="string">&quot;US&quot;</span><span class="punctuation">,</span> <span class="attr">&quot;level&quot;</span><span class="punctuation">:</span> <span class="string">&quot;VIP&quot;</span> <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>Key fields:</p>
+<ul>
+<li><strong><code>sub</code></strong>: user identifier, taken from the subject token.</li>
+<li><strong><code>aud</code></strong>: the trust boundary; the token is only meaningful inside that boundary.</li>
+<li><strong><code>exp</code></strong>: short lifetime—on the order of minutes.</li>
+<li><strong><code>txn</code></strong>: unique id for this transaction.</li>
+<li><strong><code>req_wl</code></strong>: who initiated the exchange (often the gateway).</li>
+<li><strong><code>scope</code></strong>: same idea as in ordinary access tokens.</li>
+<li><strong><code>rctx</code></strong>: request context (for example, client IP).</li>
+<li><strong><code>tctx</code></strong>: <strong>transaction context</strong>. Important: the TTS should <strong>not</strong> blindly copy the request body into <code>tctx</code>; that would be easy to abuse. The TTS decides what may be bound into <code>tctx</code>.</li>
+</ul>
+<p>The TTS signs the JWT with its private key and returns it as <code>access_token</code> in the Token Exchange response—exactly as RFC 8693 defines.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Content-Type: application/json</span><br><span class="line">Cache-Control: no-store</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  &quot;token_type&quot;: &quot;N_A&quot;,</span><br><span class="line">  &quot;issued_token_type&quot;: &quot;urn:ietf:params:oauth:token-type:txn_token&quot;,</span><br><span class="line">  &quot;access_token&quot;: &quot;eyJ0eXAiOiJ0eG50b2tlbitqd3QiLCJhbGciOiJSUzI1NiIsImtpZCI6InR0cy0yMDI2LXEyIn0...&quot;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="Propagation-and-verification"><a href="#Propagation-and-verification" class="headerlink" title="Propagation and verification"></a>Propagation and verification</h5><p>Downstream calls should send the txn-token in the <strong><code>Txn-Token</code></strong> HTTP header, because <strong><code>Authorization</code></strong> is reserved for ordinary access tokens:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">POST /orders HTTP/1.1</span><br><span class="line">Host: order-service.trust-domain.example</span><br><span class="line">Txn-Token: eyJ0eXAiOiJ0eG50b2tlbitqd3QiLC...</span><br><span class="line">Content-Type: application/json</span><br><span class="line"></span><br><span class="line">&#123;&quot;action&quot;: &quot;BUY&quot;, &quot;ticker&quot;: &quot;MSFT&quot;, &quot;quantity&quot;: 100&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The downstream service typically verifies:</p>
+<ul>
+<li><strong>Signature</strong>: validate with the TTS public key so the payload cannot be altered.</li>
+<li><strong><code>aud</code></strong>: matches this deployment’s trust boundary (usually configuration).</li>
+<li><strong><code>exp</code></strong>: token is still valid; lifetimes are short by design.</li>
+<li><strong><code>tctx</code></strong>: this is the txn-token superpower. A compromised service might change the body from “buy 100 shares” to “buy 1000 shares,” but <strong><code>tctx</code> is inside the signed JWT</strong>—downstream code should trust <code>tctx</code>, not the mutable body. Smart design, right?</li>
+</ul>
+<h2 id="What-Transaction-Tokens-Buy-You"><a href="#What-Transaction-Tokens-Buy-You" class="headerlink" title="What Transaction Tokens Buy You"></a>What Transaction Tokens Buy You</h2><p>Now that we have walked through the flow, let’s map txn-tokens back to the four attack patterns:</p>
+<ul>
+<li><strong>Spurious invocation</strong>: only the TTS can mint a valid txn-token. A compromised service cannot forge one; downstream verification fails fast.</li>
+<li><strong>User impersonation</strong>: <code>sub</code> is part of the signed JWT and cannot be rewritten in transit.</li>
+<li><strong>Parameter tampering</strong>: business parameters live in <strong><code>tctx</code></strong>. Verifiers read authoritative data from the token, not from attacker-controlled JSON.</li>
+<li><strong>Token theft and replay</strong>: txn-tokens are tied to a <strong>single audience</strong> (one trust boundary), carry <strong>minimal scope</strong>, expire quickly, and include a unique <strong><code>txn</code></strong> id so you can enforce <strong>one-time use</strong> with a cache. Even if theft happens, the window is tiny.</li>
+</ul>
+<h2 id="Agentic-AI"><a href="#Agentic-AI" class="headerlink" title="Agentic AI"></a>Agentic AI</h2><p>Rolling out transaction tokens is real engineering work—it can feel heavy for classic three-tier apps. For <strong>agentic AI</strong> systems, though, where tool calls, delegation, and multi-hop workflows are the norm and behavior is harder to predict, tightening the authorization attack surface is often worth the investment.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -202,9 +349,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2026-10-10 13:05:00 / Modified: 13:08:14" itemprop="dateCreated datePublished" datetime="2026-10-10T13:05:00+08:00">2026-10-10</time>
+      <time title="Created: 2026-10-10 13:05:00" itemprop="dateCreated datePublished" datetime="2026-10-10T13:05:00+08:00">2026-10-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
     </span>
 
   
@@ -320,9 +473,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2026-10-10 13:00:00 / Modified: 13:08:14" itemprop="dateCreated datePublished" datetime="2026-10-10T13:00:00+08:00">2026-10-10</time>
+      <time title="Created: 2026-10-10 13:00:00" itemprop="dateCreated datePublished" datetime="2026-10-10T13:00:00+08:00">2026-10-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
     </span>
 
   
@@ -502,9 +661,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2026-10-10 12:00:00 / Modified: 13:08:14" itemprop="dateCreated datePublished" datetime="2026-10-10T12:00:00+08:00">2026-10-10</time>
+      <time title="Created: 2026-10-10 12:00:00" itemprop="dateCreated datePublished" datetime="2026-10-10T12:00:00+08:00">2026-10-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
     </span>
 
   
@@ -630,7 +795,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
     </span>
 
   
@@ -734,7 +899,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
     </span>
 
   
@@ -876,7 +1041,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
     </span>
 
   
@@ -1026,7 +1191,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
     </span>
 
   
@@ -1175,7 +1340,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
     </span>
 
   
@@ -1256,7 +1421,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
+      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
     </span>
 
   
@@ -1303,190 +1468,6 @@
 <p>In the new design, everything is running inside a single process host in <code>Amazon Elastic Container Service(ECS)</code>. In this monolith architecture, the frames are stored in the memory instead of S3 buckets. It doesn’t need serverless orchestration service either. </p>
 <p>How does this new architecture run at a high scale? They directly scale out and partition the <code>Amazon ECS</code> cluster. In this way, they get a scalable monitoring application with a 90% cost reduction. </p>
 <h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>There is no perfect application architecture that can fit all cases. In the cloud computing era, you need to understand the service you used better than before and make a wise decision. </p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2023/03/20/guide-to-service-fabric-architecture/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/03/20/guide-to-service-fabric-architecture/" class="post-title-link" itemprop="url">Build Microservices with Service Fabric: A Hands-on Approach</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2023-03-20 18:18:32" itemprop="dateCreated datePublished" datetime="2023-03-20T18:18:32+08:00">2023-03-20</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-10 13:08:14" itemprop="dateModified" datetime="2026-10-10T13:08:14+08:00">2026-10-10</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In this article, I want to introduce a distributed systems platform: <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-overview"><code>Service Fabric</code></a>, that is used to build microservices. </p>
-<p>First things first, what is <code>Service Fabric</code>? In the software world, <code>Service Fabric</code> is in the scope of the <code>orchestrator</code>. So it is the competitor of <a target="_blank" rel="noopener" href="https://kubernetes.io/"><code>Kubernetes</code></a>, <a target="_blank" rel="noopener" href="https://docs.docker.com/engine/swarm/"><code>Docker Swarm</code></a>, etc. </p>
-<p>I know what you’re thinking about, at the time of writing, <code>Kubernetes</code> already won the competition. Why am I still writing about <code>Service Fabric</code>? My motivation to write this post is as follows:</p>
-<ul>
-<li>Firstly, I once used <code>Service Fabric</code> to build microservices and learned something valuable about it. I want to summarize all my learnings and share them with you here! </li>
-<li>Secondly, we can (simply) examine both <code>Service Fabric</code> and <code>Kubernetes</code> to understand why the cloud-native solution is better and what problems it can solve. </li>
-<li>Finally, <code>Service Fabric</code> is still widely used in some enterprise applications, in detail, you can refer <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-application-scenarios">here</a>. So the skills you learned about service fabric are valuable.</li>
-</ul>
-<h3 id="Hands-on-Project"><a href="#Hands-on-Project" class="headerlink" title="Hands-on Project"></a>Hands-on Project</h3><p>To learn the <code>Service Fabric</code> platform, we will examine an open-source project: <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation">HealthMetrics</a>. This project is originally developed by Microsoft itself to demonstrate the power of service fabric and I added some enhancements to it, in detail please refer to this <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation">GitHub repo</a>.</p>
-<p>At the business requirement level, this application goes like this: each <code>patient</code> keeps reporting the heart rate data to the <code>doctor</code> via the wearable device(the <code>band</code> in this case). And the <code>doctor</code> aggregates the collected health data and reports to the <code>county</code> service. Each <code>county</code> service instance runs some statistics on doctors’ data and sends the report to the <code>country</code> service. Finally, you can get something as follows: </p>
-<img src="/images/health-metrics-ui.png" title="health metrics" width="800px" height="600px">
-
-<p>Before we explore the detailed implementation, you can pause here for a few minutes. How will you design the architecture if this application is assigned to you? How to make it both <code>reliable</code> and <code>scalable</code>?  </p>
-<h3 id="Service-Fabric-Programming-Model"><a href="#Service-Fabric-Programming-Model" class="headerlink" title="Service Fabric Programming Model"></a>Service Fabric Programming Model</h3><p><code>Service Fabric</code> provides multiple ways to write and manage your services: </p>
-<ul>
-<li>Reliable Services: is the most popular choice in the context of service fabric, we’ll examine much more about it later. </li>
-<li>Containers: service fabric can also deploy services in containers. But if you choose to use containers, why not directly use <code>Kubernetes</code>? I’ll not cover it in this post. </li>
-<li>Guest executables: You can run any type of code or script like Node.js as guest executables in the service fabric. Note that the service fabric platform doesn’t include the runtime for the guest executables, instead, the operating system hosting the service fabric must provide the corresponding runtime for the given language. It provides a flexible way to run legacy applications within microservices. If you have an interest in it, please refer to this <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-guest-executables-introduction">article</a>, I will not examine the details in this post.</li>
-</ul>
-<p>Next, let’s examine what are <code>Reliable Services</code>.</p>
-<h3 id="Reliable-Services"><a href="#Reliable-Services" class="headerlink" title="Reliable Services"></a>Reliable Services</h3><p>As I mentioned above, <code>service fabric</code> is an <code>orchestrator</code> which provides infrastructure-level functionalities like <code>cluster management</code>, <code>service discovery</code>, and <code>scaling</code> as <code>Kubernetes</code> does. But <code>service fabric</code> goes further by also providing a <code>reliable services</code> model to guide the development on the application level, this’s a special point compared to <code>Kubernetes</code>. Simply speaking, the application code can call the <code>service fabric</code> runtime APIs to query the system for building reliable applications. In the following sections, I’ll show you what that means with some code blocks. </p>
-<p><code>Reliable Services</code> can be classified into two types as follows: </p>
-<ul>
-<li>Stateless service: when we mentioned stateless service in the context of service fabric, we are not saying that the service doesn’t have any state to store, but it means that the service doesn’t store the data inside the cluster of service fabric. Indeed, the stateless service can store states in the external database. The naming of stateless is relative to the cluster. </li>
-<li>Stateful service: similarly, the stateful service keeps its state locally in the service fabric cluster, which means the data and service are in the same virtual or physical machine. And this is called <code>Reliable Collections</code>. Compared with external data storage, <code>Reliable Collections</code> implies low latency and high performance. In the following section, I will introduce more about <code>Reliable Collections</code>, which is a very interesting topic. Please hold on!</li>
-</ul>
-<img src="/images/reliable-services.png" title="reliable services" width="600px" height="400px">
-
-<p>Besides stateless and stateful services listed above, there is the third type of service provided by Service Fabric: <code>Actor Service</code>. </p>
-<ul>
-<li>Actor Service: is a special type of stateful service, which applies the <code>actor model</code> theory. The <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Actor_model"><code>actor model</code></a> is a general computer science theory handling <code>concurrent computation</code>. It is a very big topic worthy of a separate article. I’ll not cover the details in this post, instead, let’s go through this model in the context of service fabric.</li>
-</ul>
-<p>The <code>actor model</code> is proposed many years ago in 1973 to simplify the process of writing concurrent programs with the following several advantages: </p>
-<ul>
-<li>Encapsulation: in the actor model, each actor is a self-contained unit that encapsulates its own state and behavior. And each actor runs <code>only one thread</code>, so you don’t have to worry about complex multi-threading programming issues. But how does it support high concurrency? Just allocate <code>more actor instances</code> as the load goes up.   </li>
-<li>Message passing: different from the traditional multi-threading programming techniques, actors do not <code>share memories</code>, instead, they communicate with async message-passing communication, which can reduce the complexity of concurrent programs. </li>
-<li>Location transparency: as a self-contained computation unit, each actor can be located on different machines, which makes it the perfect solution for building distributed applications as service fabric does.</li>
-</ul>
-<p>In the future, I will write an article on the actor model to examine more details about it. Next, let’s take a look at the demo app: <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation">HealthMetrics</a> and analyze how it was built based on the programming models we discussed above. </p>
-<img src="/images/actor-model.png" title="actor model" width="400px" height="300px">  
-
-<h3 id="Architecture-of-HealthMetrics"><a href="#Architecture-of-HealthMetrics" class="headerlink" title="Architecture of HealthMetrics"></a>Architecture of HealthMetrics</h3><img src="/images/healthmetrics-architecture.png" title="architecture" width="800px" height="600px">
-
-<p>There are several services included in this <code>HealthMetrics</code> demo application. They are: </p>
-<ul>
-<li>BandCreationService: this <code>stateless</code> service read the input CSV file and creates the individual <code>band actors</code> and <code>doctor actors</code>. For example, as the above snapshot shows, the application creates roughly 300 band actors and doctor actors.  </li>
-<li>BandActor: this <code>actor</code> service is the host for the band actors. Each BandActor represents an individual wearable device, which generates heart rate data and then sends it to the designated DoctorActor every 5 seconds. </li>
-<li>DoctorActor: the doctor <code>actor</code> service aggregates all of the data it receives from each band actor and generates an overall view for that doctor and then pushes it into the CountyService every 5 seconds.</li>
-<li>CountyService: this <code>stateful</code> service aggregates the information provided by the doctor actor further and also pushes the data into the NationalService. </li>
-<li>NationalService: this <code>stateful</code> service maintains the total aggerated data for the entire county and is used to serve data requested by WebService. </li>
-<li>WebService: this <code>stateless</code> service just hosts a simple web API to query information from NationalService and render the data on the web UI.</li>
-</ul>
-<p>As you can see, this demo application consists of all three types of services provided by service fabric, which is a perfect case to learn <code>service fabric</code>, right? </p>
-<p>In the next sections, let’s examine what kinds of techniques of service fabric are applied to build this highly <code>scalable</code> and <code>available</code> microservices application. </p>
-<h3 id="Naming-Perspective"><a href="#Naming-Perspective" class="headerlink" title="Naming Perspective"></a>Naming Perspective</h3><p><code>Naming</code> plays an important role in the <code>distributed system</code>. They are used to share resources, to uniquely identify entities, to refer to locations, and so on. In the <code>distributed system</code>, each name should be resolved to the entity it refers to. To resolve names, it is necessary to implement a <code>naming system</code>.</p>
-<p>In <code>Service Fabric</code>, <code>naming</code> is used to identify and locate <code>services</code> and <code>actors</code> within a cluster. And <code>Service Fabric</code> uses a <code>structured naming</code> system, where services and actors are identified using a <code>hierarchical</code> naming scheme. The naming system is based on the concept of a <code>namespace</code>. A namespace is a logical grouping of related <code>applications</code> and <code>services</code>. In the <code>Service Fabric</code> namespace, the first level is the <code>application</code>, which represents a logical grouping of services, and the second level is the <code>service</code>, which represents a specific unit of functionality that is part of the application. And the default namespace is <code>fabric:/</code>, so the service <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier">URI</a> in the <code>Service Fabric</code> cluster is in the following format: </p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fabric:/applicationName/ServiceName</span><br></pre></td></tr></table></figure>
-<p>And in our <code>HealthMetrics</code> demo app, the URL will be something like <code>fabric:/HealthMetrics/HealthMetrics.BandActor</code> or <code>fabric:/HealthMetrics/HealthMetrics.CountyService</code>(the application name is <code>HealthMetrics</code> and the service name is <code>HealthMetrics.BandActor</code> or <code>HealthMetrics.CountyService</code>). </p>
-<p>In this demo app, we build a helper class <code>ServiceUriBuilder</code> to generate URI as follows: </p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> Uri <span class="title">ToUri</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">string</span> applicationInstance = <span class="keyword">this</span>.ApplicationInstance;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (String.IsNullOrEmpty(applicationInstance))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">try</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// the ApplicationName property here automatically prepends &quot;fabric:/&quot; for us</span></span><br><span class="line">            applicationInstance = FabricRuntime.GetActivationContext().ApplicationName.Replace(<span class="string">&quot;fabric:/&quot;</span>, String.Empty);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">catch</span> (InvalidOperationException)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">// FabricRuntime is not available. </span></span><br><span class="line">            <span class="comment">// This indicates that this is being called from somewhere outside the Service Fabric cluster.</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> Uri(<span class="string">&quot;fabric:/&quot;</span> + applicationInstance + <span class="string">&quot;/&quot;</span> + <span class="keyword">this</span>.ServiceInstance);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>For detail, please refer to this source code <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetrics.Common/ServiceUriBuilder.cs">file</a>.</p>
-<p>Since the behavior of the name resolver is quite similar to the internet domain name resolver, the <code>Service Fabric Name Service</code> can be regarded as an internal <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Domain_Name_System"><code>DNS</code></a> service. This type of internal <code>DNS</code> service is a common requirement for all distributed systems, including <code>Kubernetes</code>. In the modern <code>cloud-native</code> ecosystem, the popular choice is <a target="_blank" rel="noopener" href="https://coredns.io/"><code>CoreDNS</code></a>, which runs inside K8S. In the future, I will write an article about DNS. Please keep watching my blog’s update.</p>
-<p>Besides this default <code>DNS</code> solution mentioned above, you can use other <code>service registry</code> and <code>service discovery</code> solutions. For example, in my <a href="https://organicprogrammer.com/2020/11/16/golang-service-discovery-consul/">previous article</a>, I once examined how to do this based on <a target="_blank" rel="noopener" href="https://www.consul.io/"><code>Consul</code></a>. Imagine your large-scale application consists of hundreds of microservices, with the default DNS solutions you have to hardcode so many names in each service. That’s just where <code>Consul</code> can help. In detail, I’ll not repeat it here, please refer to my previous article!</p>
-<p>Now that we understand how the naming system works, let’s examine how to do inter-service communication based on that. </p>
-<h3 id="Communication-Perspective"><a href="#Communication-Perspective" class="headerlink" title="Communication Perspective"></a>Communication Perspective</h3><p>Inter-service communication is at the heart of all distributed systems. For nondistributed platforms, communication between processes can be done by <code>sharing memories</code>. But the communication between processes on different machines has always been based on the low-level message passing as offered by the underlying <code>network</code>. There are two widely used models for communications in distributed systems: <code>Remote Procedure Call(RPC)</code> and <code>Message-Oriented Middleware(MOM)</code>. </p>
-<ul>
-<li><p><code>Remote Procedure Call(RPC)</code>: is ideal for <code>client-server</code> applications and aims at hiding message-passing details from the client. The <code>HTTP</code> protocol is a typical <code>client-server</code> model, so <code>HTTP</code> requests can be thought of as a type of <code>RPC</code>.  In the <code>client-server</code> model, the client and server <code>must be online at the same time</code> to <code>exchange</code> information, so it’s often called <code>synchronous communication</code>.  </p>
-</li>
-<li><p><code>Message-Oriented Middleware(MOM)</code>: is suitable for distributed applications, where the communication does not follow the strict pattern of a client-server model. In this model, there are three parties involved: the <code>message producer</code>, the <code>message consumer</code>, and the <code>message broker</code>. In this case, when the <code>message producer</code> publishes the message, the <code>message consumer</code> doesn’t have to be online, the <code>message broker</code> will store the message until the consumer becomes available to receive it, so this model is also called <code>asynchronous communication</code>.</p>
-</li>
-</ul>
-<p>The <code>Service Fabric</code> supports <code>RPC</code> out of the box. In our <code>HealthMetrics</code> demo app, you can find the <code>RPC</code> calls and HTTP requests easily. For example, when the <code>BandActor</code> and the <code>DoctorActor</code> are created, the <code>RPC</code> call is used in the <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetrics.BandCreationService/Service.cs#L86"><code>BandCreationService</code></a> as follows: </p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">async</span> Task <span class="title">CreateBandActorTask</span>(<span class="params">BandActorGenerator bag, CancellationToken cancellationToken</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// omit some code for simplicity</span></span><br><span class="line">    ActorId bandActorId;</span><br><span class="line">    ActorId doctorActorId;</span><br><span class="line">    bandActorId = <span class="keyword">new</span> ActorId(Guid.NewGuid()); </span><br><span class="line">    doctorActorId = <span class="keyword">new</span> ActorId(bandActorInfo.DoctorId);</span><br><span class="line">    IDoctorActor docActor = ActorProxy.Create&lt;IDoctorActor&gt;(doctorActorId, <span class="keyword">this</span>.DoctorServiceUri);</span><br><span class="line">    <span class="keyword">await</span> docActor.NewAsync(doctorName, randomCountyRecord);</span><br><span class="line">    IBandActor bandActor = ActorProxy.Create&lt;IBandActor&gt;(bandActorId, <span class="keyword">this</span>.ActorServiceUri);</span><br><span class="line">    <span class="keyword">await</span> bandActor.NewAsync(bandActorInfo);</span><br><span class="line">    <span class="comment">// omit some code for simplicity</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>You can see the <code>ActorProxy</code> instance is created as the <code>RPC</code> client, and the <code>NewAsync</code> method of <code>BandActor</code> and <code>DoctorActor</code> service is called. For example, the <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetrics.BandActor/BandActor.cs#L78"><code>NewAsync</code></a> method of <code>BandActor</code> goes like this: </p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">NewAsync</span>(<span class="params">BandInfo info</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;CountyRecord&gt;(<span class="string">&quot;CountyInfo&quot;</span>, info.CountyInfo);</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;Guid&gt;(<span class="string">&quot;DoctorId&quot;</span>, info.DoctorId);</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;HealthIndex&gt;(<span class="string">&quot;HealthIndex&quot;</span>, info.HealthIndex);</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;<span class="built_in">string</span>&gt;(<span class="string">&quot;PatientName&quot;</span>, info.PersonName);</span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.StateManager.SetStateAsync&lt;List&lt;HeartRateRecord&gt;&gt;(<span class="string">&quot;HeartRateRecords&quot;</span>, <span class="keyword">new</span> List&lt;HeartRateRecord&gt;()); <span class="comment">// initially the heart rate records are empty list</span></span><br><span class="line">    <span class="keyword">await</span> <span class="keyword">this</span>.RegisterReminders();</span><br><span class="line"></span><br><span class="line">    ActorEventSource.Current.ActorMessage(<span class="keyword">this</span>, <span class="string">&quot;Band created. ID: &#123;0&#125;, Name: &#123;1&#125;, Doctor ID: &#123;2&#125;&quot;</span>, <span class="keyword">this</span>.Id, info.PersonName, info.DoctorId);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>You can ignore the detailed content of this method for now, I will explain in a later section.</p>
-<p>And when the <code>DoctorActor</code> service reports its status, it calls the <code>CountyService</code> endpoint with HTTP requests: </p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">SendHealthReportToCountyAsync</span>()</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// omit some code</span></span><br><span class="line">    <span class="keyword">await</span> servicePartitionClient.InvokeWithRetryAsync(</span><br><span class="line">        client =&gt;</span><br><span class="line">        &#123;</span><br><span class="line">            Uri serviceAddress = <span class="keyword">new</span> Uri(</span><br><span class="line">                client.BaseAddress,</span><br><span class="line">                <span class="built_in">string</span>.Format(</span><br><span class="line">                    <span class="string">&quot;county/health/&#123;0&#125;/&#123;1&#125;&quot;</span>,</span><br><span class="line">                    partitionKey.Value.ToString(),</span><br><span class="line">                    id));</span><br><span class="line"></span><br><span class="line">            HttpWebRequest request = WebRequest.CreateHttp(serviceAddress);</span><br><span class="line">            request.Method = <span class="string">&quot;POST&quot;</span>;</span><br><span class="line">            request.ContentType = <span class="string">&quot;application/json&quot;</span>;</span><br><span class="line">            request.KeepAlive = <span class="literal">false</span>;</span><br><span class="line">            request.Timeout = (<span class="built_in">int</span>) client.OperationTimeout.TotalMilliseconds;</span><br><span class="line">            request.ReadWriteTimeout = (<span class="built_in">int</span>) client.ReadWriteTimeout.TotalMilliseconds;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">using</span> (Stream requestStream = request.GetRequestStream())</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">using</span> (BufferedStream buffer = <span class="keyword">new</span> BufferedStream(requestStream))</span><br><span class="line">                &#123;</span><br><span class="line">                    <span class="keyword">using</span> (StreamWriter writer = <span class="keyword">new</span> StreamWriter(buffer))</span><br><span class="line">                    &#123;</span><br><span class="line">                        JsonSerializer serializer = <span class="keyword">new</span> JsonSerializer();</span><br><span class="line">                        serializer.Serialize(writer, payload);</span><br><span class="line">                        buffer.Flush();</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">using</span> (HttpWebResponse response = (HttpWebResponse) request.GetResponse())</span><br><span class="line">                    &#123;</span><br><span class="line">                        ActorEventSource.Current.Message(<span class="string">&quot;Doctor Sent Data to County: &#123;0&#125;&quot;</span>, serviceAddress);</span><br><span class="line">                        <span class="keyword">return</span> Task.FromResult(<span class="literal">true</span>);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    );</span><br><span class="line">    <span class="comment">// omit some code</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>In the demo app, no <code>asynchronous communication</code> is used. But you can easily integrate the <code>message broker</code> middleware with the <code>Service Fabric</code>. This kind of microservice design is called <code>Event-Driven Architecture</code>. In the future, I will write another article about it, please keep watching my blog!</p>
-<h3 id="Scalability-Perspective"><a href="#Scalability-Perspective" class="headerlink" title="Scalability Perspective"></a>Scalability Perspective</h3><p><code>Scalability</code> has become one of the most important design goals for developers of distributed systems. A system can be scalable, meaning that we can easily add more users and resources to the system without any noticeable loss of performance. In most cases, scalability problems in distributed systems appear as performance problems caused by the limited capacity of servers and networks. </p>
-<p>Simply speaking, there are two types of scaling techniques: <code>scaling up</code> and <code>scaling out</code>: </p>
-<ul>
-<li>scaling up: is the process by which a machine is equipped with more and often more powerful resources(e.g., by increasing memory, upgrading CPUs, or replacing network modules) so that it can better accommodate performance-demanding applications. However, there are limits to how much you can scale up a single machine, and at some point, it may become more cost-effective to scale out. </li>
-<li>scaling out: is all about extending a networked computer system with more computers and subsequently distributing workloads across the extended set of computers. There are basically only three techniques we can apply: <code>asynchronous communication</code>, <code>replication</code> and <code>Partitioning</code>.</li>
-</ul>
-<p>We already examined asynchronous communication in the last section. Next, let’s take a deep look at the other two: </p>
-<ul>
-<li><p><code>Replication</code>:  is a technique, which <code>replicates</code> more components or resources, etc., across a distributed system. <code>Replication</code> not only increases <code>availability</code>; but also helps to balance the load between components, leading to <code>better performance</code>. In Service Fabric, no matter whether it is a stateless or stateful service, you can replicate the service across multiple nodes. As the workload of your application increases, Service Fabric will automatically distribute the load. But <code>replication</code> can only boost performance for <code>read</code> requests (which don’t change data); if you need to optimize the performance for <code>write</code> requests (which change data), you need <code>Partitioning</code>. </p>
-</li>
-<li><p><code>Partitioning</code>:  is an important scaling technique, which involves taking a component or other resource, splitting it into <code>smaller parts</code>, and subsequently spreading those parts across the system. Each partition only contains a subset of the entire dataset. This can help reduce the amount of data that needs to be processed and accessed by each partition,  which can lead to faster processing times and improved performance. In addition to reducing the size of the data set, partitioning can also improve concurrency and reduce contention.</p>
-</li>
-</ul>
-<p>In Service Fabric, each <code>partition</code> consists of a <code>replica set</code> with a single <code>primary</code> replica and multiple active <code>secondary</code> replicas. Service Fabric makes sure to distribute replicas of partitions across nodes so that secondary replicas of a partition do not end up on the same node as the primary replica, which can increase the <code>availability</code>. </p>
-<img src="/images/partition-replication.png" title="partition and replicas" width="600px" height="400px"> 
-
-<p>The difference between a <code>primary</code> replica and a <code>secondary</code> replica is that the <code>primary</code> replica can handle both <code>read and write</code> requests, while the <code>secondary</code> replica can only handle <code>read</code> requests. Moreover, by default, the read requests are only handled by the <code>primary</code> replica, if you want to balance the read requests among all the <code>secondary</code> replicas, you need to set <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-reliable-services-lifecycle"><code>ListenOnSecondary</code></a> at the application code level. You can set the number of replicas with <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L155"><code>MinReplicaSetSize</code></a> and <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L158"><code>TargetReplicaSetSize</code></a></p>
-<p>And when the client needs to call the service with multiple partitions, the client needs to generate a <code>ServicePartitionKey</code>; and send requests to the service with this partition key. For example, the <code>DoctorActor</code> sends the health report to the county service with multiple partitions as follows: </p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">async</span> Task <span class="title">SendHealthReportToCountyAsync</span>()</span> &#123;</span><br><span class="line">    <span class="comment">// omit some code </span></span><br><span class="line">    ServicePartitionKey partitionKey = <span class="keyword">new</span> ServicePartitionKey(countyRecord.CountyId);</span><br><span class="line">    ServicePartitionClient&lt;HttpCommunicationClient&gt; servicePartitionClient =</span><br><span class="line">    <span class="keyword">new</span> ServicePartitionClient&lt;HttpCommunicationClient&gt;(</span><br><span class="line">        <span class="keyword">this</span>.clientFactory,</span><br><span class="line">        <span class="keyword">this</span>.countyServiceInstanceUri,</span><br><span class="line">        partitionKey);</span><br><span class="line">    <span class="keyword">await</span> servicePartitionClient.InvokeWithRetryAsync();</span><br><span class="line">    <span class="comment">// omit some code</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>You can see the partition key is generated based on the county id field. Service Fabric provides several different <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-concepts-partitioning">partition schemas</a>. In this case, <code>ranged partitioning</code> is used, where the partition key is an <code>integer</code>. </p>
-<p>The county service specifies an integer range by a <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L34"><code>Low Key</code></a> ( set to 0) and <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L35"><code>High Key</code></a> (set to 57000). It also defines the number of partitions as <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-fabric-dotnet-data-aggregation/blob/master/HealthMetricsApplication/Scripts/HealthMetricsDeployment.ps1#L61"><code>PartitionCount</code></a> (set to 3). All the integer keys are evenly distributed among the partitions. So the partitions of the county service go as follows: </p>
-<img src="/images/partition-key.png" title="partition key" width="400px" height="300px"> 
-
-<p>As I mentioned above, the county id is unique, we could then generate a hash code based on the id field, then modulus the key range, to finally get the partition key. Service Fabric runtime will direct the requests to the target node based on that partition key. </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this post, we quickly examined some interesting topics about Service Fabric. I have to admit that Service Fabric is a big project, what I examined here only covers a small portion of the entire system. Feel free to explore more!</p>
 
       
     </div>
