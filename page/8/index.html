@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-count">77</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">44</span>
+        <span class="site-state-item-count">45</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,133 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2019/03/05/https-certificate-signature/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2019/03/05/https-certificate-signature/" class="post-title-link" itemprop="url">How HTTPS works: part four - digital signature</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2019-03-05 16:00:47" itemprop="dateCreated datePublished" datetime="2019-03-05T16:00:47+08:00">2019-03-05</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>The <a href="https://organicprogrammer.com/2019/02/25/https-certificate/">second</a> article of this series shows that we should not directly exchange <code>public key</code> to establish a secure channel. Instead, <code>certificates</code> should be used to establish trust between clients and servers. And the last article examines the content of certificates, which encodes two very crucial pieces of information: <strong>the server’s public key</strong> and a <strong>digital signature</strong> that can confirm the certificate’s authenticity. In this article, let us examine what digital signature is and how it works.  </p>
+<h3 id="Digital-Signature"><a href="#Digital-Signature" class="headerlink" title="Digital Signature"></a>Digital Signature</h3><p>The concept of <code>digital signature</code> can be illustrated as follows: </p>
+<img src="/images/https-signature-process.png" title="digital signature process" width="600px" height="400px">
+
+<p>When the server sends a message to the client, how can we prevent the attackers from eavesdropping on the message? The solution is that the server attaches its signature to the message, and the client accepts the message only if the verification of the certificate passes. So this process can be divided into two parts: <code>sign the message to get the digital signature</code> and <code>verify the digital signature</code>.</p>
+<ul>
+<li><p><strong>Sign the message</strong>: means <code>hash</code> the message and <code>encrypt</code> the hash with the server’s private key. The encrypted hash is called <code>digital signature</code>. </p>
+</li>
+<li><p><strong>Verify the signature</strong>: means <code>decrypt</code> the signature with the server’s public key to get the hash, <code>re-compute</code> the hash of the message again, and compare the identity of two hashes.</p>
+</li>
+</ul>
+<p>What can we benefit from signing and verifying the digital signature? To verify the digital signature is to confirm two things: </p>
+<ul>
+<li><p><strong>Message Integrity</strong>: the message has not changed since the signature was attached because it is based on a  <code>cryptographic hash</code> of the message. </p>
+</li>
+<li><p><strong>Proof of Origin</strong>: the signature belongs to the person who alone has access to the private key. In this way, the recipient of the message can be sure of the origin of the message.</p>
+</li>
+</ul>
+<p>Information security has other attributes, but integrity and authentication are the two traits you must know.</p>
+<h3 id="Secrets-behind-digital-signature"><a href="#Secrets-behind-digital-signature" class="headerlink" title="Secrets behind digital signature"></a>Secrets behind digital signature</h3><p>As mentioned in the above section, the digital signature can prove the integrity of the message and the authenticity of the message’s owner. To understand how it works, you must understand the following two facts: </p>
+<ul>
+<li><strong>Hash is irreversible</strong></li>
+</ul>
+<p>In the previous articles, we explained that cryptography is a two-way algorithm. You can <code>encrypt</code> the plaintext to the ciphertext and <code>decrypt</code> the ciphertext back to the plaintext. It means the cryptographic algorithm is reversible. </p>
+<p>Different from cryptographic algorithms, <strong>A hash is irreversible!</strong>. This irreversibility is the whole point.</p>
+<p>The goal of any cryptographic hashing algorithm is to reduce the arbitrarily sized input into a fixed-sized hash. The cryptographic hashing algorithm should guarantee that no two different messages can produce an identical hash. That is <code>collide</code>. </p>
+<p>In this way, it is impossible for attackers to reverse engineer such a <code>collision</code>. </p>
+<img src="/images/https-signature-hash.png" title="Hash is irreversible" width="600px" height="400px">
+
+<p>The attacker intercepts the message and changes it. Then the verification process of the signature on the client-side can not pass since the re-computed hashing can not match the original hashing. </p>
+<p>I will write about how to implement a hash function in the future. In this article, you can ignore the details. Just remember that hashing is irreversible. </p>
+<p><strong>The private key prove identity</strong></p>
+<p>The attack shown above does not pass the verification because the signature and the forged message do not match. Then this time, the attacker compute a new hash based on the forged message and sign the hash with his private key. Can this attack work? </p>
+<img src="/images/https-signature-key-identity.png" title="Hash is irreversible" width="800px" height="600px">
+
+<p>The short answer is No. </p>
+<p>When the client gets the digital signature, the first step is to <code>decrypt</code> it. The decryption breaks for this new attack because the forged signature is signed with the attacker’s private key instead of the server’s private key. </p>
+<p><strong>It’s impossible for anybody except the owner of the private key to generate something that can be decrypted using the public key.</strong> This is the nature of public-key cryptography. I will write other articles to explain it mathematically in the future.  </p>
+<p>In a word, the private key can prove identity.</p>
+<h3 id="How-does-signature-make-certificate-secure"><a href="#How-does-signature-make-certificate-secure" class="headerlink" title="How does signature make certificate secure?"></a>How does signature make certificate secure?</h3><p>The digital signature is not designed only for TLS certificates, and it has other applications, which is not the focus of my article. The important thing is to understand how to apply digital signature in the PKI framework and how it makes certificates more secure. </p>
+<p>The key is that <strong>the certificate associates the public key with the server you are connecting to</strong>. As we see in <a href="https://organicprogrammer.com/2019/03/02/https-certificate-anatomy/">last</a> article, the certificate must contain some information about the identity of the server, such as the domain name of the server. For example, the <code>Subject</code> property of the <a target="_blank" rel="noopener" href="https://gist.github.com/baoqger/79923d4f92b166bb914aa700721d6a0b">certificate</a> we examined in the last article</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Subject: CN = *.google.com</span><br></pre></td></tr></table></figure>
+
+<p>And the digital signature is <code>signed based on all of the information instead of only public key</code>. It can prevent man-in-the-middle attack in the two following cases:</p>
+<ul>
+<li><p>The attacker intercepts the server’s certificate and changes the public key or any other information, the hash code in the signature does not match the hash code of the content of the forged certificate, and the client rejects it. It is <code>Message Integrity</code> mentioned above. </p>
+</li>
+<li><p>The attacker can obtain a certificate signed by the trusted CA by pretending as a legitimate business. When the client requests a certificate from the server, the attacker can replace it with his own. The validation on the client-side can not pass. Although the attacker’s certificate is signed by a trusted CA, the domain name(or other server information) does not match the expected one. It is <code>Proof of Origin</code> mentioned above.</p>
+</li>
+</ul>
+<p>So far, I hope you can understand (roughly) the beauty of this Internet security framework. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, I examined how a digital signature works. You see how to sign a signature and how to verify it. Digital signature and certificate are the most abstract part of the PKI framework. So in the following article, let me illustrate the whole process by manually going through the certificate verification process step by step. We will use <code>openssl</code> to examine the result in each step.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +337,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -309,7 +436,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -403,7 +530,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -508,7 +635,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -610,7 +737,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -685,7 +812,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   

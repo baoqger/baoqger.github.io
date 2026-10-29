@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">76</span>
+          <span class="site-state-item-count">77</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">44</span>
+        <span class="site-state-item-count">45</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,115 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2023/04/09/understand-more-aws-service-by-negative-cases/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2023/04/09/understand-more-aws-service-by-negative-cases/" class="post-title-link" itemprop="url">Scalability Lessons Learned from Amazon Return to The Monolith</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2023-04-09 17:25:40" itemprop="dateCreated datePublished" datetime="2023-04-09T17:25:40+08:00">2023-04-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>Recently, the engineering team at Amazon Prime Video posted an article that becomes super popular in the software community. Many discussions arose concerning <code>how to design a scalable application in the modern cloud computing era</code>.  </p>
+<p><code>Scalability</code> is one critical metric for designing and developing an online application. Technically it is a challenging task, but the cloud made it easy; because the public cloud services providers like AWS and Azure do the job for you. <a target="_blank" rel="noopener" href="https://www.cloudflare.com/learning/cloud/what-is-a-virtual-machine/"><code>Virtual machine</code></a>, <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Container"><code>Container</code></a> , and <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Serverless_computing"><code>Serverless</code></a>, you have so many powerful technologies to scale your application and business.  </p>
+<p>But the problem is you need to choose the one suitable for your application. So in this article, let’s examine the details of why Aamzon refactors the application and how they do it.</p>
+<p>Since Amazon doesn’t expose the code implementation of this project, our analysis is based on the <a target="_blank" rel="noopener" href="https://www.primevideotech.com/video-streaming/scaling-up-the-prime-video-audio-video-monitoring-service-and-reducing-costs-by-90">original post</a> and the technical understanding of AWS. All right? </p>
+<h3 id="Case-study"><a href="#Case-study" class="headerlink" title="Case study"></a>Case study</h3><p>The product refactored is called Amazon Prime Video Monitoring Service, which monitors the quality of thousands of live video streams. This monitoring tool runs the real-time analysis of the streams and detects quality issues. The entire process consists of 3 steps: <code>media converter</code>, <code>defect detector</code> and <code>real-time notification</code>. </p>
+<ul>
+<li><code>media converter</code>:  converting input audio&#x2F;video streams to frames. </li>
+<li><code>defect detector</code>:  executing machine learning algorithms that analyze frames to detect defects. </li>
+<li><code>real-time notification</code>:  sending real-time notifications whenever a defect is found.</li>
+</ul>
+<p>The old architecture goes as follows: </p>
+<img src="/images/prime-01.png" title="serverless architecture" width="600px" height="800px">
+
+<p>In this <code>microservices</code> architecture, each step was implemented by <code>AWS Lambda</code> <code>serverless</code> service (I assume you already know what is <code>serverless</code>; if not, please refer to other <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Serverless_computing">online documents</a>). And the entire workflow was orchestrated by <code>AWS Step Functions</code>, which is a serverless orchestration service.</p>
+<h5 id="AWS-Step-Functions-State-Transition"><a href="#AWS-Step-Functions-State-Transition" class="headerlink" title="AWS Step Functions State Transition"></a>AWS Step Functions State Transition</h5><p>The first bottleneck is just coming from AWS Step Functions. But before discussing the issues of this architecture, we need to understand what is <code>AWS Step Functions</code> and how it works basically. This knowledge is very critical to understand the performance bottlenecks later. </p>
+<p><code>AWS Step Functions</code> is a <code>serverless</code> service that allows you to coordinate and orchestrate multiple AWS serverless functions using a <code>state machine</code>. You can define the workflow of serverless applications as a state machine, which represents the different <code>states</code> and <code>transitions</code> of the application’s execution.</p>
+<p>The <code>State machine</code> can be thought of as a <code>directed graph</code>, where each node represents a state, and each edge represents a transition between states, which is used to model complex systems. The topic of state machine isn’t in the scope of this article, I will write a post about it in the future. So far, you only need to know each state in the state machine represents a specific step in the workflow, while transitions represent the events that trigger the transition from one step to another. You can find many examples of <code>AWS Step Functions</code> in this <a target="_blank" rel="noopener" href="https://github.com/aws-samples/aws-stepfunctions-examples/tree/main">repo</a>, please take a look at what problems you can solve with it. </p>
+<p>In theory, this serverless-based microservices architecture can scale out easily. However, as the <a target="_blank" rel="noopener" href="https://www.primevideotech.com/video-streaming/scaling-up-the-prime-video-audio-video-monitoring-service-and-reducing-costs-by-90">original post</a> mentioned it “<strong>hit a hard scaling limit at around 5% of the expected load. Also, the overall cost of all the building blocks was too high to accept the solution at a large scale.</strong>“ </p>
+<p>So the bottleneck is the <code>cost</code>! Because AWS Step Functions <code>charges users per state transition</code>, and in this monitoring service case, it performed multiple state transitions for every second of the video stream, it quickly hit the account limits!</p>
+<p>As a software engineer working in a team, maybe you can just focus on writing great codes, but when you need to select the tech stack, you have to consider the <code>cost</code>, especially when your application is running on the cloud. </p>
+<h5 id="AWS-S3-Buckets-Tier-1-requests"><a href="#AWS-S3-Buckets-Tier-1-requests" class="headerlink" title="AWS S3 Buckets Tier-1 requests"></a>AWS S3 Buckets Tier-1 requests</h5><p>As mentioned above, the <code>media converter</code> service splits videos into frames, and the <code>defect detector</code> service loads and analyzes the frames later. So in the original architect, the frame images are stored in the Amazon S3 bucket. As the <a target="_blank" rel="noopener" href="https://www.primevideotech.com/video-streaming/scaling-up-the-prime-video-audio-video-monitoring-service-and-reducing-costs-by-90">original post</a> mentioned “Defect detectors then download images and processed them concurrently using AWS Lambda. However, <strong>the high number of Tier-1 calls</strong> to the S3 bucket was expensive.”</p>
+<p>So the second bottleneck is also a cost issue. But what is a <code>Tier-1 call</code> or request in the context of AWS S3? </p>
+<p>A <code>Tier-1 request</code> refers to an API request that retrieves or lists objects in an S3 bucket, and is charged at a higher rate than other types of API requests. AWS S3 API requests are classified into two categories: <code>standard requests</code> and <code>Tier-1 requests</code>. </p>
+<ul>
+<li><code>standard requests</code>:  including API requests such as PUT, COPY, DELETE and HEAD requests. </li>
+<li><code>Tier-1 requests</code>:  including API requests such as GET and LIST requests.</li>
+</ul>
+<p><code>Tier-1 requests</code> are expensive because they involve retrieving and listing objects in an AWS S3 bucket, which is more resource-intensive.  Because when you retrieve or list objects, S3 needs to scan through the entire bucket to find the targets. Additionally, S3 needs to transfer the data for each retrieved object over the network. So basically, it consumes more <code>storage</code> and <code>network</code> resources on the cloud. </p>
+<h5 id="Monolith-Architecture"><a href="#Monolith-Architecture" class="headerlink" title="Monolith Architecture"></a>Monolith Architecture</h5><p>Based on these two bottlenecks, they refactored this monitoring tool and returned to the monolith architecture as follows: </p>
+<img src="/images/prime-2.png" title="serverless architecture" width="600px" height="800px">
+
+<p>In the new design, everything is running inside a single process host in <code>Amazon Elastic Container Service(ECS)</code>. In this monolith architecture, the frames are stored in the memory instead of S3 buckets. It doesn’t need serverless orchestration service either. </p>
+<p>How does this new architecture run at a high scale? They directly scale out and partition the <code>Amazon ECS</code> cluster. In this way, they get a scalable monitoring application with a 90% cost reduction. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>There is no perfect application architecture that can fit all cases. In the cloud computing era, you need to understand the service you used better than before and make a wise decision. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +319,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -394,7 +503,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -505,7 +614,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -638,7 +747,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -759,7 +868,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -888,7 +997,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -1012,7 +1121,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -1145,7 +1254,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -1254,7 +1363,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
+      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
     </span>
 
   
@@ -1317,225 +1426,6 @@
 <li>Automatic memory management by Garbage Collection.</li>
 <li>Integrate <code>ncurses</code> for Text-based user interface.</li>
 </ul>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2022/06/08/how-to-write-a-netfilter-firewall-part3/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2022/06/08/how-to-write-a-netfilter-firewall-part3/" class="post-title-link" itemprop="url">Write a Linux firewall from scratch based on Netfilter: part three - Netfilter module</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2022-06-08 14:59:19" itemprop="dateCreated datePublished" datetime="2022-06-08T14:59:19+08:00">2022-06-08</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-21 15:03:54" itemprop="dateModified" datetime="2026-10-21T15:03:54+08:00">2026-10-21</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the previous <a href="https://organicprogrammer.com/2022/05/05/how-to-write-a-netfilter-firewall-part2/">article</a>, we examined how to write a Kernel module and load it dynamically into a running Linux system. Based on this understanding, let’s continue our journey to write a <code>Netfilter</code> module as our mini-firewall.  </p>
-<h3 id="Netfilter-architecture"><a href="#Netfilter-architecture" class="headerlink" title="Netfilter architecture."></a>Netfilter architecture.</h3><h5 id="Basics-of-Netfilter-hooks"><a href="#Basics-of-Netfilter-hooks" class="headerlink" title="Basics of Netfilter hooks"></a>Basics of Netfilter hooks</h5><p><strong>The <code>Netfilter</code> framework provides a bunch of <code>hooks</code> in the Linux kernel. As network packets pass through the protocol stack in the kernel, they will traverse these hooks as well</strong>. And Netfilter allows you to write modules and register callback functions with these hooks. When the hooks are triggered, the callback functions will be called. This is the basic idea behind Netfilter architecture. Not difficult to understand, right? </p>
-<img src="/images/netfilter-in-kernel.png" title="Netfilter architecture" width="800px" height="600px">
-
-<p>Currently, Netfilter provides the following 5 hooks for <code>IPv4</code>:</p>
-<ul>
-<li><em>NF_INET_PRE_ROUTING</em>: is triggered right after the packet has been received on a network card. This hook is triggered before the <code>routing decision</code> was made. Then the kernel determines whether this packet is destined for the current host or not. Based on the condition, the following two hooks will be triggered. </li>
-<li><em>NF_INET_LOCAL_IN</em>: is triggered for network packets that are destined for the current host. </li>
-<li><em>NF_INET_FORWARD</em>: is triggered for network packets that should be forwarded. </li>
-<li><em>NF_INET_POST_ROUTING</em>: is triggered for network packets that have been routed and before being sent out to the network card. </li>
-<li><em>NF_INET_LOCAL_OUT</em>: is triggered for network packets generated by the processes on the current host.</li>
-</ul>
-<p>The hook function you defined in the module can mangle or filter the packets, but it eventually must return a status code to Netfilter. There are several possible values for the code, but for now, you only need to understand two of them: </p>
-<ul>
-<li><em>NF_ACCEPT</em>: this means the hook function accepts the packet and it can go on the network stack trip. </li>
-<li><em>NF_DROP</em>: this means the packet is dropped and no further parts of the network stack will be traversed.</li>
-</ul>
-<p>Netfilter allows you to register multiple callback functions to the same hook with different priorities. If the first hook function accepts the packet, then the packet will be passed to the next functions with low priority. If the packet is dropped by one callback function, then the next functions(if existing) will not be traversed. </p>
-<p>As you see, <code>Netfilter</code> has a big scope and I can’t cover every detail in the articles. So the mini-firewall developed here will work on the hook <code>NF_INET_PRE_ROUTING</code>, which means it works by controlling the inbound network traffic. But the way of registering the hook and handling the packet can be applied to all other hooks. </p>
-<p><em>Note</em>: there is another remarkable question: what’s the difference between <code>Netfilter</code> and <code>eBPF</code>? If you don’t know eBPF, please refer to my previous <a href="https://organicprogrammer.com/2022/03/28/how-to-implement-libpcap-on-linux-with-raw-socket-part2/">article</a>. Both of them are important network features in the Linux kernel. The important thing is <code>Netfilter</code> and <code>eBPF</code> hooks are located in different layers of the Kernel. As I drew in the above diagram, <code>eBPF</code> is located in a lower layer. </p>
-<h5 id="Kernel-code-of-Netfilter-hooks"><a href="#Kernel-code-of-Netfilter-hooks" class="headerlink" title="Kernel code of Netfilter hooks"></a>Kernel code of Netfilter hooks</h5><p>To have a clear understanding of how the <code>Netfilter</code> framework is implemented inside the protocol stack, let’s dig a little bit deeper and take a look at the kernel source code (Don’t worry, only shows several simple functions). Let’s use the hook <code>NF_INET_PRE_ROUTING</code> as an example; since the mini-firewall will be written based on it. </p>
-<p>When an IPv4 packet is received, its handler function <code>ip_rcv</code> will be called as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/net/ipv4/ip_input.c</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * IP receive entry point</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">ip_rcv</span><span class="params">(<span class="keyword">struct</span> sk_buff *skb, <span class="keyword">struct</span> net_device *dev, <span class="keyword">struct</span> packet_type *pt,</span></span><br><span class="line"><span class="params">           <span class="keyword">struct</span> net_device *orig_dev)</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">net</span> *<span class="title">net</span> =</span> dev_net(dev);</span><br><span class="line"></span><br><span class="line">        skb = ip_rcv_core(skb, net);</span><br><span class="line">        <span class="keyword">if</span> (skb == <span class="literal">NULL</span>)</span><br><span class="line">                <span class="keyword">return</span> NET_RX_DROP;</span><br><span class="line">        <span class="comment">// run Netfilter NF_INET_PRE_ROUTING hook&#x27;s callback function</span></span><br><span class="line">        <span class="keyword">return</span> NF_HOOK(NFPROTO_IPV4, NF_INET_PRE_ROUTING, </span><br><span class="line">                       net, <span class="literal">NULL</span>, skb, dev, <span class="literal">NULL</span>,</span><br><span class="line">                       ip_rcv_finish);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>In this handler function, you can see the hook is passed to the function <code>NF_HOOK</code>. Based on the name <code>NF_HOOK</code>, you can guess that it is for triggering the Netfilter hooks. Right? Let’s continue to examine how <code>NF_HOOK</code> is implemented as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/netfilter.h</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">int</span></span><br><span class="line"><span class="title function_">NF_HOOK</span><span class="params">(<span class="type">uint8_t</span> pf, <span class="type">unsigned</span> <span class="type">int</span> hook, <span class="keyword">struct</span> net *net, <span class="keyword">struct</span> sock *sk, <span class="keyword">struct</span> sk_buff *skb,</span></span><br><span class="line"><span class="params">        <span class="keyword">struct</span> net_device *in, <span class="keyword">struct</span> net_device *out,</span></span><br><span class="line"><span class="params">        <span class="type">int</span> (*okfn)(<span class="keyword">struct</span> net *, <span class="keyword">struct</span> sock *, <span class="keyword">struct</span> sk_buff *))</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="type">int</span> ret = nf_hook(pf, hook, net, sk, skb, in, out, okfn);</span><br><span class="line">        <span class="keyword">if</span> (ret == <span class="number">1</span>)</span><br><span class="line">                ret = okfn(net, sk, skb); <span class="comment">// in our case: okfn is ip_rcv_finish</span></span><br><span class="line">        <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> *      nf_hook - call a netfilter hook</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *      Returns 1 if the hook has allowed the packet to pass.  The function</span></span><br><span class="line"><span class="comment"> *      okfn must be invoked by the caller in this case.  Any other return</span></span><br><span class="line"><span class="comment"> *      value indicates the packet has been consumed by the hook.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">int</span> <span class="title function_">nf_hook</span><span class="params">(<span class="type">u_int8_t</span> pf, <span class="type">unsigned</span> <span class="type">int</span> hook, <span class="keyword">struct</span> net *net,</span></span><br><span class="line"><span class="params">                          <span class="keyword">struct</span> sock *sk, <span class="keyword">struct</span> sk_buff *skb,</span></span><br><span class="line"><span class="params">                          <span class="keyword">struct</span> net_device *indev, <span class="keyword">struct</span> net_device *outdev,</span></span><br><span class="line"><span class="params">                          <span class="type">int</span> (*okfn)(<span class="keyword">struct</span> net *, <span class="keyword">struct</span> sock *, <span class="keyword">struct</span> sk_buff *))</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// code omit</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>The function <code>NF_HOOK</code> contains two steps:</p>
-<ul>
-<li>First, runs the hook’s callback functions by calling the underlying function <code>nf_hook</code>. </li>
-<li>Second, invokes the function <code>okfn</code> (passed to <em>NF_HOOK</em> as the argument), if the packet passes through the hook functions and doesn’t drop.</li>
-</ul>
-<p>For the hook <em>NF_INET_LOCAL_IN</em>, the function <code>ip_rcv_finish</code> will be invoked after the hook functions pass. Its job is to pass the packet on to the next protocol handler(TCP or UDP) in the protocol stack to continue its journey! </p>
-<p>The other 4 hooks all use the same function <code>NF_HOOK</code> to trigger the callback functions. The following table shows where the hooks are embedded in the kernel, I leave them to the readers. </p>
-<table>
-<thead>
-<tr>
-<th>Hook</th>
-<th>File</th>
-<th>Function</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>NF_INET_PRE_ROUTING</td>
-<td>&#x2F;kernel-src&#x2F;net&#x2F;ipv4&#x2F;ip_input.c</td>
-<td>ip_rcv()</td>
-</tr>
-<tr>
-<td>NF_INET_LOCAL_IN</td>
-<td>&#x2F;kernel-src&#x2F;net&#x2F;ipv4&#x2F;ip_input.c</td>
-<td>ip_local_deliver()</td>
-</tr>
-<tr>
-<td>NF_INET_FORWARD</td>
-<td>&#x2F;kernel-src&#x2F;net&#x2F;ipv4&#x2F;ip_forward.c</td>
-<td>ip_forward()</td>
-</tr>
-<tr>
-<td>NF_INET_POST_ROUTING</td>
-<td>&#x2F;kernel-src&#x2F;net&#x2F;ipv4&#x2F;ip_output.c</td>
-<td>ip_build_and_send_pkt()</td>
-</tr>
-<tr>
-<td>NF_INET_LOCAL_OUT</td>
-<td>&#x2F;kernel-src&#x2F;net&#x2F;ipv4&#x2F;ip_output.c</td>
-<td>ip_output()</td>
-</tr>
-</tbody></table>
-<p>Next, Let’s review the Netfilter’s APIs to create and register the hook function. </p>
-<h3 id="Netfilter-API"><a href="#Netfilter-API" class="headerlink" title="Netfilter API"></a>Netfilter API</h3><p>It’s straightforward to create a Netfilter module, which involves three steps: </p>
-<ul>
-<li>Define the hook function.</li>
-<li>Register the hook function in the kernel module initialization process.</li>
-<li>Unregister the hook function in the kernel module clean-up process.</li>
-</ul>
-<p>Let’s go through them quickly one by one. </p>
-<h5 id="Define-a-hook-function"><a href="#Define-a-hook-function" class="headerlink" title="Define a hook function"></a>Define a hook function</h5><p>The hook function name can be whatever you want, but it must follow the signature below: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/netfilter.h</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">nf_hookfn</span><span class="params">(<span class="type">void</span> *priv,</span></span><br><span class="line"><span class="params">                               <span class="keyword">struct</span> sk_buff *skb,</span></span><br><span class="line"><span class="params">                               <span class="type">const</span> <span class="keyword">struct</span> nf_hook_state *state)</span>;</span><br></pre></td></tr></table></figure>
-
-<p>The hook function can mangle or filter the packet whose data is stored in the <code>sk_buff</code> structure (we can ignore the other two parameters; since we don’t use them in our mini-firewall). As we mentioned above, the callback function must return a Netfilter status code which is an integer. For instance, the <code>accepted</code> and <code>dropped</code> status is defined as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In source code file /kernel-src/include/uapi/linux/netfilter.h</span></span><br><span class="line"><span class="comment">/* Responses from hook functions. */</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NF_DROP 0</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> NF_ACCEPT 1</span></span><br></pre></td></tr></table></figure>
-<h5 id="Register-and-unregister-a-hook-function"><a href="#Register-and-unregister-a-hook-function" class="headerlink" title="Register and unregister a hook function"></a>Register and unregister a hook function</h5><p>To register a hook function, we should wrap the defined hook function with related information, such as which hook you want to bind to, the protocol family and the priority of the hook function,  into a structure <code>struct nf_hook_ops</code> and pass it to the function <code>nf_register_net_hook</code>. </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/netfilter.h</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">nf_hook_ops</span> &#123;</span></span><br><span class="line">        <span class="comment">/* User fills in from here down. */</span></span><br><span class="line">        nf_hookfn               *hook;    <span class="comment">// callback function</span></span><br><span class="line">        <span class="class"><span class="keyword">struct</span> <span class="title">net_device</span>       *<span class="title">dev</span>;</span>     <span class="comment">// network device interface</span></span><br><span class="line">        <span class="type">void</span>                    *priv; </span><br><span class="line">        <span class="type">u_int8_t</span>                pf;       <span class="comment">// protocol</span></span><br><span class="line">        <span class="type">unsigned</span> <span class="type">int</span>            hooknum;  <span class="comment">// Netfilter hook enum</span></span><br><span class="line">        <span class="comment">/* Hooks are ordered in ascending priority. */</span></span><br><span class="line">        <span class="type">int</span>                     priority; <span class="comment">// priority of callback function</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>Most of the fields are very straightforward to understand. The one need to emphasize is the field <code>hooknum</code>, which is just the Netfilter hooks discussed above. They are defined as enumerators as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In source code file /kernel-src/include/uapi/linux/netfilter.h</span></span><br><span class="line"><span class="class"><span class="keyword">enum</span> <span class="title">nf_inet_hooks</span> &#123;</span></span><br><span class="line">	NF_INET_PRE_ROUTING,</span><br><span class="line">	NF_INET_LOCAL_IN,</span><br><span class="line">	NF_INET_FORWARD,</span><br><span class="line">	NF_INET_LOCAL_OUT,</span><br><span class="line">	NF_INET_POST_ROUTING,</span><br><span class="line">	NF_INET_NUMHOOKS,</span><br><span class="line">	NF_INET_INGRESS = NF_INET_NUMHOOKS,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<p>Next, let’s take a look at the functions to register and unregister hook functions goes as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/netfilter.h</span></span><br><span class="line"><span class="comment">/* Function to register/unregister hook points. */</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">nf_register_net_hook</span><span class="params">(<span class="keyword">struct</span> net *net, <span class="type">const</span> <span class="keyword">struct</span> nf_hook_ops *ops)</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">nf_unregister_net_hook</span><span class="params">(<span class="keyword">struct</span> net *net, <span class="type">const</span> <span class="keyword">struct</span> nf_hook_ops *ops)</span>;</span><br></pre></td></tr></table></figure>
-<p>The first parameter <code>struct net</code> is related to the network namespace, we can ignore it for now and use a default value. </p>
-<p>Next, let’s implement our mini-firewall based on these APIs. All right? </p>
-<h3 id="Implement-mini-firewall"><a href="#Implement-mini-firewall" class="headerlink" title="Implement mini-firewall"></a>Implement mini-firewall</h3><p>First, we need to clarify the requirements for our mini-firewall. We’ll implement two network traffic control rules in the mini-firewall as follows:</p>
-<ul>
-<li><em>Network protocol rule</em>: drops the <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Internet_Control_Message_Protocol">ICMP</a> protocol packets.</li>
-<li><em>IP address rule</em>: drops the packets from one specific IP address.</li>
-</ul>
-<p>The completed code implementation is in this Github <a target="_blank" rel="noopener" href="https://github.com/baoqger/linux-mini-firewall-netfilter/blob/main/mini_firewall.c">repo</a>.</p>
-<h5 id="Drop-ICMP-protocol-packets"><a href="#Drop-ICMP-protocol-packets" class="headerlink" title="Drop ICMP protocol packets"></a>Drop ICMP protocol packets</h5><p><code>ICMP</code> is a network protocol widely used in the real world. The popular diagnostic tools like <code>ping</code> and <code>traceroute</code> run the ICMP protocol. We can filter out the ICMP packets based on the protocol type in the IP headers with the following hook function: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In mini-firewall.c </span></span><br><span class="line"><span class="type">static</span> <span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">nf_blockicmppkt_handler</span><span class="params">(<span class="type">void</span> *priv, <span class="keyword">struct</span> sk_buff *skb, <span class="type">const</span> <span class="keyword">struct</span> nf_hook_state *state)</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">iphdr</span> *<span class="title">iph</span>;</span>   <span class="comment">// IP header</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">udphdr</span> *<span class="title">udph</span>;</span> <span class="comment">// UDP header</span></span><br><span class="line">	<span class="keyword">if</span>(!skb)</span><br><span class="line">		<span class="keyword">return</span> NF_ACCEPT;</span><br><span class="line">	iph = ip_hdr(skb); <span class="comment">// retrieve the IP headers from the packet</span></span><br><span class="line">	<span class="keyword">if</span>(iph-&gt;protocol == IPPROTO_UDP) &#123; </span><br><span class="line">		udph = udp_hdr(skb);</span><br><span class="line">		<span class="keyword">if</span>(ntohs(udph-&gt;dest) == <span class="number">53</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> NF_ACCEPT; <span class="comment">// accept UDP packet</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (iph-&gt;protocol == IPPROTO_TCP) &#123;</span><br><span class="line">		<span class="keyword">return</span> NF_ACCEPT; <span class="comment">// accept TCP packet</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (iph-&gt;protocol == IPPROTO_ICMP) &#123;</span><br><span class="line">		printk(KERN_INFO <span class="string">&quot;Drop ICMP packet \n&quot;</span>);</span><br><span class="line">		<span class="keyword">return</span> NF_DROP;   <span class="comment">// drop TCP packet</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> NF_ACCEPT;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>The logic in the above hook function is easy to understand. First, we retrieve the IP headers from the network packet. And then according to the <code>protocol</code> type field in the headers, we decided to accept TCP and UDP packets but drop the ICMP packets. The only technique we need to pay attention to is the function <code>ip_hdr</code>, which is the kernel function defined as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//In source code file /kernel-src/include/linux/ip.h</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="keyword">struct</span> iphdr *<span class="title function_">ip_hdr</span><span class="params">(<span class="type">const</span> <span class="keyword">struct</span> sk_buff *skb)</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">return</span> (<span class="keyword">struct</span> iphdr *)skb_network_header(skb);</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// In source code file /kernel-src/include/linux/skbuff.h</span></span><br><span class="line"><span class="type">static</span> <span class="keyword">inline</span> <span class="type">unsigned</span> <span class="type">char</span> *<span class="title function_">skb_network_header</span><span class="params">(<span class="type">const</span> <span class="keyword">struct</span> sk_buff *skb)</span></span><br><span class="line">&#123;</span><br><span class="line">        <span class="keyword">return</span> skb-&gt;head + skb-&gt;network_header;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>The function <code>ip_hdr</code> delegates the task to the function <code>skb_network_header</code>. It gets IP headers based on the following two data: </p>
-<ul>
-<li>head: is the pointer to the packet;</li>
-<li>network_header: is the offset between the pointer to the packet and the pointer to the network layer protocol header. In detail, you can refer to this <a target="_blank" rel="noopener" href="https://linux-kernel-labs.github.io/refs/heads/master/labs/networking.html">document</a>.</li>
-</ul>
-<p>Next, we can register the above hook function as follows: </p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In mini-firewall.c </span></span><br><span class="line"><span class="type">static</span> <span class="class"><span class="keyword">struct</span> <span class="title">nf_hook_ops</span> *<span class="title">nf_blockicmppkt_ops</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">int</span> __init <span class="title function_">nf_minifirewall_init</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">	nf_blockicmppkt_ops = (<span class="keyword">struct</span> nf_hook_ops*)kcalloc(<span class="number">1</span>,  <span class="keyword">sizeof</span>(<span class="keyword">struct</span> nf_hook_ops), GFP_KERNEL);</span><br><span class="line">	<span class="keyword">if</span> (nf_blockicmppkt_ops != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		nf_blockicmppkt_ops-&gt;hook = (nf_hookfn*)nf_blockicmppkt_handler;</span><br><span class="line">		nf_blockicmppkt_ops-&gt;hooknum = NF_INET_PRE_ROUTING;</span><br><span class="line">		nf_blockicmppkt_ops-&gt;pf = NFPROTO_IPV4;</span><br><span class="line">		nf_blockicmppkt_ops-&gt;priority = NF_IP_PRI_FIRST; <span class="comment">// set the priority</span></span><br><span class="line">		</span><br><span class="line">		nf_register_net_hook(&amp;init_net, nf_blockicmppkt_ops);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">void</span> __exit <span class="title function_">nf_minifirewall_exit</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">	<span class="keyword">if</span>(nf_blockicmppkt_ops != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		nf_unregister_net_hook(&amp;init_net, nf_blockicmppkt_ops);</span><br><span class="line">		kfree(nf_blockicmppkt_ops);</span><br><span class="line">	&#125;</span><br><span class="line">	printk(KERN_INFO <span class="string">&quot;Exit&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">module_init(nf_minifirewall_init);</span><br><span class="line">module_exit(nf_minifirewall_exit);</span><br></pre></td></tr></table></figure>
-
-<p>The above logic is self-explaining. I will not spend too much time here. </p>
-<p>Next, it’s time to demo how our mini-firewall works. </p>
-<h5 id="Demo-time"><a href="#Demo-time" class="headerlink" title="Demo time"></a>Demo time</h5><p>Before we load the mini-firewall module, the <code>ping</code> command can work as expected: </p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ lsmod | grep mini_firewall</span><br><span class="line">chrisbao@CN0005DOU18129:~$ ping www.google.com</span><br><span class="line">PING www.google.com (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>) <span class="number">56</span>(<span class="number">84</span>) <span class="built_in">bytes</span> of data.</span><br><span class="line"><span class="number">64</span> <span class="built_in">bytes</span> <span class="keyword">from</span> sm-<span class="keyword">in</span>-f103<span class="number">.1e100</span>.net (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>): icmp_seq=<span class="number">1</span> ttl=<span class="number">104</span> time=<span class="number">71.9</span> ms</span><br><span class="line"><span class="number">64</span> <span class="built_in">bytes</span> <span class="keyword">from</span> sm-<span class="keyword">in</span>-f103<span class="number">.1e100</span>.net (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>): icmp_seq=<span class="number">2</span> ttl=<span class="number">104</span> time=<span class="number">71.8</span> ms</span><br><span class="line"><span class="number">64</span> <span class="built_in">bytes</span> <span class="keyword">from</span> sm-<span class="keyword">in</span>-f103<span class="number">.1e100</span>.net (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>): icmp_seq=<span class="number">3</span> ttl=<span class="number">104</span> time=<span class="number">71.9</span> ms</span><br><span class="line"><span class="number">64</span> <span class="built_in">bytes</span> <span class="keyword">from</span> sm-<span class="keyword">in</span>-f103<span class="number">.1e100</span>.net (<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>): icmp_seq=<span class="number">4</span> ttl=<span class="number">104</span> time=<span class="number">71.8</span> ms</span><br><span class="line">^C</span><br><span class="line">--- www.google.com ping statistics ---</span><br><span class="line"><span class="number">4</span> packets transmitted, <span class="number">4</span> received, <span class="number">0</span>% packet loss, time 3005ms</span><br><span class="line">rtt <span class="built_in">min</span>/avg/<span class="built_in">max</span>/mdev = <span class="number">71.857</span>/<span class="number">71.902</span>/<span class="number">71.961</span>/<span class="number">0.193</span> ms</span><br></pre></td></tr></table></figure>
-
-<p>In contrast, after the mini-firewall module is built and loaded (based on the commands we discussed previously): </p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ lsmod | grep mini_firewall</span><br><span class="line">mini_firewall          <span class="number">16384</span>  <span class="number">0</span></span><br><span class="line">chrisbao@CN0005DOU18129:~$ ping www.google.com</span><br><span class="line">PING www.google.com (<span class="number">142.250</span><span class="number">.4</span><span class="number">.105</span>) <span class="number">56</span>(<span class="number">84</span>) <span class="built_in">bytes</span> of data.</span><br><span class="line">^C</span><br><span class="line">--- www.google.com ping statistics ---</span><br><span class="line"><span class="number">6</span> packets transmitted, <span class="number">0</span> received, <span class="number">100</span>% packet loss, time 5097ms</span><br></pre></td></tr></table></figure>
-
-<p>You can see all the packets are lost; because it is dropped by our mini-firewall. We can verify this by running the command <code>dmesg</code>: </p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ dmesg | tail -n <span class="number">5</span></span><br><span class="line">[ <span class="number">1260.184712</span>] Drop ICMP packet</span><br><span class="line">[ <span class="number">1261.208637</span>] Drop ICMP packet</span><br><span class="line">[ <span class="number">1262.232669</span>] Drop ICMP packet</span><br><span class="line">[ <span class="number">1263.256757</span>] Drop ICMP packet</span><br><span class="line">[ <span class="number">1264.280733</span>] Drop ICMP packet</span><br></pre></td></tr></table></figure>
-
-<p>But other protocol packets can still run through the firewall. For instance, the command <code>wget 142.250.4.103</code> can return normally as follows:</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ wget <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">--<span class="number">2022</span>-06-<span class="number">25</span> <span class="number">10</span>:<span class="number">12</span>:<span class="number">39</span>--  http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>/</span><br><span class="line">Connecting to <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">80.</span>.. connected.</span><br><span class="line">HTTP request sent, awaiting response... <span class="number">302</span> Moved Temporarily</span><br><span class="line">Location: http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">6080</span>/php/urlblock.php?args=AAAAfQAAABAjFEC0HSM7xhfO~a53FMMaAAAAEILI_eaKvZQ2xBfgKEgDtwsAAABNAAAATRPNhqoqFgHJ0ggbKLKcdinR4UvnlhgAR4~YyrY4tAnroOFkE_IsHsOg9~RFPc7nEoj6YdiDgqZImAmb_xw9ZuFLvF91P2HzP5tlu1WX&amp;url=http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>%2f [following]</span><br><span class="line">--<span class="number">2022</span>-06-<span class="number">25</span> <span class="number">10</span>:<span class="number">12</span>:<span class="number">39</span>--  http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">6080</span>/php/urlblock.php?args=AAAAfQAAABAjFEC0HSM7xhfO~a53FMMaAAAAEILI_eaKvZQ2xBfgKEgDtwsAAABNAAAATRPNhqoqFgHJ0ggbKLKcdinR4UvnlhgAR4~YyrY4tAnroOFkE_IsHsOg9~RFPc7nEoj6YdiDgqZImAmb_xw9ZuFLvF91P2HzP5tlu1WX&amp;url=http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>%2f</span><br><span class="line">Connecting to <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">6080.</span>.. connected.</span><br><span class="line">HTTP request sent, awaiting response... <span class="number">200</span> OK</span><br><span class="line">Length: <span class="number">3248</span> (<span class="number">3.2</span>K) [text/html]</span><br><span class="line">Saving to: ‘index.html’</span><br><span class="line"></span><br><span class="line">index.html                                           <span class="number">100</span>%[===================================================================================================================&gt;]   <span class="number">3.17</span>K  --.-KB/s    <span class="keyword">in</span> 0s</span><br><span class="line"></span><br><span class="line"><span class="number">2022</span>-06-<span class="number">25</span> <span class="number">10</span>:<span class="number">12</span>:<span class="number">39</span> (<span class="number">332</span> MB/s) - ‘index.html’ saved [<span class="number">3248</span>/<span class="number">3248</span>]</span><br></pre></td></tr></table></figure>
-
-<p>Next, let’s try to ban the traffic from this IP address. </p>
-<h5 id="Drop-packets-source-from-one-specific-IP-address"><a href="#Drop-packets-source-from-one-specific-IP-address" class="headerlink" title="Drop packets source from one specific IP address"></a>Drop packets source from one specific IP address</h5><p>As we mentioned above, multiple callback functions are allowed to be registered on the same Netfilter hook. So we will define the second hook function with a different priority. The logic of this hook function goes like this: we can get the source IP address from the IP headers and make the drop or accept decision according to it. The code goes as follows</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// In mini-firewall.c </span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> IPADDRESS(addr) \</span></span><br><span class="line"><span class="meta">	((unsigned char *)&amp;addr)[3], \</span></span><br><span class="line"><span class="meta">	((unsigned char *)&amp;addr)[2], \</span></span><br><span class="line"><span class="meta">	((unsigned char *)&amp;addr)[1], \</span></span><br><span class="line"><span class="meta">	((unsigned char *)&amp;addr)[0]</span></span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">char</span> *ip_addr_rule = <span class="string">&quot;142.250.4.103&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="type">static</span> <span class="type">unsigned</span> <span class="type">int</span> <span class="title function_">nf_blockipaddr_handler</span><span class="params">(<span class="type">void</span> *priv, <span class="keyword">struct</span> sk_buff *skb, <span class="type">const</span> <span class="keyword">struct</span> nf_hook_state *state)</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">if</span> (!skb) &#123;</span><br><span class="line">		<span class="keyword">return</span> NF_ACCEPT;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		<span class="type">char</span> *str = (<span class="type">char</span> *)kmalloc(<span class="number">16</span>, GFP_KERNEL);</span><br><span class="line">		u32 sip;</span><br><span class="line">		<span class="class"><span class="keyword">struct</span> <span class="title">sk_buff</span> *<span class="title">sb</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">		<span class="class"><span class="keyword">struct</span> <span class="title">iphdr</span> *<span class="title">iph</span>;</span></span><br><span class="line"></span><br><span class="line">		sb = skb;</span><br><span class="line">		iph = ip_hdr(sb);</span><br><span class="line">		sip = ntohl(iph-&gt;saddr); <span class="comment">// get source ip address; </span></span><br><span class="line">		</span><br><span class="line">		<span class="built_in">sprintf</span>(str, <span class="string">&quot;%u.%u.%u.%u&quot;</span>, IPADDRESS(sip)); <span class="comment">// convert to standard IP address format</span></span><br><span class="line">		<span class="keyword">if</span>(!<span class="built_in">strcmp</span>(str, ip_addr_rule)) &#123;</span><br><span class="line">			<span class="keyword">return</span> NF_DROP;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">return</span> NF_ACCEPT;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>This hook function uses two interesting techniques:</p>
-<ul>
-<li><p><code>ntohl</code>: is a kernel function, which is used to convert the value from <code>network byte order</code> to <code>host byte order</code>. <code>Byte order</code> is related to the computer science concept of <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Endianness"><code>Endianness</code></a>. Endianness defines the order or sequence of bytes of a word of digital data in computer memory. A <code>big-endian</code> system stores the most significant byte of a word at the smallest memory address.  A <code>little-endian</code> system, in contrast, stores the least-significant byte at the smallest address. Network protocol uses the <code>big-endian</code> system. But different OS and platforms run various Endianness system. So it may need such conversion based on the host machine.</p>
-</li>
-<li><p><code>IPADDRESS</code>: is a macro, which generates the standard IP address format(four 8-bit fields separated by periods) from a 32-bit integer. It uses the technique of <a target="_blank" rel="noopener" href="https://www.eskimo.com/~scs/cclass/notes/sx10e.html"><code>the equivalence of arrays and pointers in C</code></a>. I will write another article to examine what it is and how it works. Please keep watching my updates!</p>
-</li>
-</ul>
-<p>Next, we can register this hook function in the same way discussed above. The only remarkable point is this callback function should have a different priority as follows:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> __init <span class="title function_">nf_minifirewall_init</span><span class="params">(<span class="type">void</span>)</span> &#123;</span><br><span class="line">	&lt;-omit code-&gt;</span><br><span class="line">	nf_blockipaddr_ops = (<span class="keyword">struct</span> nf_hook_ops*)kcalloc(<span class="number">1</span>, <span class="keyword">sizeof</span>(<span class="keyword">struct</span> nf_hook_ops), GFP_KERNEL);</span><br><span class="line">	<span class="keyword">if</span> (nf_blockipaddr_ops != <span class="literal">NULL</span>) &#123;</span><br><span class="line">		nf_blockipaddr_ops-&gt;hook = (nf_hookfn*)nf_blockipaddr_handler;</span><br><span class="line">		nf_blockipaddr_ops-&gt;hooknum = NF_INET_PRE_ROUTING;  <span class="comment">// register to the same hook</span></span><br><span class="line">		nf_blockipaddr_ops-&gt;pf = NFPROTO_IPV4;</span><br><span class="line">		nf_blockipaddr_ops-&gt;priority = NF_IP_PRI_FIRST + <span class="number">1</span>; <span class="comment">// set a higher priority</span></span><br><span class="line"></span><br><span class="line">		nf_register_net_hook(&amp;init_net, nf_blockipaddr_ops);</span><br><span class="line">	&#125;</span><br><span class="line">	&lt;-omit code-&gt;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Let’s see how it works with a demo. </p>
-<h5 id="Demo-time-1"><a href="#Demo-time-1" class="headerlink" title="Demo time"></a>Demo time</h5><p>After re-build and re-load the module, we can get: </p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ wget <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">--<span class="number">2022</span>-06-<span class="number">25</span> <span class="number">10</span>:<span class="number">20</span>:07--  http://<span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>/</span><br><span class="line">Connecting to <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span>:<span class="number">80.</span>.. failed: Connection timed out.</span><br><span class="line">Retrying.</span><br></pre></td></tr></table></figure>
-
-<p>The <code>wget 142.250.4.103</code> can’t return response. Because it is dropped by our mini-firewall. Great!</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">chrisbao@CN0005DOU18129:~$ dmesg | tail -n <span class="number">5</span></span><br><span class="line">[ <span class="number">3162.064284</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">[ <span class="number">3166.089466</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">[ <span class="number">3166.288603</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">[ <span class="number">3174.345463</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br><span class="line">[ <span class="number">3174.480123</span>] Drop packet <span class="keyword">from</span> <span class="number">142.250</span><span class="number">.4</span><span class="number">.103</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="More-space-to-expand"><a href="#More-space-to-expand" class="headerlink" title="More space to expand"></a>More space to expand</h3><p>You can find the full code implementation <a target="_blank" rel="noopener" href="https://github.com/baoqger/linux-mini-firewall-netfilter/blob/main/mini_firewall.c">here</a>. But I have to say, our mini-firewall only touches the surface of what Netfilter can provide. You can keep expanding the functionalities. For example, currently, the rules are hardcoded, why not make it possible to config the rules dynamically. There are many cool ideas worth trying. I leave it for the readers.  </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we implement the mini-firewall step by step and examined many detailed techniques. Not only code; but we also verify the behavior of the mini-firewall by running real demos.   </p>
 
       
     </div>
