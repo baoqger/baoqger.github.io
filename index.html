@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">77</span>
+          <span class="site-state-item-count">79</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">45</span>
+        <span class="site-state-item-count">47</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,269 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/11/03/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/11/03/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/" class="post-title-link" itemprop="url">Deep Dive Entra Agent ID - The Complete Identity Chain from Blueprint to Agent Token</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-11-03 09:35:00 / Modified: 09:35:27" itemprop="dateCreated datePublished" datetime="2026-11-03T09:35:00+08:00">2026-11-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>For modern applications, authentication usually follows a pattern where a dedicated, centralized service handles authentication and authorization—that service is the <strong>identity provider (IdP)</strong>—instead of every app implementing those concerns on its own.</p>
+<p><strong>Entra ID</strong> is the IdP for the Azure cloud platform. As I mentioned in my previous articles, you can use it to add authentication and authorization to your Azure solutions. Feel free to revisit those posts if you need a refresher.</p>
+<p>In the AI era, people often say agents may work alongside—or even replace—humans in the workplace. Your next “colleague” at the company might be an agent. To support that trend, <strong>Entra ID</strong> extends its existing architecture with <strong>Entra Agent ID</strong>, acting as the IdP for AI agents to manage their identities, authorization, and more. In this article, I will walk through what I learned about the following questions:</p>
+<ul>
+<li>Why is managing <strong>Agent Identity</strong> so important?</li>
+<li>How does <strong>Entra Agent ID</strong> differ from classic <strong>Entra ID</strong> app identity?</li>
+<li>How do you create Entra Agent ID objects and use them for authentication and authorization?</li>
+</ul>
+<p>If these topics interest you, bookmark this post and let’s get started. After reading it, you should understand the blueprint-to-agent token flow and where each object fits in Entra.</p>
+<img src="/images/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/3-Layer_AI_Agent_Identity.png" alt="" >
+## Identity Is the Primary Security Perimeter
+
+<p>Before cloud and mobile apps, the <strong>network</strong> was the security boundary—the corporate intranet was treated as trusted. Today, you cannot reliably know who or what is on your network. What can you use as a boundary instead? The answer is <strong>identity as the security perimeter</strong>—at least the primary one. That idea existed long before AI agents showed up.</p>
+<p>An <strong>identity</strong> is the set of attributes that define or characterize a person, a device, or a software component. Common categories include:</p>
+<ul>
+<li><strong>Human identities</strong>: ordinary user accounts.</li>
+<li><strong>Machine identities</strong>: further split into <strong>device identities</strong> (hardware) and <strong>workload identities</strong> (apps or services).</li>
+<li><strong>Agent identities</strong>: AI-driven agents—the focus of today’s discussion.</li>
+</ul>
+<p>When any identity—user, device, or application—requests access to a resource, that identity becomes the center of verification. The security question is no longer “Is this request coming from inside our corporate network?” but “Who or what is making this request, and should we trust it?” That is why <strong>identity is the security perimeter</strong>: every access decision starts with identity—verify it, then control what that identity is allowed to do.</p>
+<h2 id="From-Entra-ID-to-Entra-Agent-ID"><a href="#From-Entra-ID-to-Entra-Agent-ID" class="headerlink" title="From Entra ID to Entra Agent ID"></a>From Entra ID to Entra Agent ID</h2><p>An AI agent is still an application at its core, but autonomy and decision-making change the security model compared to traditional apps. That is why <strong>Agent Identity</strong> is modeled and managed as its own category.</p>
+<p>Next, let’s compare traditional applications and AI agents from Entra’s architecture and design perspective.</p>
+<h5 id="Entra-ID’s-two-layer-model"><a href="#Entra-ID’s-two-layer-model" class="headerlink" title="Entra ID’s two-layer model"></a>Entra ID’s two-layer model</h5><img src="/images/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/Pasted%20image%2020261102111340.png" alt="" >
+
+<p><strong>Entra ID</strong> manages application identity with a <strong>two-layer</strong> model: <strong>app registration</strong> and <strong>service principal</strong>:</p>
+<ul>
+<li><strong>App registration</strong>: You define the app name and settings—scopes, app roles, redirect URLs after sign-in, and so on. If you know OAuth 2.0, this step is essentially registering the OAuth client. Entra ID supports OAuth 2.0 as the authorization server.</li>
+<li><strong>Service principal</strong>: When a tenant adds the app, Entra creates an identity in that tenant that can take action. In Entra ID, this is the unit to which roles and permissions are assigned.</li>
+</ul>
+<p>The app registration is not the runtime object. Registering an app creates a service principal in the tenant; roles and permissions are granted to the <strong>service principal</strong>. Think of the app registration as a <strong>template</strong> defined in a tenant; <strong>instantiation</strong> produces the service principal. Smart design, right? It is very much like the relationship between a <strong>class</strong> and an <strong>object</strong> in object-oriented programming.</p>
+<p>An app registration can be published and managed in one Entra ID tenant while the app is consumed by many tenants—multi-tenant apps.</p>
+<p>One more important point: in each tenant, the service principal can hold credentials (for example, a client secret) and use them to authenticate and obtain tokens.</p>
+<h6 id="Entra-Agent-ID’s-three-layer-model"><a href="#Entra-Agent-ID’s-three-layer-model" class="headerlink" title="Entra Agent ID’s three-layer model"></a>Entra Agent ID’s three-layer model</h6><img src="/images/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/Pasted%20image%2020261102113718.png" alt="" >
+
+<p>Building on that design, <strong>Entra Agent ID</strong> introduces a <strong>three-layer</strong> model:</p>
+<ul>
+<li><strong>Agent Identity Blueprint</strong>: For classic apps, the template&#x2F;instance relationship was implicit. For agents, the name <strong>Blueprint</strong> makes it explicit. Conceptually it matches <strong>app registration</strong>: name and baseline settings, plus credential configuration used to validate agent-related identity flows.</li>
+<li><strong>Agent Identity Blueprint Principal</strong>: Also a <strong>service principal</strong>—one blueprint principal per tenant. Up to this layer, the model closely mirrors the two-layer app model. The blueprint principal is created automatically; you do not provision it manually.</li>
+<li><strong>Agent Identity</strong>: This is the new piece. An agent identity is also a <strong>service principal</strong>, created by the blueprint principal. It represents a <strong>single running instance</strong> of an agent—the <strong>work identity</strong> for that agentic application instance.</li>
+</ul>
+<p>This architecture keeps <strong>one blueprint principal per tenant</strong> (the service principal for the blueprint) while allowing <strong>many agent identities</strong> in that tenant (one service principal per agent instance).</p>
+<p>Unlike the classic pattern where every app instance might hold secrets, <strong>credentials are created and held only on the Agent Identity Blueprint</strong>, so individual agents do not need direct access to secrets—reducing risk. Great, right?</p>
+<p>A simple analogy: the <strong>blueprint</strong> is the recipe, the <strong>blueprint principal</strong> is the licensed kitchen allowed to “cook” agents in your tenant, and each <strong>agent identity</strong> is a dish made from that recipe.</p>
+<h2 id="Foundry-Agent-Identity"><a href="#Foundry-Agent-Identity" class="headerlink" title="Foundry Agent Identity"></a>Foundry Agent Identity</h2><p>You might not have noticed: every agent you develop and deploy on <strong>Foundry</strong> automatically gets an agent identity created in <strong>Entra ID</strong>.</p>
+<img src="/images/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/Pasted%20image%2020261102133145.png" alt="" >
+
+<p>In the following section, let’s run a hands-on demo: how to create Entra Agent ID objects and use them for authentication and authorization.</p>
+<h2 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h2><p>This demo uses PowerShell and the <strong>Microsoft Graph</strong> API. The steps are:</p>
+<h5 id="Step-1-Create-the-blueprint"><a href="#Step-1-Create-the-blueprint" class="headerlink" title="Step 1: Create the blueprint"></a>Step 1: Create the blueprint</h5><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$body</span> = <span class="selector-tag">@</span>&#123;</span><br><span class="line">    <span class="string">&quot;@odata.type&quot;</span>         = <span class="string">&quot;Microsoft.Graph.AgentIdentityBlueprint&quot;</span></span><br><span class="line">    displayName           = <span class="string">&quot;ChrisBao Blueprint&quot;</span></span><br><span class="line">    <span class="string">&quot;sponsors@odata.bind&quot;</span> = <span class="selector-tag">@</span>(<span class="string">&quot;https://graph.microsoft.com/v1.0/users/<span class="variable">$myUserId</span>&quot;</span>)</span><br><span class="line">    <span class="string">&quot;owners@odata.bind&quot;</span>   = <span class="selector-tag">@</span>(<span class="string">&quot;https://graph.microsoft.com/v1.0/users/<span class="variable">$myUserId</span>&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$blueprint</span> = <span class="built_in">Invoke-MgGraphRequest</span> <span class="literal">-Method</span> POST `</span><br><span class="line">    <span class="literal">-Uri</span> <span class="string">&quot;https://graph.microsoft.com/beta/applications/&quot;</span> `</span><br><span class="line">    <span class="literal">-Headers</span> <span class="selector-tag">@</span>&#123; <span class="string">&quot;OData-Version&quot;</span> = <span class="string">&quot;4.0&quot;</span> &#125; `</span><br><span class="line">    <span class="literal">-Body</span> (<span class="variable">$body</span> | <span class="built_in">ConvertTo-Json</span>)</span><br></pre></td></tr></table></figure>
+
+<p>The key parameter is <code>Microsoft.Graph.AgentIdentityBlueprint</code>, which tells Graph you are creating an <strong>Agent Identity Blueprint</strong>.</p>
+<h5 id="Step-2-Create-the-blueprint-principal"><a href="#Step-2-Create-the-blueprint-principal" class="headerlink" title="Step 2: Create the blueprint principal"></a>Step 2: Create the blueprint principal</h5><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$principalBody</span> = <span class="selector-tag">@</span>&#123; appId = <span class="variable">$blueprint</span>.appId &#125;</span><br><span class="line"><span class="variable">$principal</span> = <span class="built_in">Invoke-MgGraphRequest</span> <span class="literal">-Method</span> POST `</span><br><span class="line">    <span class="literal">-Uri</span> <span class="string">&quot;https://graph.microsoft.com/beta/serviceprincipals/graph.agentIdentityBlueprintPrincipal&quot;</span> `</span><br><span class="line">    <span class="literal">-Headers</span> <span class="selector-tag">@</span>&#123; <span class="string">&quot;OData-Version&quot;</span> = <span class="string">&quot;4.0&quot;</span> &#125; `</span><br><span class="line">    <span class="literal">-Body</span> (<span class="variable">$principalBody</span> | <span class="built_in">ConvertTo-Json</span>)</span><br></pre></td></tr></table></figure>
+
+<h5 id="Step-3-Create-credentials"><a href="#Step-3-Create-credentials" class="headerlink" title="Step 3: Create credentials"></a>Step 3: Create credentials</h5><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$blueprintApp</span> = (<span class="built_in">Invoke-MgGraphRequest</span> <span class="literal">-Method</span> GET <span class="literal">-Uri</span> <span class="string">&quot;https://graph.microsoft.com/beta/applications?`$filter=appId eq &#x27;<span class="variable">$</span>(<span class="variable">$blueprint</span>.appId)&#x27;&quot;</span>).value[<span class="number">0</span>]</span><br><span class="line">...</span><br><span class="line"><span class="variable">$secret</span> = <span class="built_in">Invoke-MgGraphRequest</span> <span class="literal">-Method</span> POST `</span><br><span class="line">    <span class="literal">-Uri</span> <span class="string">&quot;https://graph.microsoft.com/beta/applications/<span class="variable">$</span>(<span class="variable">$blueprintApp</span>.id)/addPassword&quot;</span> `</span><br><span class="line">    <span class="literal">-Body</span> (<span class="variable">$secretBody</span> | <span class="built_in">ConvertTo-Json</span>)</span><br></pre></td></tr></table></figure>
+
+<p>As you can see, the secret is created <strong>under the blueprint</strong>, not on each agent instance.</p>
+<img src="/images/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/Pasted%20image%2020261102134551.png" alt="" >
+
+<h5 id="Step-4-Get-a-blueprint-token"><a href="#Step-4-Get-a-blueprint-token" class="headerlink" title="Step 4: Get a blueprint token"></a>Step 4: Get a blueprint token</h5><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$testTokenBody</span> = <span class="selector-tag">@</span>&#123;</span><br><span class="line">    client_id     = <span class="variable">$blueprint</span>.appId</span><br><span class="line">    scope         = <span class="string">&quot;https://graph.microsoft.com/.default&quot;</span></span><br><span class="line">    grant_type    = <span class="string">&quot;client_credentials&quot;</span></span><br><span class="line">    client_secret = <span class="variable">$secret</span>.secretText</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$testResponse</span> = <span class="built_in">Invoke-RestMethod</span> <span class="literal">-Method</span> POST `</span><br><span class="line">    <span class="literal">-Uri</span> <span class="string">&quot;https://login.microsoftonline.com/<span class="variable">$TenantId</span>/oauth2/v2.0/token&quot;</span> `</span><br></pre></td></tr></table></figure>
+
+<p>An agent instance has no secret of its own and cannot authenticate by itself. We first use the blueprint’s secret to obtain a token. There is no user sign-in here—we use the OAuth 2.0 <strong>client credentials</strong> flow. If you want to go deeper on that flow, check my earlier articles on the topic.</p>
+<h5 id="Step-5-Validate-token-claims"><a href="#Step-5-Validate-token-claims" class="headerlink" title="Step 5: Validate token claims"></a>Step 5: Validate token claims</h5><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$tokenPayload</span> = <span class="built_in">Get-DecodedJwtToken</span> <span class="literal">-Token</span> <span class="variable">$blueprintToken</span> | <span class="built_in">ConvertFrom-Json</span></span><br><span class="line"><span class="keyword">if</span> (<span class="variable">$tokenPayload</span>.roles <span class="operator">-notcontains</span> <span class="string">&quot;AgentIdentity.CreateAsManager&quot;</span>) &#123;</span><br><span class="line">    <span class="built_in">Write-Warning</span> <span class="string">&quot;  [WARN]  Token doesn&#x27;t have AgentIdentity.CreateAsManager role. Waiting for permissions to propagate...&quot;</span></span><br><span class="line">    <span class="built_in">Start-Sleep</span> <span class="literal">-Seconds</span> <span class="number">10</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The blueprint token must include the <strong><code>AgentIdentity.CreateAsManager</code></strong> role before you can create an agent identity.</p>
+<h5 id="Step-6-Create-an-agent-identity"><a href="#Step-6-Create-an-agent-identity" class="headerlink" title="Step 6: Create an agent identity"></a>Step 6: Create an agent identity</h5><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$agentIdentityBody</span> = <span class="selector-tag">@</span>&#123;</span><br><span class="line">    displayName              = <span class="string">&quot;My Agent&quot;</span></span><br><span class="line">    agentIdentityBlueprintId = <span class="variable">$BlueprintAppId</span></span><br><span class="line">    <span class="string">&quot;sponsors@odata.bind&quot;</span>    = <span class="selector-tag">@</span>(<span class="string">&quot;https://graph.microsoft.com/v1.0/users/<span class="variable">$UserId</span>&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$agentIdentity</span> = <span class="built_in">Invoke-RestMethod</span> <span class="literal">-Method</span> POST `</span><br><span class="line">    <span class="literal">-Uri</span> <span class="string">&quot;https://graph.microsoft.com/beta/serviceprincipals/Microsoft.Graph.AgentIdentity&quot;</span> `</span><br><span class="line">    <span class="literal">-Headers</span> <span class="selector-tag">@</span>&#123;</span><br><span class="line">        <span class="string">&quot;Authorization&quot;</span> = <span class="string">&quot;Bearer <span class="variable">$blueprintToken</span>&quot;</span></span><br><span class="line">        <span class="string">&quot;OData-Version&quot;</span>   = <span class="string">&quot;4.0&quot;</span></span><br><span class="line">        <span class="string">&quot;Content-Type&quot;</span>    = <span class="string">&quot;application/json&quot;</span></span><br><span class="line">    &#125; `</span><br><span class="line">    <span class="literal">-Body</span> (<span class="variable">$agentIdentityBody</span> | <span class="built_in">ConvertTo-Json</span>)</span><br></pre></td></tr></table></figure>
+
+<p>With that token, we call Graph to create the <strong>agent identity</strong>.</p>
+<img src="/images/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/Pasted%20image%2020261102141245.png" alt="" >
+
+<h5 id="Step-7-Exchange-for-an-agent-token"><a href="#Step-7-Exchange-for-an-agent-token" class="headerlink" title="Step 7: Exchange for an agent token"></a>Step 7: Exchange for an agent token</h5><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Exchange Blueprint token for agent token (Agent identity token)</span></span><br><span class="line"><span class="variable">$t2Body</span> = <span class="selector-tag">@</span>&#123;</span><br><span class="line">    client_id             = <span class="variable">$AgentIdentityAppId</span></span><br><span class="line">    scope                 = <span class="string">&quot;https://graph.microsoft.com/.default&quot;</span></span><br><span class="line">    grant_type            = <span class="string">&quot;client_credentials&quot;</span></span><br><span class="line">    client_assertion_type = <span class="string">&quot;urn:ietf:params:oauth:client-assertion-type:jwt-bearer&quot;</span></span><br><span class="line">    client_assertion      = <span class="variable">$blueprintToken</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$t2Response</span> = <span class="built_in">Invoke-RestMethod</span> <span class="literal">-Method</span> POST `</span><br><span class="line">    <span class="literal">-Uri</span> <span class="string">&quot;https://login.microsoftonline.com/<span class="variable">$TenantId</span>/oauth2/v2.0/token&quot;</span> `</span><br><span class="line">    <span class="literal">-ContentType</span> <span class="string">&quot;application/x-www-form-urlencoded&quot;</span> `</span><br><span class="line">    <span class="literal">-Body</span> <span class="variable">$t2Body</span></span><br><span class="line"></span><br><span class="line"><span class="variable">$agentToken</span> = <span class="variable">$t2Response</span>.access_token</span><br><span class="line"><span class="built_in">Write-Host</span> <span class="string">&quot;  [OK] Got T2 token (Agent identity)&quot;</span> <span class="literal">-ForegroundColor</span> Green</span><br></pre></td></tr></table></figure>
+
+<p>The agent needs its <strong>own</strong> token for API calls, so we exchange the blueprint token for an agent identity token using <strong>JWT bearer client assertion</strong>—no agent-held secret required for this step.</p>
+<h5 id="Step-8-Grant-permissions-to-the-agent-identity"><a href="#Step-8-Grant-permissions-to-the-agent-identity" class="headerlink" title="Step 8: Grant permissions to the agent identity"></a>Step 8: Grant permissions to the agent identity</h5><p>Even with an agent token, the identity has no effective permissions until app roles are assigned. Next we grant <strong><code>User.ReadWrite.All</code></strong> so the agent can read and write user data via Graph (adjust permissions to least privilege in production).</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$permissionMap</span> = <span class="selector-tag">@</span>&#123;</span><br><span class="line">    <span class="string">&quot;User.ReadWrite.All&quot;</span> = <span class="string">&quot;741f803b-c850-494e-b5df-cde7c675a1ca&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$appRoleId</span> = <span class="variable">$permissionMap</span>[<span class="string">&quot;User.ReadWrite.All&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="variable">$permissionBody</span> = <span class="selector-tag">@</span>&#123;</span><br><span class="line">    principalId = <span class="variable">$AgentIdentitySP</span></span><br><span class="line">    resourceId  = <span class="variable">$graphSP</span></span><br><span class="line">    appRoleId   = <span class="variable">$appRoleId</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="built_in">Invoke-MgGraphRequest</span> <span class="literal">-Method</span> POST `</span><br><span class="line">    <span class="literal">-Uri</span> <span class="string">&quot;https://graph.microsoft.com/v1.0/servicePrincipals/<span class="variable">$AgentIdentitySP</span>/appRoleAssignments&quot;</span> `</span><br><span class="line">    <span class="literal">-Body</span> (<span class="variable">$permissionBody</span> | <span class="built_in">ConvertTo-Json</span>) | <span class="built_in">Out-Null</span></span><br><span class="line"><span class="built_in">Write-Host</span> <span class="string">&quot;  [OK] Added permission: <span class="variable">$permission</span>&quot;</span> <span class="literal">-ForegroundColor</span> Green</span><br></pre></td></tr></table></figure>
+
+<img src="/images/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/Pasted%20image%2020261102141323.png" alt="" >
+
+<h5 id="Step-9-Verify-the-result"><a href="#Step-9-Verify-the-result" class="headerlink" title="Step 9: Verify the result"></a>Step 9: Verify the result</h5><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable">$response</span> = <span class="built_in">Invoke-RestMethod</span> <span class="literal">-Method</span> GET `</span><br><span class="line">    <span class="literal">-Uri</span> <span class="string">&quot;https://graph.microsoft.com/v1.0/users?`$top=5&quot;</span> `</span><br><span class="line">    <span class="literal">-Headers</span> <span class="selector-tag">@</span>&#123;</span><br><span class="line">        <span class="string">&quot;Authorization&quot;</span> = <span class="string">&quot;Bearer <span class="variable">$AccessToken</span>&quot;</span></span><br><span class="line">        <span class="string">&quot;Content-Type&quot;</span>  = <span class="string">&quot;application/json&quot;</span></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>The output shows the call succeeded.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Display Name User Principal Name                                 ID</span><br><span class="line">------------ -------------------                                 --</span><br><span class="line">Chris Bao    baoqger_gmail.com#EXT#@baoqgergmail.onmicrosoft.com d672a57e-86cc-46e3-b811-8fd26e0b0e50</span><br></pre></td></tr></table></figure>
+
+<h2 id="Sidecar-Architecture-with-Entra-Agent-Identity"><a href="#Sidecar-Architecture-with-Entra-Agent-Identity" class="headerlink" title="Sidecar Architecture with Entra Agent Identity"></a>Sidecar Architecture with Entra Agent Identity</h2><p>Two common approaches to agent authentication both fall short:</p>
+<ul>
+<li><strong>Hard-coded secrets in agent code.</strong> Every agent image holds a copy of your app’s <code>client_secret</code>. Any leak, log exposure, or committed <code>.env</code> can become a tenant-wide incident.</li>
+<li><strong>Delegated user tokens for everything.</strong> The agent only acts when a human is present, and you lose per-agent auditability—every call can look like the same service principal.</li>
+</ul>
+<p>As we saw in the demo, <strong>Entra Agent Identity</strong> handles authentication and authorization without embedding secrets in the agent and without requiring an interactive user for every action. So how do you use this in real applications?</p>
+<p>The answer is the <strong>sidecar</strong> pattern: deploy a sidecar next to each agent that encapsulates Entra Agent Identity logic. The agent focuses on its job; the sidecar handles identity and tokens. I will unpack that architecture in a future article—stay tuned.</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><ul>
+<li><strong>Identity</strong> is the primary security perimeter—especially for autonomous agents calling APIs outside a fixed network edge.</li>
+<li><strong>Entra ID</strong> uses app registration + service principal; <strong>Entra Agent ID</strong> adds blueprint, blueprint principal, and per-instance <strong>agent identity</strong>.</li>
+<li>Credentials stay on the <strong>blueprint</strong>; agents get distinct identities and tokens (including token exchange), which improves auditability and blast-radius control.</li>
+<li><strong>Foundry</strong> can provision agent identities automatically; the PowerShell demo shows the same objects via Graph when you build custom agent hosts.</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/11/03/lightweight-fine-grained-authorization-for-ai-agents-oauth-rich-authorization-requests/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/11/03/lightweight-fine-grained-authorization-for-ai-agents-oauth-rich-authorization-requests/" class="post-title-link" itemprop="url">Lightweight Fine-Grained Authorization for AI Agents - OAuth Rich Authorization Requests</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-11-03 09:31:00 / Modified: 09:35:27" itemprop="dateCreated datePublished" datetime="2026-11-03T09:31:00+08:00">2026-11-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In a previous article, I introduced <strong>Transaction Token</strong> and walked through how it supports fine-grained authorization. If you read that post, you probably felt the same thing I did: the approach is powerful, but it comes with real engineering cost.</p>
+<p>In this article, I will share a lighter-weight OAuth extension—<strong>Rich Authorization Requests (RFC 9396)</strong>—that can also express <strong>fine-grained</strong> permissions. For <strong>AI Agents</strong>, that capability is especially valuable. After reading this post, you should understand why classic <code>scope</code> strings fall short, and how RAR adds structured authorization details without jumping straight to a full Transaction Token rollout.</p>
+<img src="/images/lightweight-fine-grained-authorization-for-ai-agents-oauth-rich-authorization-requests/Fine-Grained_OAuth_for_AI.png" alt="" >
+## The `scope` Parameter
+
+<p>In the OAuth 2.0 authorization flow, the user delegates access to an application within a bounded set of permissions. That boundary is carried in the authorization request as the <strong><code>scope</code></strong> parameter, for example:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GET /authorize?</span><br><span class="line">   response_type=code</span><br><span class="line">   &amp;client_id=s6BhdRkqt3</span><br><span class="line">   &amp;state=af0ifjsldkj</span><br><span class="line">   &amp;redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb</span><br><span class="line">   &amp;scope=openid%20profile%20email</span><br></pre></td></tr></table></figure>
+
+<p>Because this request is usually sent with <strong><code>GET</code></strong>, <code>scope</code> has to be a single string. That limits how much meaning and semantics you can pack into it.</p>
+<p>Community practice often looks like this:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">users:read users:write reports:read</span><br></pre></td></tr></table></figure>
+
+<p>The pattern is <strong><code>resource:action</code></strong>. When you need permissions on multiple resources, you separate them with spaces. That works well for requests like “let me read user profile data,” but it struggles with richer intent—for example, “let me transfer <strong>45</strong> to <strong>Merchant A</strong>.”</p>
+<p>For AI Agents, <strong>fine-grained authorization</strong> is not a nice-to-have. Agents make autonomous decisions. If the consent screen cannot show those details, the user is effectively approving a blind spot—and that is dangerous. This gap between classic OAuth authorization and what agents need is one of the most common pain points teams hit when they wire agents into real APIs.</p>
+<p>As we mentioned above, the <strong>Transaction Token</strong> path can record authorization scope inside the transaction context field (<strong><code>tctx</code></strong>). Smart design—but as I said at the start, the implementation cost is higher. In this post, let’s look at a <strong>lighter</strong> approach that is already on the standards track.</p>
+<h2 id="Rich-Authorization-Requests"><a href="#Rich-Authorization-Requests" class="headerlink" title="Rich Authorization Requests"></a>Rich Authorization Requests</h2><p><strong>Rich Authorization Requests (RAR)</strong> is an OAuth 2.0 extension standardized as <strong>RFC 9396</strong>. The idea is simple: add a new parameter, <strong><code>authorization_details</code></strong>, that describes authorization scope in a structured way.</p>
+<p>To cover multiple resources or use cases, <code>authorization_details</code> is a <strong>JSON array</strong>. Each object describes one authorization scenario—for example:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">[</span></span><br><span class="line">   <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;account_information&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">         <span class="string">&quot;list_accounts&quot;</span><span class="punctuation">,</span></span><br><span class="line">         <span class="string">&quot;read_balances&quot;</span><span class="punctuation">,</span></span><br><span class="line">         <span class="string">&quot;read_transactions&quot;</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;locations&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">         <span class="string">&quot;https://example.com/accounts&quot;</span></span><br><span class="line">      <span class="punctuation">]</span></span><br><span class="line">   <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">   <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;payment_initiation&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;actions&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">         <span class="string">&quot;initiate&quot;</span><span class="punctuation">,</span></span><br><span class="line">         <span class="string">&quot;status&quot;</span><span class="punctuation">,</span></span><br><span class="line">         <span class="string">&quot;cancel&quot;</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;locations&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">         <span class="string">&quot;https://example.com/payments&quot;</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;instructedAmount&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">         <span class="attr">&quot;currency&quot;</span><span class="punctuation">:</span> <span class="string">&quot;EUR&quot;</span><span class="punctuation">,</span></span><br><span class="line">         <span class="attr">&quot;amount&quot;</span><span class="punctuation">:</span> <span class="string">&quot;123.50&quot;</span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;creditorName&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Merchant A&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;creditorAccount&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">         <span class="attr">&quot;iban&quot;</span><span class="punctuation">:</span> <span class="string">&quot;DE02100100109307118603&quot;</span></span><br><span class="line">      <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;remittanceInformationUnstructured&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Ref Number Merchant&quot;</span></span><br><span class="line">   <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">]</span></span><br></pre></td></tr></table></figure>
+
+<p>The <strong><code>type</code></strong> field identifies the resource or scenario. Your authorization server must register and support each type you use. Other fields depend on your business requirements.</p>
+<p>When you send the authorization request, you URL-encode that JSON and attach it to the query string:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">GET /authorize?</span><br><span class="line">   response_type=code</span><br><span class="line">   &amp;client_id=s6BhdRkqt3</span><br><span class="line">   &amp;state=af0ifjsldkj</span><br><span class="line">   &amp;redirect_uri=https%3A%2F%2Fclient.example.org%2Fcb</span><br><span class="line">   &amp;authorization_details=%5B%7B%22type%22%3A%22account%5Finfo</span><br></pre></td></tr></table></figure>
+
+<p>From that angle, RAR is a remarkably straightforward way to move from coarse scope strings toward <strong>lightweight, fine-grained authorization</strong>—especially when you are prototyping agent workflows or comparing options before committing to a heavier Transaction Token architecture.</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><ul>
+<li>Classic OAuth <strong><code>scope</code></strong> is a space-delimited string; it is easy to use but hard to express precise, transaction-level consent.</li>
+<li><strong>AI Agents</strong> amplify that problem because users must understand <em>what the agent is about to do</em>, not just which API family it may call.</li>
+<li><strong>Rich Authorization Requests (RFC 9396)</strong> add <strong><code>authorization_details</code></strong> so clients can describe structured permissions—including amounts, payees, and actions—in the authorization request itself.</li>
+<li>RAR does not replace every Transaction Token use case, but it is a <strong>lighter</strong> standards-based step toward fine-grained authorization. Great starting point, right?</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -202,9 +465,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2026-10-29 12:58:00 / Modified: 13:02:56" itemprop="dateCreated datePublished" datetime="2026-10-29T12:58:00+08:00">2026-10-29</time>
+      <time title="Created: 2026-10-29 12:58:00" itemprop="dateCreated datePublished" datetime="2026-10-29T12:58:00+08:00">2026-10-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-11-03 09:35:27" itemprop="dateModified" datetime="2026-11-03T09:35:27+08:00">2026-11-03</time>
     </span>
 
   
@@ -391,7 +660,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:27" itemprop="dateModified" datetime="2026-11-03T09:35:27+08:00">2026-11-03</time>
     </span>
 
   
@@ -544,7 +813,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:27" itemprop="dateModified" datetime="2026-11-03T09:35:27+08:00">2026-11-03</time>
     </span>
 
   
@@ -668,7 +937,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:27" itemprop="dateModified" datetime="2026-11-03T09:35:27+08:00">2026-11-03</time>
     </span>
 
   
@@ -856,7 +1125,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:27" itemprop="dateModified" datetime="2026-11-03T09:35:27+08:00">2026-11-03</time>
     </span>
 
   
@@ -982,7 +1251,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -1086,7 +1355,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -1228,7 +1497,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -1316,236 +1585,6 @@
 <p>This code is a clear, hands-on illustration of how Transformer inference works in practice. It is worth reading carefully more than once.</p>
 <p>Build and run it, and you will see a small model answering your questions locally on ordinary CPU hardware. Great, right?</p>
 <img src="/images/edge-ai-onnx/Pasted%20image%2020260915135410.png" alt="" >
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2024/05/01/dotnet-gc-memory-leak-windbg/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2024/05/01/dotnet-gc-memory-leak-windbg/" class="post-title-link" itemprop="url">Diagnose Memory Leaks in .NET Applications with WinDbg: A Hands-on Approach</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2024-05-01 10:43:54" itemprop="dateCreated datePublished" datetime="2024-05-01T10:43:54+08:00">2024-05-01</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>In this article, I will share what I learned about <code>.NET memory management</code> by troubleshooting a memory leak issue for a .NET service running in a real production environment. After reading this post, you can understand more about the following items:</p>
-<ul>
-<li><code>.NET Memory Management</code> and <code>.NET Garbage Collection</code></li>
-<li>Diagnose memory usage with <code>WinDbg</code></li>
-</ul>
-<p>Previously I once published <a href="https://organicprogrammer.com/2022/08/05/userland-memory-allocation-one/">articles</a> about memory allocation of native applications written in C on Linux systems. I highly recommend you read both articles and compare what’s the difference, this can deepen your understanding of memory-related techniques.  </p>
-<h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>Firstly, let me explain the background: the problematic .NET service is running on the <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/azure/service-fabric/service-fabric-azure-clusters-overview"><code>Azure Service Fabric</code></a>, which consists of a cluster of <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Windows_Server">Windows Server</a>. If you are not familiar with Service Fabric, please refer to my <a href="https://organicprogrammer.com/2023/03/20/guide-to-service-fabric-architecture/">previous article</a>, which explains how to develop microservices based on it. The problem is that the memory usage of this .NET service reaches roughly <code>1.5GB</code>, which is 4 times higher than the average usage. Generally speaking, on the cloud more resource usage means higher cost. Next, let’s diagnose what is happening here. But before we roll up our sleeves to debug this issue, let’s first review how .NET memory works at a theoretical level.</p>
-<h3 id="NET-Memory-Management"><a href="#NET-Memory-Management" class="headerlink" title=".NET Memory Management"></a>.NET Memory Management</h3><h5 id="NET-Runtime"><a href="#NET-Runtime" class="headerlink" title=".NET Runtime"></a>.NET Runtime</h5><p>Unlike native software written directly to the operating system’s APIs, programs written with <code>.NET</code> are called <code>managed</code> applications because they depend on a runtime and framework that manages many of their vital tasks and ensures a basic safe operating environment. In <code>.NET</code>, runtime refers to the <code>Common Language Runtime(CLR)</code> and the framework is <code>.NET Framework</code> or <code>.NET Core</code>. And the .NET application is built on top of them. </p>
-<img src="/images/CLR.png" title=".NET and CLR" width="600px" height="400px">
-
-<p><code>CLR</code> works as a virtual execution engine for .NET applications, and it is a very complex topic that is out of the scope of this article, so we can’t dive into the details. But one of the crucial functionalities it provides is just: <code>memory management</code>. </p>
-<h5 id="NET-GC"><a href="#NET-GC" class="headerlink" title=".NET GC"></a>.NET GC</h5><p>When you’re working on system programming with C or C++, you need to manage the memory by calling standard library’s APIs like <code>malloc</code> and <code>free</code> to allocate and release the memory. But on the .NET framework, your life will be easier since the .NET memory manager does this task for you. When the program creates a new object, the memory manager will allocate the memory for you. Easy, right? But that’s only a trivial part of the memory manager, the complicated task is how and when the memory manager can decide to collect the memory. Because of this, the .NET memory manager has another name: <code>.NET Garbage Collector</code>. </p>
-<p>The .NET GC uses two Win32 functions <code>VirtualAlloc</code> and <code>VirtualFree</code> for allocating a segment of memory and releasing segments back to the operating system respectively. The entire process can be divided into the following three phases: </p>
-<img src="/images/gcphases.png" title=".NET and CLR" width="600px" height="400px">
-
-
-<ul>
-<li><strong>Marking Phase</strong>: A list of <code>live</code> objects is created during the marking phase. This is done by starting from a set of references called the <code>GC roots</code>. GC marks these root objects as <code>live</code> and then looks at any object that they reference and marks these as being <code>live</code> too. And the GC continues the search iteratively. This process is also called <code>reachability analysis</code>. All of the objects that are not on the reachable list are potentially released from the memory.</li>
-</ul>
-<img src="/images/reachability.png" title="GC roots" width="600px" height="400px">
-
-<ul>
-<li><p><strong>Relocating Phase</strong>: The references of all the reachable objects are updated so that they point to the new location. The purpose of the relocating phase is to optimize memory usage by compacting the live objects closer together. This helps reduce <code>memory fragmentation</code> and improves memory allocation efficiency. </p>
-</li>
-<li><p><strong>Compacting Phase</strong>: The memory space occupied by the dead objects is released and the live objects are moved to the new location.</p>
-</li>
-</ul>
-<p>GC algorithm is a complex topic, the above description only touches the surface of it. You can explore <a target="_blank" rel="noopener" href="https://www.red-gate.com/simple-talk/development/dotnet-development/understanding-garbage-collection-in-net/">more</a> by yourself. In the following sections, I will add extra information when necessary. </p>
-<h3 id="WinDbg"><a href="#WinDbg" class="headerlink" title="WinDbg"></a>WinDbg</h3><p>To diagnose .NET applications’ memory issues, there are many modern tools, like <a target="_blank" rel="noopener" href="https://www.jetbrains.com/dotmemory/"><code>dotMemory</code></a>. But in this article, I will show you a low-level tool: <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/WinDbg"><code>WinDbg</code></a>. <code>WinDbg</code> is a multipurpose debugger for the Windows OS, which can be used to debug both user mode and kernel mode. Originally WinDbg was used to debug the native applications, but WinDbg allows the loading of extensions which can augment the debugger’s supported commands. For example, to debug .NET applications running on CLR, we need the <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/dotnet/framework/tools/sos-dll-sos-debugging-extension?redirectedfrom=MSDN"><code>SOS</code> extension</a>.  </p>
-<p>Now that we have a powerful debugger in hand, the next question is how to use it. Generally speaking, you can attach the debugger to the problematic service, but since the target service is running in the production environment, we can’t do that easily. So we need to troubleshoot this issue in the offline style as follows:</p>
-<img src="/images/procdump-windbg.png" title="GC roots" width="600px" height="400px">
-
-<p>We need to use <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/sysinternals/downloads/procdump"><code>ProcDump</code></a> to dump the memory information into a file, called <code>dump file</code>. Then use <code>WinDbg</code> to analyze the dump file. I will not cover the usage of <code>ProcDump</code> in this article and leave it to you. </p>
-<p>Next, let’s play with the dump file, all right? Let’s go! </p>
-<h3 id="Diagnose-the-memory-leak"><a href="#Diagnose-the-memory-leak" class="headerlink" title="Diagnose the memory leak"></a>Diagnose the memory leak</h3><p>First, let’s use the WinDbg <code>!address</code> extension to display information about the memory that the target process or target computer uses as follows:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; !address -summary</span><br><span class="line"></span><br><span class="line">--- Usage Summary ---------------- RgnCount ----------- Total Size -------- %ofBusy %ofTotal</span><br><span class="line">Free                                    338     7ffe`d06bb000 ( 127.995 TB)          100.00%</span><br><span class="line">&lt;unknown&gt;                              4715        0`feb0f000 (   3.980 GB)  83.90%    0.00%</span><br><span class="line">Stack                                   276        0`16880000 ( 360.500 MB)   7.42%    0.00%</span><br><span class="line">Image                                  1241        0`0e989000 ( 233.535 MB)   4.81%    0.00%</span><br><span class="line">Heap                                    519        0`0b997000 ( 185.590 MB)   3.82%    0.00%</span><br><span class="line">Other                                    15        0`001cd000 (   1.801 MB)   0.04%    0.00%</span><br><span class="line">TEB                                      92        0`000b8000 ( 736.000 kB)   0.01%    0.00%</span><br><span class="line">PEB                                       1        0`00001000 (   4.000 kB)   0.00%    0.00%</span><br><span class="line"></span><br><span class="line">--- Type Summary (for busy) ------ RgnCount ----------- Total Size -------- %ofBusy %ofTotal</span><br><span class="line">MEM_PRIVATE                            5051        1`1e9d4000 (   4.478 GB)  94.41%    0.00%</span><br><span class="line">MEM_IMAGE                              1753        0`1013b000 ( 257.230 MB)   5.30%    0.00%</span><br><span class="line">MEM_MAPPED                               55        0`00e26000 (  14.148 MB)   0.29%    0.00%</span><br><span class="line"></span><br><span class="line">--- State Summary ---------------- RgnCount ----------- Total Size -------- %ofBusy %ofTotal</span><br><span class="line">MEM_FREE                                338     7ffe`d06bb000 ( 127.995 TB)          100.00%</span><br><span class="line">MEM_RESERVE                            2503        0`cdc3c000 (   3.215 GB)  67.78%    0.00%</span><br><span class="line">MEM_COMMIT                             4356        0`61cf9000 (   1.528 GB)  32.22%    0.00%</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>Let’s examine the output, which provides so much information!</p>
-<p>The <em>first</em> section shows the memory <code>Usage Summary</code>: </p>
-<ul>
-<li><strong>Free</strong>: is the entire <code>virtual memory</code> that can potentially be claimed from the operating system. This may include <code>swap space</code>, not only physical RAM. For a 64-bit process,  the virtual memory is <code>128TB</code>. </li>
-<li><strong>Heap</strong>: what you see as <code>Heap</code> is the memory that was allocated through the <code>Windows Heap Manager</code>, we generally call it the <code>native heap</code>. </li>
-<li><strong>Unknown</strong>: any other heap managers will implement their own memory management. Basically, they all work similarly: they get large blocks of memory from <code>VirtualAlloc</code> and then try to do a better management of the small block within that large block. Since WinDbg doesn’t know any of these memory managers, that memory is declared as <code>Unknown</code>. It includes but is not limited to the managed heap of <code>.NET</code>. In my case, the value is <code>3.98GB</code> which is much bigger than the <code>1.5GB</code> memory usage reported by the monitor tool. I will explain why it goes like this in the following sections. </li>
-<li><strong>Image</strong>: is the memory space allocated for the binary assemblies. </li>
-<li><strong>Stack</strong>: is straightforward. If you don’t know, please refer to my previous <a href="https://organicprogrammer.com/2020/08/19/stack-frame/">article</a>.</li>
-</ul>
-<p>The <em>second</em> section shows the usage by memory <code>Type</code>: <code>MEM_PRIVATE</code>, <code>MEM_IMAGE</code> and <code>MEM_MAPPED</code>. <code>MEM_PRIVATE</code> is private to one process and <code>MEM_IMAGE</code> and <code>MEM_MAPPED</code> can be shared among multiple processes. </p>
-<p>The <em>third</em> section shows the usage by memory <code>State</code>.</p>
-<ul>
-<li><strong>MEM_COMMIT</strong>: committed memory refers to the portion of the virtual address space that has been allocated and backed by physical memory or the paging file. Committed memory is actively used and accessible by the process. It includes memory regions that have been allocated and are in use, such as code, data, and heap allocations. </li>
-<li><strong>MEM_RESERVE</strong>: corresponds to reserved memory. Reserved memory refers to memory that has been reserved in the virtual address space but has not yet been committed. When memory is reserved, the address space is allocated, but physical memory or paging file resources are not immediately allocated. The process reserves the address space to ensure that it will be available when needed. Reserved memory can later be committed to make it usable by the process. </li>
-<li><strong>MEM_FREE</strong>: represents free memory. This category includes all memory that has not been reserved or committed.</li>
-</ul>
-<p>In my case, the committed memory is <code>1.528GB</code>, which exactly matches the monitored memory usage. This can perfectly explain the confusing point mentioned about the <code>3.98GB</code> <code>unknown</code> memory segment. It turns out the majority of these memories are only reserved. So next step is to get the actual committed memory usage for various types. How to achieve that? </p>
-<p>Thanks for the powerful <code>address</code> extension, I can do that by adding some filters like this:</p>
- <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">!address -f:MEM_COMMIT -c:&quot;.echo %1 %3 %5 %7&quot;</span><br></pre></td></tr></table></figure>
-
-<p> This command will output all the committed memory regions, and for each region prints its base address(%1), region size(%3), state(%5) and type(%7). The output goes as follows:</p>
- <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">0x5f3a0000 0x1000 MEM_COMMIT Image</span><br><span class="line">0x5f3a1000 0x2ab000 MEM_COMMIT Image</span><br><span class="line">0x5f64c000 0xb000 MEM_COMMIT Image</span><br><span class="line">0x5f657000 0x1b000 MEM_COMMIT Image</span><br><span class="line">0x5f672000 0x2000 MEM_COMMIT Image</span><br><span class="line">0x5f674000 0x2d000 MEM_COMMIT Image</span><br><span class="line">0x7ffe0000 0x1000 MEM_COMMIT Other</span><br><span class="line">0x4580ca7000 0x5000 MEM_COMMIT Stack</span><br><span class="line">...thousands of lines omitted...</span><br></pre></td></tr></table></figure>
-
-<p>I wrote a simple script to parse the above output and finally got the following result: </p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Memory by Type:</span><br><span class="line">type Image:  233.52344MB</span><br><span class="line">type Other:  1.8007812MB</span><br><span class="line">type Stack:  3.796875MB</span><br><span class="line">type TEB  :  0.71875MB</span><br><span class="line">type PEB  :  0.00390625MB</span><br><span class="line">type Heap :  84.88281MB</span><br><span class="line">type &lt;unknown&gt; :  1240.2461MB</span><br></pre></td></tr></table></figure>
-<p>Based on this result, you can see the majority comes from the <code>unknown</code> segment. I suspect that the memory leak issue occurs in this problematic service. Various WinDbg <a target="_blank" rel="noopener" href="https://www.tessferrandez.com/blog/2005/11/25/dumpheap-stat-explained.html">commands</a> can diagnose the memory leak problem. And in this specific case, I find the command <code>!finalizequeue</code> is super helpful!</p>
-<p>Before I show you the output of the command, let’s examine what the <code>finalizer queue</code> is. In <code>C#</code>, the <code>finalizer</code>(also referred to as <code>destructor</code>)  is used to perform any necessary final clean-up when a class instance is being collected by the GC. </p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title">Car</span></span><br><span class="line">&#123;</span><br><span class="line">    ~Car()  <span class="comment">// finalizer</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="comment">// cleanup statements...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>When your application encapsulates <code>unmanaged resources</code>, such as windows, files and network connections, you should use the <code>finalizer</code> to free those resources. </p>
-<p>Objects of classes with finalizers can’t be removed immediately: they instead go to the <code>finalizer queue</code> and are removed from memory once the finalizer has been run. </p>
-<p>Based on this, let’s examine the output of command <code>!finalizequeue</code>:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">0:000&gt; !FinalizeQueue</span><br><span class="line">SyncBlocks to be cleaned up: 0</span><br><span class="line">Free-Threaded Interfaces to be released: 0</span><br><span class="line">MTA Interfaces to be released: 0</span><br><span class="line">STA Interfaces to be released: 0</span><br><span class="line">----------------------------------</span><br><span class="line">generation 0 has 66 finalizable objects (0000021c729c47b0-&gt;0000021c729c49c0)</span><br><span class="line">generation 1 has 4 finalizable objects (0000021c729c4790-&gt;0000021c729c47b0)</span><br><span class="line">generation 2 has 4372 finalizable objects (0000021c729bbef0-&gt;0000021c729c4790)</span><br><span class="line">Ready for finalization 0 objects (0000021c729c49c0-&gt;0000021c729c49c0)</span><br><span class="line">Statistics for all finalizable objects (including all objects ready for finalization):</span><br><span class="line">              MT    Count    TotalSize Class Name</span><br><span class="line">00007ffcde443f78        1           32 Microsoft.Win32.SafeHandles.SafePEFileHandle</span><br><span class="line">00007ffcde4407f8        1           32 System.Security.Cryptography.X509Certificates.SafeCertContextHandle</span><br><span class="line"></span><br><span class="line">--- many lines of output omitted ---</span><br><span class="line"></span><br><span class="line">00007ffcde447db0       97         3104 Microsoft.Win32.SafeHandles.SafeWaitHandle</span><br><span class="line">00007ffcdd272468       28         4928 System.Diagnostics.PerformanceCounter</span><br><span class="line">00007ffcde45d6a8       64         6144 System.Threading.Thread</span><br><span class="line">00007ffcde4297c0     3639       262008 System.Reflection.Emit.DynamicResolver</span><br><span class="line">Total 4442 objects</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>You can notice that there are <code>3639</code> objects of type <code>System.Reflection.Emit.DynamicResolver</code>. As we know, the objects in the <code>finalizer queue</code> can’t be removed until the finalizer runs. This also means that any object they reference and any object referenced by those, and so on has to be kept in memory.</p>
-<p>This is the potential reason for the memory leak problem. <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/dotnet/api/system.reflection.emit?view=net-8.0"><code>System.Reflection.Emit</code></a> is a low-level library used to generate the Microsoft Intermediate Language (MSIL) dynamically, my application does not rely on it. Finally, it turns out the issue is from the Service Fabric SDK and upgrading to new versions can fix it. </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we examined how .NET GC works and how to diagnose the memory leak issue with WinDbg. </p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2023/06/09/lift-scholarship-program/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2023/06/09/lift-scholarship-program/" class="post-title-link" itemprop="url">Linux Foundation Scholarship</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2023-06-09 10:19:04" itemprop="dateCreated datePublished" datetime="2023-06-09T10:19:04+08:00">2023-06-09</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <p>After graduating from campus 10 years ago, I didn’t expect that I would still be eligible for a scholarship, especially considering that I wasn’t a high-achieving student at that time. But recently, I joined one program from Linux Foundation: <a target="_blank" rel="noopener" href="https://www.linuxfoundation.org/about/lift-scholarships"><code>The Shubhra Kar Linux Foundation Training (LiFT) Scholarship Program</code></a>. And very luckily, get awarded. </p>
-<img src="/images/lift-scholarship.png" title="lift" width="800px" height="600px">
-
-<p>I plan and hope to set up a bright new career in the open-source software field, that’s the motivation to join the program! </p>
-<p>Thanks to the award from Linux Foundation, I got the opportunity to select one training course and certification exam freely. Big thanks. </p>
-<p>And the one I choose is <a target="_blank" rel="noopener" href="https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/"><code>CKAD (Certified Kubernetes Application Developer)</code></a>, stay tuned, I will update the status later. </p>
 
       
     </div>

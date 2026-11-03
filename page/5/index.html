@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">77</span>
+          <span class="site-state-item-count">79</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">45</span>
+        <span class="site-state-item-count">47</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,252 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/08/06/win-wsl/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/08/06/win-wsl/" class="post-title-link" itemprop="url">New way to set up Linux development environment in Windows with WSL</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-08-06 09:19:41" itemprop="dateCreated datePublished" datetime="2021-08-06T09:19:41+08:00">2021-08-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>I like system programming which can allow you to touch more software development skills in the bottom level.  </p>
+<p>Linux is the perfect platform when you want to do system programming. But if you’re using a computer running Windows on it, then you have to spend some time to set up the Linux development environment. Generally speaking there are two traditional ways to do that: <code>virtual machine</code> and <code>dualboot</code>, both need some effort. Or you can try to do that with <code>container</code> technology, for example, I once shared one <a target="_blank" rel="noopener" href="https://baoqger.github.io/2020/07/28/linux-cpp-docker/">article</a> about how to do it with <code>Docker</code>. </p>
+<p>In this article, I will introduce a new and easier way to do this without too much overhead. </p>
+<h3 id="Windows-Subsystem-for-Linux"><a href="#Windows-Subsystem-for-Linux" class="headerlink" title="Windows Subsystem for Linux"></a>Windows Subsystem for Linux</h3><p>The new way is <code>Windows Subsystem for Linux (WSL)</code>. I have to admit that the operating system is complex and difficult so for now I don’t know how Microsoft make <code>WSL</code> works. In details, you can refer to this <a target="_blank" rel="noopener" href="https://devblogs.microsoft.com/commandline/a-deep-dive-into-how-wsl-allows-windows-to-access-linux-files/">article</a> to learn how <code>WSL</code> allows Windows to access Linux files. In this article let’s focus on how to set it up and what kind of benefits it can provide to developers.</p>
+<p>Based on the <a target="_blank" rel="noopener" href="https://docs.microsoft.com/en-us/windows/wsl/about">official document</a>, with <code>WSL</code> you can</p>
+<ul>
+<li>Run common command-line tools such as <code>grep</code>, <code>sed</code>, <code>awk</code>.</li>
+<li>Run Bash shell scripts and GNU&#x2F;Linux command-line applications including:<ul>
+<li>Tools: vim, emacs, tmux.</li>
+<li>Languages: NodeJS, Javascript, Python, Ruby, C&#x2F;C++, C# &amp; F#, Rust, Go, etc.</li>
+<li>Services: SSHD, MySQL, Apache, lighttpd, MongoDB, PostgreSQL.</li>
+</ul>
+</li>
+<li>Install additional software using your own GNU&#x2F;Linux distribution package manager.</li>
+</ul>
+<p>With these conditions, you can set up a completed Linux development environment. </p>
+<h3 id="Install-WSL"><a href="#Install-WSL" class="headerlink" title="Install WSL"></a>Install WSL</h3><p>For detail steps to install <code>WSL</code>, you can find it on the official document. Based on my experience, I follow the document to download and install Linux Ubuntu distribution smoothly, which is much easier than settig the virtual machine.</p>
+<h3 id="File-mount"><a href="#File-mount" class="headerlink" title="File mount"></a>File mount</h3><p>By default, you can also access your local machine’s file system from within the Linux Bash shell. Since your local drives are mounted under the <strong>&#x2F;mnt</strong> folder of the subsystem. </p>
+<p>In this way, you can develop the code with the productivity tools in Windows and build it in Linux environment.</p>
+<h3 id="Network"><a href="#Network" class="headerlink" title="Network"></a>Network</h3><p>This is another convenient point. <code>WSL</code> shares the IP address of Windows, as it is running on Windows.<br>As such you can access any ports on localhost e.g. if you had a web server running on port 8080, you could access it just by visiting <strong><a target="_blank" rel="noopener" href="http://localhost:8080/">http://localhost:8080</a></strong> into your Windows browser.</p>
+<h3 id="Set-up-the-development-environment"><a href="#Set-up-the-development-environment" class="headerlink" title="Set up the development environment"></a>Set up the development environment</h3><p>After install the Ubuntu system, I also install tools to prepare the development environment. For example, <code>GCC</code> to develop C language program as below. </p>
+<img src="/images/linux-gcc.png" title="gcc in Linux" width="800px" height="600px">
+
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>Based on my testing and experience, <code>WSL</code> can save developers’ time to set up Linux environment.  </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/07/31/how-to-implement-simple-http-server-golang/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/07/31/how-to-implement-simple-http-server-golang/" class="post-title-link" itemprop="url">How to write a Golang HTTP server with Linux system calls</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-07-31 10:15:25" itemprop="dateCreated datePublished" datetime="2021-07-31T10:15:25+08:00">2021-07-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p><code>HTTP</code> is everywhere. As a software engineer, you’re using the <code>HTTP</code> protocol every day. Starting an <code>HTTP</code> server will be an easy task if you’re using any modern language or framework. For example, in Golang you can do that with the following lines of code:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;net/http&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    http.HandleFunc(<span class="string">&quot;/hi&quot;</span>, <span class="function"><span class="keyword">func</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span>&#123;</span><br><span class="line">        fmt.Fprintf(w, <span class="string">&quot;Hi&quot;</span>)</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line">    log.Fatal(http.ListenAndServe(<span class="string">&quot;:8081&quot;</span>, <span class="literal">nil</span>))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>You can finish the job easily because <code>net/http</code> package implements the <code>HTTP</code> protocol completely. How can you do that without <code>net/http</code> package ? That’s the target of this article. </p>
+<p><strong>Note</strong>: This article is inspired by <a target="_blank" rel="noopener" href="https://joe.schafer.dev/go-server-with-syscalls/">Joe Schafer’s post</a> a lot. My implementation has something different which totally removes dependency on Golang’s <code>net</code> package, but the idea of using <code>system call</code> in Golang to setup the TCP&#x2F;IP connetion is the same. Thanks very much for Joe Schafer’s interesting post.</p>
+<p>Another thing I need to mention is this article will cover many concepts, but it’s very difficult to discuss all of them in detail. To understand this article smoothly, you need some prerequisite knowledge such as <code>OSI model</code>, <code>TCP/IP stack</code>, <code>socket programming</code>, <code>HTTP protocol</code> and <code>system call</code>. I will add some explanations on these topics to help you understand this article and give some references and links to let you continue exploring more in advanced level. </p>
+<h3 id="OSI-network-model"><a href="#OSI-network-model" class="headerlink" title="OSI network model"></a>OSI network model</h3><p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/OSI_model"><code>OSI model</code></a> partitions the data flow in a communication system into <strong>seven abstraction layers</strong>. These layers form a protocol stack, with each layer communicating with the layer above and the layer below as follows: </p>
+<img src="/images/osi_model.png" title="network" width="400px" height="300px">
+
+<p>For example, <code>HTTP</code> is in <strong>layer 7</strong>, <code>TCP</code> is in <strong>layer 4</strong> and <code>IP</code> is in <strong>layer 3</strong>. </p>
+<p>OSI is a general model, which was first specified in the early 1980s. <strong>But neither traditional nor modern networking protocols fit into this model neatly</strong>. For example, <code>TCP/IP</code> stack does not define the three upper layers: session, presentation, and application. In fact, it does not define anything above the transport layer. From the viewpoint of <code>TCP/IP</code>, everything above the transport layer is part of<br>the application. So the layered network model more  consistent with Linux (TCP&#x2F;IP stack is implemented in Linux kernel) is as follows: </p>
+<ul>
+<li>Application Layer (telnet, ftp, http)</li>
+<li>Host-to-Host Transport Layer (TCP, UDP)</li>
+<li>Internet Layer (IP and routing)</li>
+<li>Network Access Layer (Ethernet, wi-fi)</li>
+</ul>
+<p>Once again, <strong>it is important to point out that the upper layers—Layers 5, 6, and 7—are not part of the TCP&#x2F;IP stack</strong>. </p>
+<p>Another critical point to understand is <code>data encapsulation</code>.  The data flow goes from the bottom physical level to the highest-level representation of data in an application.</p>
+<p>Each layer has administrative information that it has to keep about its own layer. It does this by adding header information to the packet it receives from the layer above, as the packet passes down. Each header contains information regarding the message contents. For example, one <code>HTTP</code> server sends data from one host to another. It uses the <code>TCP</code> protocol on top of the <code>IP</code> protocol, which may be sent over <code>Ethernet</code>. This looks like: </p>
+<img src="/images/data_encapsulation.png" title="network" width="400px" height="300px">
+
+
+
+<p>The packet transmitted over ethernet, is the bottom one. On the receiving side, these headers are removed as the packet moves up.</p>
+<p>Next let’s see how <code>TCP/IP</code> stack encapsulates <code>HTTP</code> message and send it over the network through <code>socket</code>. The idea can be illustrated with the following image: </p>
+<img src="/images/socket_network.png" title="network" width="600px" height="400px">
+
+<p>I will explain how it works by writing a HTTP server from scratch, you can refer to this <a target="_blank" rel="noopener" href="https://github.com/baoqger/http-server-scratch">Github repo</a> to get all the code. </p>
+<h3 id="TCP-IP"><a href="#TCP-IP" class="headerlink" title="TCP&#x2F;IP"></a>TCP&#x2F;IP</h3><p><code>TCP/IP</code> stack is originated from <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/ARPANET"><code>ARPANET</code></a> project, which is integrated into Unix BSD OS as the first implementation of <code>TCP/IP</code> protocols.</p>
+<p>Nowadays, <code>TCP/IP</code> is still implemented in the operating system level. For Linux system, you can find the source code inside the kernel. The detailed implementation is outside the scope of this article. You can study it in this Github <a target="_blank" rel="noopener" href="https://github.com/torvalds/linux/tree/master/net/ipv4">link</a>. </p>
+<h3 id="Socket"><a href="#Socket" class="headerlink" title="Socket"></a>Socket</h3><p>As I mentioned in the above sections, HTTP server is running in the application level. How it can work with <code>TCP/IP</code> stack which lives in the kernel? The answer is <code>socket</code>. </p>
+<p>The <code>socket</code> interface was originally developed as part of the BSD operating system. Sockets provide an interface between the application level programs and the TCP&#x2F;IP stack. Linux (or other OS) provides an API and sockets, and applications use this API to access the networking facilities in the kernel. </p>
+<p>The socket interface is really TCP&#x2F;IP’s window on the world. In most modern systems incorporating TCP&#x2F;IP, the socket interface is the only way that applications make use of the TCP&#x2F;IP suite of protocols. </p>
+<p>One main advantage of sockets in Unix or Linux system is that the socket is treated as a <code>file descriptor</code>, and all the standard I&#x2F;O functions work on sockets in the same way they work on a local file. File descriptor is simply an integer associated with an open file. </p>
+<p>You may heard <strong>everything in Unix is a file</strong>. The file can be a network connection, a pipe, a real file in the disk, a device or anything else. So when you want to send data to another program over the Interent you will do it through a file descriptor.   </p>
+<p>In our HTTP server case, <strong>it will get the request by reading data from the socket and send the response by writing data to the socket</strong>.  </p>
+<p>Next, let’s review the source code to see how the HTTP server is implemented.</p>
+<p>First, we need setup the TCP connection through socket, the process can be described in the following image: </p>
+<img src="/images/socket_tcp.png" title="network" width="600px" height="400px">
+
+<p>In Golang, <code>net</code> package provides all the socket related functionalities. Since this article’s purpose is writing a HTTP server from scratch, so I create a package named <strong>simplenet</strong> to provide the very basic implementation. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> simplenet</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;os&quot;</span></span><br><span class="line">	<span class="string">&quot;syscall&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> netSocket <span class="keyword">struct</span> &#123;</span><br><span class="line">	fd <span class="type">int</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewNetSocket</span><span class="params">(ip IP, port <span class="type">int</span>)</span></span> (*netSocket, <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="comment">// ForkLock docs state that socket syscall requires the lock.</span></span><br><span class="line">	syscall.ForkLock.Lock()</span><br><span class="line">	<span class="comment">// AF_INET = Address Family for IPv4</span></span><br><span class="line">	<span class="comment">// SOCK_STREAM = virtual circuit service</span></span><br><span class="line">	<span class="comment">// 0: the protocol for SOCK_STREAM, there&#x27;s only 1.</span></span><br><span class="line">	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_STREAM, <span class="number">0</span>)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, os.NewSyscallError(<span class="string">&quot;socket&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line">	syscall.ForkLock.Unlock()</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Allow reuse of recently-used addresses.</span></span><br><span class="line">	<span class="keyword">if</span> err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, <span class="number">1</span>); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		syscall.Close(fd)</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, os.NewSyscallError(<span class="string">&quot;setsockopt&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Bind the socket to a port</span></span><br><span class="line">	sa := &amp;syscall.SockaddrInet4&#123;Port: port&#125;</span><br><span class="line">	<span class="built_in">copy</span>(sa.Addr[:], ip)</span><br><span class="line">	<span class="keyword">if</span> err = syscall.Bind(fd, sa); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, os.NewSyscallError(<span class="string">&quot;bind&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Listen for incoming connections.</span></span><br><span class="line">	<span class="keyword">if</span> err = syscall.Listen(fd, syscall.SOMAXCONN); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, os.NewSyscallError(<span class="string">&quot;listen&quot;</span>, err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> &amp;netSocket&#123;fd: fd&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ns netSocket)</span></span> Read(p []<span class="type">byte</span>) (<span class="type">int</span>, <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(p) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">	n, err := syscall.Read(ns.fd, p) <span class="comment">// read from socket file descriptor</span></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		n = <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> n, err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ns netSocket)</span></span> Write(p []<span class="type">byte</span>) (<span class="type">int</span>, <span class="type">error</span>) &#123;</span><br><span class="line">	n, err := syscall.Write(ns.fd, p) <span class="comment">// write to socket file descriptor</span></span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		n = <span class="number">0</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> n, err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Creates a new netSocket for the next pending connection request.</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ns *netSocket)</span></span> Accept() (*netSocket, <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="comment">// syscall.ForkLock doc states lock not needed for blocking accept.</span></span><br><span class="line">	nfd, _, err := syscall.Accept(ns.fd)</span><br><span class="line">	<span class="keyword">if</span> err == <span class="literal">nil</span> &#123;</span><br><span class="line">		syscall.CloseOnExec(nfd)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> &amp;netSocket&#123;nfd&#125;, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(ns *netSocket)</span></span> Close() <span class="type">error</span> &#123;</span><br><span class="line">	<span class="keyword">return</span> syscall.Close(ns.fd)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>netSocket</strong> data model is created to represent the socket, which contains only one field <strong>fd</strong> means file descriptor. And all the socket related APIs: <strong>Read</strong>, <strong>Write</strong>,  <strong>Accept</strong> and <strong>Close</strong>, are defined. The usage of socket API is not in this article’s scope, you can easily find a lot of great documents about it online. </p>
+<p>The logic of <strong>netSocket</strong> is not complicated, because it delegates the job to the kernel by <code>system call</code>. A system call is a programmatic way a program requests a service from the kernel, in detail you can refer to this <a target="_blank" rel="noopener" href="https://opensource.com/article/19/10/strace">article</a>. In Golang, all the system calls are wrapped inside the <code>syscall</code> standard package.  </p>
+<p>One thing need to mention is different platform have different <code>syscall</code> usages, so the demo code shown in this article can only be compiled and build on Linux system. </p>
+<p>Now we setup the TCP server and wait for connection request from client side. Next, let’s see how to read or write HTTP request and response through socket. </p>
+<h3 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h3><p>The main workflow is as follows: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;flag&quot;</span></span><br><span class="line">	<span class="string">&quot;http-server-scratch/simplenet&quot;</span></span><br><span class="line">	<span class="string">&quot;log&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	ipFlag := flag.String(<span class="string">&quot;ip_addr&quot;</span>, <span class="string">&quot;127.0.0.1&quot;</span>, <span class="string">&quot;The IP address to use&quot;</span>)</span><br><span class="line">	portFlag := flag.Int(<span class="string">&quot;port&quot;</span>, <span class="number">8080</span>, <span class="string">&quot;The port to use.&quot;</span>)</span><br><span class="line">	flag.Parse()</span><br><span class="line"></span><br><span class="line">	ip := simplenet.ParseIP(*ipFlag)</span><br><span class="line">	port := *portFlag</span><br><span class="line">	socket, err := simplenet.NewNetSocket(ip, port)</span><br><span class="line">	<span class="keyword">defer</span> socket.Close()</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="built_in">panic</span>(err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	log.Print(<span class="string">&quot;===============&quot;</span>)</span><br><span class="line">	log.Print(<span class="string">&quot;Server Started!&quot;</span>)</span><br><span class="line">	log.Print(<span class="string">&quot;===============&quot;</span>)</span><br><span class="line">	log.Print()</span><br><span class="line">	log.Printf(<span class="string">&quot;addr: http://%s:%d&quot;</span>, ip, port)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="comment">// Block until incoming connection</span></span><br><span class="line">		rw, e := socket.Accept()</span><br><span class="line">		log.Print()</span><br><span class="line">		log.Print()</span><br><span class="line">		log.Printf(<span class="string">&quot;Incoming connection&quot;</span>)</span><br><span class="line">		<span class="keyword">if</span> e != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(e)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Read request</span></span><br><span class="line">		log.Print(<span class="string">&quot;Reading request&quot;</span>)</span><br><span class="line">		req, err := simplenet.ParseRequest(rw)</span><br><span class="line">		log.Print(<span class="string">&quot;request: &quot;</span>, req)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			<span class="built_in">panic</span>(err)</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="comment">// Write response</span></span><br><span class="line">		log.Print(<span class="string">&quot;Writing response&quot;</span>)</span><br><span class="line">		simplenet.WriteString(rw, <span class="string">&quot;HTTP/1.1 200 OK\r\n&quot;</span>+</span><br><span class="line">			<span class="string">&quot;Content-Type: text/html; charset=utf-8\r\n&quot;</span>+</span><br><span class="line">			<span class="string">&quot;Content-Length: 20\r\n&quot;</span>+</span><br><span class="line">			<span class="string">&quot;\r\n&quot;</span>+</span><br><span class="line">			<span class="string">&quot;&lt;h1&gt;hello world&lt;/h1&gt;&quot;</span>)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">			log.Print(err.Error())</span><br><span class="line">			<span class="keyword">continue</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>As you can see, the HTTP request parsing logic is defined in the <strong>ParseRequest</strong> method in <strong>simplenet</strong> package. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> simplenet</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;bufio&quot;</span></span><br><span class="line">	<span class="string">&quot;errors&quot;</span></span><br><span class="line">	<span class="string">&quot;http-server-scratch/simplenet/simpleTextProto&quot;</span></span><br><span class="line">	<span class="string">&quot;io&quot;</span></span><br><span class="line">	<span class="string">&quot;strconv&quot;</span></span><br><span class="line">	<span class="string">&quot;strings&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> request <span class="keyword">struct</span> &#123;</span><br><span class="line">	method <span class="type">string</span> <span class="comment">// GET, POST, etc.</span></span><br><span class="line">	header simpleTextProto.MIMEHeader</span><br><span class="line">	body   []<span class="type">byte</span></span><br><span class="line">	uri    <span class="type">string</span> <span class="comment">// The raw URI from the request</span></span><br><span class="line">	proto  <span class="type">string</span> <span class="comment">// &quot;HTTP/1.1&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">ParseRequest</span><span class="params">(c *netSocket)</span></span> (*request, <span class="type">error</span>) &#123;</span><br><span class="line">	b := bufio.NewReader(*c)</span><br><span class="line">	tp := simpleTextProto.NewReader(b) <span class="comment">// need replace</span></span><br><span class="line">	req := <span class="built_in">new</span>(request)</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Parse request line: parse &quot;GET /index.html HTTP/1.0&quot;</span></span><br><span class="line">	<span class="keyword">var</span> s <span class="type">string</span></span><br><span class="line">	s, _ = tp.ReadLine() <span class="comment">// need replace</span></span><br><span class="line">	sp := strings.Split(s, <span class="string">&quot; &quot;</span>)</span><br><span class="line">	req.method, req.uri, req.proto = sp[<span class="number">0</span>], sp[<span class="number">1</span>], sp[<span class="number">2</span>]</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Parse request headers</span></span><br><span class="line">	mimeHeader, _ := tp.ReadMIMEHeader() <span class="comment">// need replace</span></span><br><span class="line">	req.header = mimeHeader</span><br><span class="line"></span><br><span class="line">	<span class="comment">// Parse request body</span></span><br><span class="line">	<span class="keyword">if</span> req.method == <span class="string">&quot;GET&quot;</span> || req.method == <span class="string">&quot;HEAD&quot;</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> req, <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(req.header[<span class="string">&quot;Content-Length&quot;</span>]) == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, errors.New(<span class="string">&quot;no content length&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	length, err := strconv.Atoi(req.header[<span class="string">&quot;Content-Length&quot;</span>][<span class="number">0</span>])</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	body := <span class="built_in">make</span>([]<span class="type">byte</span>, length)</span><br><span class="line">	<span class="keyword">if</span> _, err = io.ReadFull(b, body); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">nil</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	req.body = body</span><br><span class="line">	<span class="keyword">return</span> req, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>The HTTP request message can be divided into three parts <code>request line</code>, <code>request headers</code> and <code>request body</code> as follows: </p>
+<img src="/images/http_message_format.png" title="network" width="600px" height="400px">
+
+
+<p>The logic inside <strong>ParseRequest</strong> handles these 3 parts step by step. You can refer to the comments in the demo code. </p>
+<p>One thing need to emphasis is that <strong>ParseRequest</strong> method doesn’t depends on <code>net</code> package. Because I want to show how HTTP server works in the bottom level, so I copy the request parsing logics from <code>net</code> package into my <code>simplenet</code> package. The parsing for request header part is kind of complex, but it doesn’t influence your understanding about the main concept of HTTP server. If you want to know the details, you can refer to the <code>simplenet/simpleTextProto</code> package. The important thing to understand is HTTP server reads the request message with <strong>Read</strong> method of <strong>netSocket</strong> . And the <strong>Read</strong> method makes socket read system call to get network data from TCP stack: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">syscall.Read(ns.fd, p)</span><br></pre></td></tr></table></figure>
+
+<p>On the other side,  HTTP response is sent back by calling <code>WriteString</code> method of <code>simplenet</code> package</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WriteString</span><span class="params">(c *netSocket, s <span class="type">string</span>)</span></span> (n <span class="type">int</span>, err <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="keyword">return</span> c.Write([]<span class="type">byte</span>(s))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>WriteString</code> simply calls <strong>Write</strong> method of <strong>netsocket</strong>, which makes socket write system call to send data over Interent with TCP stack:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">syscall.Write(ns.fd, p)</span><br></pre></td></tr></table></figure>
+<p>That’s all for the code part. Next let’s try to run this simple HTTP server we build from scratch.</p>
+<h3 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h3><p>Build (need Linux platform) and run this HTTP server with default options setting and send request to it with <code>curl</code>. The result goes as follows: </p>
+<img src="/images/golang_http_server_demo.png" title="network" width="600px" height="400px">
+
+<p>the server works as expected. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +456,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -285,7 +531,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -360,7 +606,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -501,7 +747,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -576,7 +822,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -684,7 +930,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -836,7 +1082,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -941,7 +1187,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -955,226 +1201,6 @@
     
     <div class="post-body" itemprop="articleBody">
           
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/05/11/golang-sync-once/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/05/11/golang-sync-once/" class="post-title-link" itemprop="url"> Golang synchronization primitives source code analysis: part one - sync.Once</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2021-05-11 20:07:55" itemprop="dateCreated datePublished" datetime="2021-05-11T20:07:55+08:00">2021-05-11</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the following series of posts, I will take an in-depth look at the <code>synchronization primitives</code> provided by Golang. </p>
-<p>Although the recommended synchronization mechanism in Golang is <code>channel</code>, there are several powerful <code>synchronization primitives</code> provided in Golang <code>sync</code> package. Based on the official document, <strong>Other than the Once and WaitGroup types, most are intended for use by low-level library routines</strong>. If you read the code of low-level open source projects or the standard packages, you will see synchronization primitives in <code>sync</code> package frequently. </p>
-<p>As the first post in this series, let’s check the source code of <code>sync.Once</code>, which is also the simplest one.</p>
-<h3 id="sync-Once"><a href="#sync-Once" class="headerlink" title="sync.Once"></a>sync.Once</h3><p>If you have several logics running in various go-routines, and you want only one of the logics will execute finally. For this kind of scenario, <code>sync.Once</code> is a perfect option for you. </p>
-<p>Let’s review the source code of <code>sync.Once</code> defined inside the <code>once.go</code> file: </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> sync</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;sync/atomic&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Once <span class="keyword">struct</span> &#123;</span><br><span class="line">	done <span class="type">uint32</span></span><br><span class="line">	m    Mutex</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(o *Once)</span></span> Do(f <span class="function"><span class="keyword">func</span><span class="params">()</span></span>) &#123;</span><br><span class="line">	<span class="keyword">if</span> atomic.LoadUint32(&amp;o.done) == <span class="number">0</span> &#123;</span><br><span class="line">		o.doSlow(f)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(o *Once)</span></span> doSlow(f <span class="function"><span class="keyword">func</span><span class="params">()</span></span>) &#123;</span><br><span class="line">	o.m.Lock()</span><br><span class="line">	<span class="keyword">defer</span> o.m.Unlock()</span><br><span class="line">	<span class="keyword">if</span> o.done == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">defer</span> atomic.StoreUint32(&amp;o.done, <span class="number">1</span>)</span><br><span class="line">		f()</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Struct <code>Once</code> has a status flag <code>done</code> whose value is <code>0</code> when initialized. Wrap the logic you want to execute in a function <code>f</code>, and pass this function <code>f</code> to the <code>Do()</code> method. When <code>Do</code> is called for the first time, the logic in <code>f</code> executes after that <code>done</code> flag is set to <code>1</code>, other calls to <code>Do</code> don’t execute <code>f</code>. </p>
-<p>One misleading point is  <strong>If <code>once.Do(f)</code> is called multiple times, only the first call will invoke <code>f</code>, even if <code>f</code> has a different value in each invocation</strong>. Check the following example:</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;sync&quot;</span></span><br><span class="line">	<span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> doOnce sync.Once</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">go</span> TaskOne()</span><br><span class="line">	<span class="keyword">go</span> TaskTwo()</span><br><span class="line">	time.Sleep(time.Second)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">PrintTask</span><span class="params">(id <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">	fmt.Printf(<span class="string">&quot;Task %d, Run once\n&quot;</span>, id)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TaskOne</span><span class="params">()</span></span> &#123;</span><br><span class="line">	doOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		PrintTask(<span class="number">1</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	fmt.Println(<span class="string">&quot;Run this every time&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TaskTwo</span><span class="params">()</span></span> &#123;</span><br><span class="line">	doOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		PrintTask(<span class="number">2</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	fmt.Println(<span class="string">&quot;Run this every time&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Even <code>Do</code> is called twice with different <code>f</code> logic, but only the first call is invoked since they are bound to the same instance of <code>Once</code>. </p>
-<h3 id="fast-path-and-slow-path"><a href="#fast-path-and-slow-path" class="headerlink" title="fast path and slow path"></a>fast path and slow path</h3><p>As you saw above, the implementation of <code>sync.Once</code> is not complex. But one question comes to my mind when I double check the code. Why do we need split the logics into two functions <code>Do</code> and <code>doSlow</code>? Why the second function name is <code>doSlow</code>, and what does <code>slow</code> mean here?</p>
-<p>Do you have similar questions? </p>
-<p>I found the answer in the comments of <code>once.go</code> file. </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> atomic.LoadUint32(&amp;o.done) == <span class="number">0</span> &#123;</span><br><span class="line">	<span class="comment">// Outlined slow-path to allow inlining of the fast-path.</span></span><br><span class="line">	o.doSlow(f)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Note that it mentioned two words: <code>fast path</code> and <code>slow path</code>. </p>
-<ul>
-<li>Fast path is a term used in computer science to describe a path with shorter instruction path length through a program compared to the ‘normal’ path. For a fast path to be effective it must handle the most commonly occurring tasks more efficiently than the ‘normal’ path, leaving the latter to handle uncommon cases, corner cases, error handling, and other anomalies. <strong>Fast paths are a form of optimization</strong>.</li>
-</ul>
-<p>In the <code>Once</code> case, since the first call to <code>Do</code> function will set <code>done</code> to 1, so the most common case or status for <code>Once</code> is the <code>done</code> flag equals to 1. The <code>fast path</code> in <code>Do</code> function is just for this common case. While the <code>done</code> flag equals to initial status 0 can be regarded as uncommon case, which is specially handled in the <code>doSlow</code> function. The performance can be optimized in this way.</p>
-<h3 id="hot-path"><a href="#hot-path" class="headerlink" title="hot path"></a>hot path</h3><p>Another very interesting concept worth mentioning is <code>hot path</code>, and it occurs in the <code>Once</code> struct design.</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Once <span class="keyword">struct</span> &#123;</span><br><span class="line">	<span class="comment">// done indicates whether the action has been performed.</span></span><br><span class="line">	<span class="comment">// It is first in the struct because it is used in the hot path.</span></span><br><span class="line">	<span class="comment">// The hot path is inlined at every call site.</span></span><br><span class="line">	<span class="comment">// Placing done first allows more compact instructions on some architectures (amd64/x86),</span></span><br><span class="line">	<span class="comment">// and fewer instructions (to calculate offset) on other architectures.</span></span><br><span class="line">	done <span class="type">uint32</span></span><br><span class="line">	m    Mutex</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>At first glance, it’s just plain and ordinary struct, but the comments emphasize that <code>done</code> <strong>is first in the struct because it is used in the hot path</strong>. It means that <code>done</code> is defined as the first field in <code>Once</code> struct on purpose. And the purpose is also described in the comment <strong>Placing done first allows more compact instructions on some architectures (amd64&#x2F;x86), and fewer instructions (to calculate offset) on other architectures.</strong></p>
-<p>What does that mean? I found a great answer in this <a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/59174176/what-does-hot-path-mean-in-the-context-of-sync-once">post</a>. The conclusion is:</p>
-<ul>
-<li><p>A <code>hot path</code> is a sequence of instructions executed very frequently.</p>
-</li>
-<li><p>When accessing the first field of a structure, we can directly dereference the pointer to the structure to access the first field. To access other fields, we need to provide an <code>offset</code> from the first value in addition to the struct pointer.</p>
-</li>
-<li><p>In machine code, this offset is an additional value to pass with the instruction which makes it longer. The performance impact is that the CPU must perform an addition of the offset to the struct pointer to get the address of the value to access.</p>
-</li>
-<li><p>Thus machine code to <code>access the first field of a struct is more compact and faster</code>.</p>
-</li>
-</ul>
-<p>Simply speaking, accessing the first field of a struct is faster since the CPU doesn’t need to compute the memory offset!</p>
-<p>This is really a good lesson to show the high-level code you programmed can have such a big difference in the bottom level.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/04/28/golang-context-source-code-part2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2021/04/28/golang-context-source-code-part2/" class="post-title-link" itemprop="url">Golang Context package source code analysis: part 2</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2021-04-28 13:38:51" itemprop="dateCreated datePublished" datetime="2021-04-28T13:38:51+08:00">2021-04-28</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the <a target="_blank" rel="noopener" href="https://baoqger.github.io/2021/04/26/golang-context-source-code/">last post</a>, I shared the first part about the <code>context</code> package: <code>valueCtx</code> and <code>cancelCtx</code>. Let us continue the journey to discover more in this post. </p>
-<h3 id="WithTimeout-and-WithDeadline"><a href="#WithTimeout-and-WithDeadline" class="headerlink" title="WithTimeout and WithDeadline"></a>WithTimeout and WithDeadline</h3><p>As usual, let us start with an example: </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;context&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    cancelCtx, cancel := context.WithTimeout(context.Background(), time.Second*<span class="number">3</span>)</span><br><span class="line">    <span class="keyword">defer</span> cancel()</span><br><span class="line">    <span class="keyword">go</span> task(cancelCtx)</span><br><span class="line">    time.Sleep(time.Second * <span class="number">4</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">task</span><span class="params">(ctx context.Context)</span></span> &#123;</span><br><span class="line">    i := <span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> &lt;-ctx.Done():</span><br><span class="line">            fmt.Println(ctx.Err())</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            fmt.Println(i)</span><br><span class="line">            time.Sleep(time.Second * <span class="number">1</span>)</span><br><span class="line">            i++</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Since we already know the behavior of <code>cancelCtx</code>, it’s quite straightforward to understand how <code>WithTimeout</code> works. It accepts a timeout duration after which the <code>done</code> channel will be closed and context will be canceled. And a cancel function will be returned as well, which can be called in case the context needs to be canceled before timeout. </p>
-<p><code>WithDeadline</code> usage is quite similar to <code>WithTimeout</code>, you can find related example easily. Let us review the source code:</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> timerCtx <span class="keyword">struct</span> &#123;</span><br><span class="line">	cancelCtx</span><br><span class="line">	timer *time.Timer </span><br><span class="line">	deadline time.Time</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithTimeout</span><span class="params">(parent Context, timeout time.Duration)</span></span> (Context, CancelFunc) &#123;</span><br><span class="line">	<span class="keyword">return</span> WithDeadline(parent, time.Now().Add(timeout))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Since <code>WithTimeout</code> and <code>WithDeadline</code> have many common points between them, so they share the same type of context: <code>timerCtx</code>, which embeds <code>cancelCtx</code> and defines two more properties: <code>timer</code> and <code>deadline</code>. </p>
-<p>Let us review what happens when we create a <code>timerCtx</code>:</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithDeadline</span><span class="params">(parent Context, d time.Time)</span></span> (Context, CancelFunc) &#123;</span><br><span class="line">	<span class="keyword">if</span> parent == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="built_in">panic</span>(<span class="string">&quot;cannot create context from nil parent&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// Get deadline time of parent context. </span></span><br><span class="line">	<span class="keyword">if</span> cur, ok := parent.Deadline(); ok &amp;&amp; cur.Before(d) &#123;</span><br><span class="line">		<span class="comment">// The current deadline is already sooner than the new one.</span></span><br><span class="line">		<span class="keyword">return</span> WithCancel(parent)</span><br><span class="line">	&#125;</span><br><span class="line">	c := &amp;timerCtx&#123;</span><br><span class="line">		cancelCtx: newCancelCtx(parent),</span><br><span class="line">		deadline:  d,</span><br><span class="line">	&#125;</span><br><span class="line">	propagateCancel(parent, c)</span><br><span class="line">	dur := time.Until(d)</span><br><span class="line">	<span class="keyword">if</span> dur &lt;= <span class="number">0</span> &#123;</span><br><span class="line">		c.cancel(<span class="literal">true</span>, DeadlineExceeded) <span class="comment">// deadline has already passed</span></span><br><span class="line">		<span class="keyword">return</span> c, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; c.cancel(<span class="literal">false</span>, Canceled) &#125;</span><br><span class="line">	&#125;</span><br><span class="line">	c.mu.Lock()</span><br><span class="line">	<span class="keyword">defer</span> c.mu.Unlock()</span><br><span class="line">	<span class="keyword">if</span> c.err == <span class="literal">nil</span> &#123; <span class="comment">// &#x27;err&#x27; field of the embedded cancelCtx is promoted </span></span><br><span class="line">		c.timer = time.AfterFunc(dur, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			c.cancel(<span class="literal">true</span>, DeadlineExceeded)</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> c, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; c.cancel(<span class="literal">true</span>, Canceled) &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>Compared to <code>WithCancle</code> and <code>WithValue</code>, <code>WithDeadline</code> is more complex, let us go through bit by bit.</p>
-<p>Firstly, <code>parent.Deadline</code> will get the deadline time for parent context. The <code>Deadline</code> method signature was defined in the <code>Context</code> interface as below:</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Context <span class="keyword">interface</span> &#123;</span><br><span class="line">	Deadline() (deadline time.Time, ok <span class="type">bool</span>)</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>In the context package, only <code>emptyCtx</code> and <code>timerCtx</code> type implement this method:</p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(*emptyCtx)</span></span> Deadline() (deadline time.Time, ok <span class="type">bool</span>) &#123;</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *timerCtx)</span></span> Deadline() (deadline time.Time, ok <span class="type">bool</span>) &#123;</span><br><span class="line">	<span class="keyword">return</span> c.deadline, <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>So when we call <code>parent.Deadline()</code>, if the parent context is also type of <code>timerCtx</code> which implements its own <code>Deadline()</code> method, then you can get the deadline time of the parent context. Otherwise if the parent context is type of <code>cancelCtx</code> or <code>valueCtx</code>, then finally the <code>Deadline()</code> method of <code>emptyCtx</code> will be called and you will get the zero value of type <code>time.Time</code> and <code>bool</code> (if you have interest, you can verify by yourself the zero value: <strong>0001-01-01 00:00:00 +0000 UTC</strong> and <strong>false</strong>).  </p>
-<p>If parent’s deadline is earlier than the passed in deadline parameter, then directly return a <code>cancelCtx</code> by calling <code>WithCancel(parent)</code>. Of course when the passed in deadline is reasonable, we need to create a <code>timerCtx</code>: </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//inside WithDeadline() function</span></span><br><span class="line">...</span><br><span class="line">c := &amp;timerCtx&#123;</span><br><span class="line">	cancelCtx: newCancelCtx(parent),</span><br><span class="line">	deadline:  d,</span><br><span class="line">&#125;</span><br><span class="line">propagateCancel(parent, c)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<p>In the above code, you see <code>propagateCancel</code> method again, I have discussed about it in the last post, if you don’t understand it, please refer <a target="_blank" rel="noopener" href="https://baoqger.github.io/2021/04/26/golang-context-source-code/">here</a>.</p>
-<p>Similar to <code>cancelCtx</code>, <code>timerCtx</code> sends the context cancel signal by closing the done channel by calling its own <code>cancel</code> method. There two scenarios when cancelling the context:</p>
-<ul>
-<li>timeout cancel: when the deadline exceeded, automatically close the done channel;</li>
-</ul>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// inside WithDeadline function</span></span><br><span class="line">...</span><br><span class="line"><span class="comment">// timeout cancel</span></span><br><span class="line">c.timer = time.AfterFunc(dur, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	c.cancel(<span class="literal">true</span>, DeadlineExceeded)</span><br><span class="line">&#125;)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-<ul>
-<li>manual cancel: call the returned cancel function to close the done channel before the deadline;</li>
-</ul>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// inside WithDeadline function</span></span><br><span class="line">...</span><br><span class="line"><span class="comment">// return the cancel function as the second return value</span></span><br><span class="line"><span class="keyword">return</span> c, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; c.cancel(<span class="literal">true</span>, Canceled) &#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
-
-<p>Both scenarios call <code>cancel</code> method: </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *timerCtx)</span></span> cancel(removeFromParent <span class="type">bool</span>, err <span class="type">error</span>) &#123;</span><br><span class="line">	c.cancelCtx.cancel(<span class="literal">false</span>, err) <span class="comment">// close the done channel and set err field</span></span><br><span class="line">	<span class="keyword">if</span> removeFromParent &#123;</span><br><span class="line">		<span class="comment">// Remove this timerCtx from its parent cancelCtx&#x27;s children.</span></span><br><span class="line">		<span class="comment">// Note: timerCtx c&#x27;s parent is c.cancelCtx.Context</span></span><br><span class="line">		removeChild(c.cancelCtx.Context, c)</span><br><span class="line">	&#125;</span><br><span class="line">	c.mu.Lock()</span><br><span class="line">	<span class="comment">// stop and clean the timer</span></span><br><span class="line">	<span class="keyword">if</span> c.timer != <span class="literal">nil</span> &#123;</span><br><span class="line">		c.timer.Stop()</span><br><span class="line">		c.timer = <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">	c.mu.Unlock()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p><code>timerCtx</code> implements <code>cancel</code> method to stop and reset the timer then delegate to <code>cancelCtx.cancel</code>. </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In the second part of this post series, we discussed how <code>timeout</code> and <code>deadline</code> context are implemented in the source code level. In this part, Golang struct embedding technique is used a lot, you can compare it with traditional OOP solution to have a deep understanding.</p>
-
       
     </div>
 

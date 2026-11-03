@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">77</span>
+          <span class="site-state-item-count">79</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">45</span>
+        <span class="site-state-item-count">47</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,226 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/05/11/golang-sync-once/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/05/11/golang-sync-once/" class="post-title-link" itemprop="url"> Golang synchronization primitives source code analysis: part one - sync.Once</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-05-11 20:07:55" itemprop="dateCreated datePublished" datetime="2021-05-11T20:07:55+08:00">2021-05-11</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the following series of posts, I will take an in-depth look at the <code>synchronization primitives</code> provided by Golang. </p>
+<p>Although the recommended synchronization mechanism in Golang is <code>channel</code>, there are several powerful <code>synchronization primitives</code> provided in Golang <code>sync</code> package. Based on the official document, <strong>Other than the Once and WaitGroup types, most are intended for use by low-level library routines</strong>. If you read the code of low-level open source projects or the standard packages, you will see synchronization primitives in <code>sync</code> package frequently. </p>
+<p>As the first post in this series, let’s check the source code of <code>sync.Once</code>, which is also the simplest one.</p>
+<h3 id="sync-Once"><a href="#sync-Once" class="headerlink" title="sync.Once"></a>sync.Once</h3><p>If you have several logics running in various go-routines, and you want only one of the logics will execute finally. For this kind of scenario, <code>sync.Once</code> is a perfect option for you. </p>
+<p>Let’s review the source code of <code>sync.Once</code> defined inside the <code>once.go</code> file: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> sync</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;sync/atomic&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">type</span> Once <span class="keyword">struct</span> &#123;</span><br><span class="line">	done <span class="type">uint32</span></span><br><span class="line">	m    Mutex</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(o *Once)</span></span> Do(f <span class="function"><span class="keyword">func</span><span class="params">()</span></span>) &#123;</span><br><span class="line">	<span class="keyword">if</span> atomic.LoadUint32(&amp;o.done) == <span class="number">0</span> &#123;</span><br><span class="line">		o.doSlow(f)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(o *Once)</span></span> doSlow(f <span class="function"><span class="keyword">func</span><span class="params">()</span></span>) &#123;</span><br><span class="line">	o.m.Lock()</span><br><span class="line">	<span class="keyword">defer</span> o.m.Unlock()</span><br><span class="line">	<span class="keyword">if</span> o.done == <span class="number">0</span> &#123;</span><br><span class="line">		<span class="keyword">defer</span> atomic.StoreUint32(&amp;o.done, <span class="number">1</span>)</span><br><span class="line">		f()</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Struct <code>Once</code> has a status flag <code>done</code> whose value is <code>0</code> when initialized. Wrap the logic you want to execute in a function <code>f</code>, and pass this function <code>f</code> to the <code>Do()</code> method. When <code>Do</code> is called for the first time, the logic in <code>f</code> executes after that <code>done</code> flag is set to <code>1</code>, other calls to <code>Do</code> don’t execute <code>f</code>. </p>
+<p>One misleading point is  <strong>If <code>once.Do(f)</code> is called multiple times, only the first call will invoke <code>f</code>, even if <code>f</code> has a different value in each invocation</strong>. Check the following example:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;sync&quot;</span></span><br><span class="line">	<span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> doOnce sync.Once</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">go</span> TaskOne()</span><br><span class="line">	<span class="keyword">go</span> TaskTwo()</span><br><span class="line">	time.Sleep(time.Second)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">PrintTask</span><span class="params">(id <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">	fmt.Printf(<span class="string">&quot;Task %d, Run once\n&quot;</span>, id)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TaskOne</span><span class="params">()</span></span> &#123;</span><br><span class="line">	doOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		PrintTask(<span class="number">1</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	fmt.Println(<span class="string">&quot;Run this every time&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">TaskTwo</span><span class="params">()</span></span> &#123;</span><br><span class="line">	doOnce.Do(<span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">		PrintTask(<span class="number">2</span>)</span><br><span class="line">	&#125;)</span><br><span class="line">	fmt.Println(<span class="string">&quot;Run this every time&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Even <code>Do</code> is called twice with different <code>f</code> logic, but only the first call is invoked since they are bound to the same instance of <code>Once</code>. </p>
+<h3 id="fast-path-and-slow-path"><a href="#fast-path-and-slow-path" class="headerlink" title="fast path and slow path"></a>fast path and slow path</h3><p>As you saw above, the implementation of <code>sync.Once</code> is not complex. But one question comes to my mind when I double check the code. Why do we need split the logics into two functions <code>Do</code> and <code>doSlow</code>? Why the second function name is <code>doSlow</code>, and what does <code>slow</code> mean here?</p>
+<p>Do you have similar questions? </p>
+<p>I found the answer in the comments of <code>once.go</code> file. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> atomic.LoadUint32(&amp;o.done) == <span class="number">0</span> &#123;</span><br><span class="line">	<span class="comment">// Outlined slow-path to allow inlining of the fast-path.</span></span><br><span class="line">	o.doSlow(f)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Note that it mentioned two words: <code>fast path</code> and <code>slow path</code>. </p>
+<ul>
+<li>Fast path is a term used in computer science to describe a path with shorter instruction path length through a program compared to the ‘normal’ path. For a fast path to be effective it must handle the most commonly occurring tasks more efficiently than the ‘normal’ path, leaving the latter to handle uncommon cases, corner cases, error handling, and other anomalies. <strong>Fast paths are a form of optimization</strong>.</li>
+</ul>
+<p>In the <code>Once</code> case, since the first call to <code>Do</code> function will set <code>done</code> to 1, so the most common case or status for <code>Once</code> is the <code>done</code> flag equals to 1. The <code>fast path</code> in <code>Do</code> function is just for this common case. While the <code>done</code> flag equals to initial status 0 can be regarded as uncommon case, which is specially handled in the <code>doSlow</code> function. The performance can be optimized in this way.</p>
+<h3 id="hot-path"><a href="#hot-path" class="headerlink" title="hot path"></a>hot path</h3><p>Another very interesting concept worth mentioning is <code>hot path</code>, and it occurs in the <code>Once</code> struct design.</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Once <span class="keyword">struct</span> &#123;</span><br><span class="line">	<span class="comment">// done indicates whether the action has been performed.</span></span><br><span class="line">	<span class="comment">// It is first in the struct because it is used in the hot path.</span></span><br><span class="line">	<span class="comment">// The hot path is inlined at every call site.</span></span><br><span class="line">	<span class="comment">// Placing done first allows more compact instructions on some architectures (amd64/x86),</span></span><br><span class="line">	<span class="comment">// and fewer instructions (to calculate offset) on other architectures.</span></span><br><span class="line">	done <span class="type">uint32</span></span><br><span class="line">	m    Mutex</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>At first glance, it’s just plain and ordinary struct, but the comments emphasize that <code>done</code> <strong>is first in the struct because it is used in the hot path</strong>. It means that <code>done</code> is defined as the first field in <code>Once</code> struct on purpose. And the purpose is also described in the comment <strong>Placing done first allows more compact instructions on some architectures (amd64&#x2F;x86), and fewer instructions (to calculate offset) on other architectures.</strong></p>
+<p>What does that mean? I found a great answer in this <a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/59174176/what-does-hot-path-mean-in-the-context-of-sync-once">post</a>. The conclusion is:</p>
+<ul>
+<li><p>A <code>hot path</code> is a sequence of instructions executed very frequently.</p>
+</li>
+<li><p>When accessing the first field of a structure, we can directly dereference the pointer to the structure to access the first field. To access other fields, we need to provide an <code>offset</code> from the first value in addition to the struct pointer.</p>
+</li>
+<li><p>In machine code, this offset is an additional value to pass with the instruction which makes it longer. The performance impact is that the CPU must perform an addition of the offset to the struct pointer to get the address of the value to access.</p>
+</li>
+<li><p>Thus machine code to <code>access the first field of a struct is more compact and faster</code>.</p>
+</li>
+</ul>
+<p>Simply speaking, accessing the first field of a struct is faster since the CPU doesn’t need to compute the memory offset!</p>
+<p>This is really a good lesson to show the high-level code you programmed can have such a big difference in the bottom level.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2021/04/28/golang-context-source-code-part2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2021/04/28/golang-context-source-code-part2/" class="post-title-link" itemprop="url">Golang Context package source code analysis: part 2</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-04-28 13:38:51" itemprop="dateCreated datePublished" datetime="2021-04-28T13:38:51+08:00">2021-04-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the <a target="_blank" rel="noopener" href="https://baoqger.github.io/2021/04/26/golang-context-source-code/">last post</a>, I shared the first part about the <code>context</code> package: <code>valueCtx</code> and <code>cancelCtx</code>. Let us continue the journey to discover more in this post. </p>
+<h3 id="WithTimeout-and-WithDeadline"><a href="#WithTimeout-and-WithDeadline" class="headerlink" title="WithTimeout and WithDeadline"></a>WithTimeout and WithDeadline</h3><p>As usual, let us start with an example: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">    <span class="string">&quot;context&quot;</span></span><br><span class="line">    <span class="string">&quot;fmt&quot;</span></span><br><span class="line">    <span class="string">&quot;time&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">    cancelCtx, cancel := context.WithTimeout(context.Background(), time.Second*<span class="number">3</span>)</span><br><span class="line">    <span class="keyword">defer</span> cancel()</span><br><span class="line">    <span class="keyword">go</span> task(cancelCtx)</span><br><span class="line">    time.Sleep(time.Second * <span class="number">4</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">task</span><span class="params">(ctx context.Context)</span></span> &#123;</span><br><span class="line">    i := <span class="number">1</span></span><br><span class="line">    <span class="keyword">for</span> &#123;</span><br><span class="line">        <span class="keyword">select</span> &#123;</span><br><span class="line">        <span class="keyword">case</span> &lt;-ctx.Done():</span><br><span class="line">            fmt.Println(ctx.Err())</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            fmt.Println(i)</span><br><span class="line">            time.Sleep(time.Second * <span class="number">1</span>)</span><br><span class="line">            i++</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Since we already know the behavior of <code>cancelCtx</code>, it’s quite straightforward to understand how <code>WithTimeout</code> works. It accepts a timeout duration after which the <code>done</code> channel will be closed and context will be canceled. And a cancel function will be returned as well, which can be called in case the context needs to be canceled before timeout. </p>
+<p><code>WithDeadline</code> usage is quite similar to <code>WithTimeout</code>, you can find related example easily. Let us review the source code:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> timerCtx <span class="keyword">struct</span> &#123;</span><br><span class="line">	cancelCtx</span><br><span class="line">	timer *time.Timer </span><br><span class="line">	deadline time.Time</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithTimeout</span><span class="params">(parent Context, timeout time.Duration)</span></span> (Context, CancelFunc) &#123;</span><br><span class="line">	<span class="keyword">return</span> WithDeadline(parent, time.Now().Add(timeout))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Since <code>WithTimeout</code> and <code>WithDeadline</code> have many common points between them, so they share the same type of context: <code>timerCtx</code>, which embeds <code>cancelCtx</code> and defines two more properties: <code>timer</code> and <code>deadline</code>. </p>
+<p>Let us review what happens when we create a <code>timerCtx</code>:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">WithDeadline</span><span class="params">(parent Context, d time.Time)</span></span> (Context, CancelFunc) &#123;</span><br><span class="line">	<span class="keyword">if</span> parent == <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="built_in">panic</span>(<span class="string">&quot;cannot create context from nil parent&quot;</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// Get deadline time of parent context. </span></span><br><span class="line">	<span class="keyword">if</span> cur, ok := parent.Deadline(); ok &amp;&amp; cur.Before(d) &#123;</span><br><span class="line">		<span class="comment">// The current deadline is already sooner than the new one.</span></span><br><span class="line">		<span class="keyword">return</span> WithCancel(parent)</span><br><span class="line">	&#125;</span><br><span class="line">	c := &amp;timerCtx&#123;</span><br><span class="line">		cancelCtx: newCancelCtx(parent),</span><br><span class="line">		deadline:  d,</span><br><span class="line">	&#125;</span><br><span class="line">	propagateCancel(parent, c)</span><br><span class="line">	dur := time.Until(d)</span><br><span class="line">	<span class="keyword">if</span> dur &lt;= <span class="number">0</span> &#123;</span><br><span class="line">		c.cancel(<span class="literal">true</span>, DeadlineExceeded) <span class="comment">// deadline has already passed</span></span><br><span class="line">		<span class="keyword">return</span> c, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; c.cancel(<span class="literal">false</span>, Canceled) &#125;</span><br><span class="line">	&#125;</span><br><span class="line">	c.mu.Lock()</span><br><span class="line">	<span class="keyword">defer</span> c.mu.Unlock()</span><br><span class="line">	<span class="keyword">if</span> c.err == <span class="literal">nil</span> &#123; <span class="comment">// &#x27;err&#x27; field of the embedded cancelCtx is promoted </span></span><br><span class="line">		c.timer = time.AfterFunc(dur, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">			c.cancel(<span class="literal">true</span>, DeadlineExceeded)</span><br><span class="line">		&#125;)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> c, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; c.cancel(<span class="literal">true</span>, Canceled) &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Compared to <code>WithCancle</code> and <code>WithValue</code>, <code>WithDeadline</code> is more complex, let us go through bit by bit.</p>
+<p>Firstly, <code>parent.Deadline</code> will get the deadline time for parent context. The <code>Deadline</code> method signature was defined in the <code>Context</code> interface as below:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Context <span class="keyword">interface</span> &#123;</span><br><span class="line">	Deadline() (deadline time.Time, ok <span class="type">bool</span>)</span><br><span class="line">	...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>In the context package, only <code>emptyCtx</code> and <code>timerCtx</code> type implement this method:</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(*emptyCtx)</span></span> Deadline() (deadline time.Time, ok <span class="type">bool</span>) &#123;</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *timerCtx)</span></span> Deadline() (deadline time.Time, ok <span class="type">bool</span>) &#123;</span><br><span class="line">	<span class="keyword">return</span> c.deadline, <span class="literal">true</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>So when we call <code>parent.Deadline()</code>, if the parent context is also type of <code>timerCtx</code> which implements its own <code>Deadline()</code> method, then you can get the deadline time of the parent context. Otherwise if the parent context is type of <code>cancelCtx</code> or <code>valueCtx</code>, then finally the <code>Deadline()</code> method of <code>emptyCtx</code> will be called and you will get the zero value of type <code>time.Time</code> and <code>bool</code> (if you have interest, you can verify by yourself the zero value: <strong>0001-01-01 00:00:00 +0000 UTC</strong> and <strong>false</strong>).  </p>
+<p>If parent’s deadline is earlier than the passed in deadline parameter, then directly return a <code>cancelCtx</code> by calling <code>WithCancel(parent)</code>. Of course when the passed in deadline is reasonable, we need to create a <code>timerCtx</code>: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//inside WithDeadline() function</span></span><br><span class="line">...</span><br><span class="line">c := &amp;timerCtx&#123;</span><br><span class="line">	cancelCtx: newCancelCtx(parent),</span><br><span class="line">	deadline:  d,</span><br><span class="line">&#125;</span><br><span class="line">propagateCancel(parent, c)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>In the above code, you see <code>propagateCancel</code> method again, I have discussed about it in the last post, if you don’t understand it, please refer <a target="_blank" rel="noopener" href="https://baoqger.github.io/2021/04/26/golang-context-source-code/">here</a>.</p>
+<p>Similar to <code>cancelCtx</code>, <code>timerCtx</code> sends the context cancel signal by closing the done channel by calling its own <code>cancel</code> method. There two scenarios when cancelling the context:</p>
+<ul>
+<li>timeout cancel: when the deadline exceeded, automatically close the done channel;</li>
+</ul>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// inside WithDeadline function</span></span><br><span class="line">...</span><br><span class="line"><span class="comment">// timeout cancel</span></span><br><span class="line">c.timer = time.AfterFunc(dur, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">	c.cancel(<span class="literal">true</span>, DeadlineExceeded)</span><br><span class="line">&#125;)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<ul>
+<li>manual cancel: call the returned cancel function to close the done channel before the deadline;</li>
+</ul>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// inside WithDeadline function</span></span><br><span class="line">...</span><br><span class="line"><span class="comment">// return the cancel function as the second return value</span></span><br><span class="line"><span class="keyword">return</span> c, <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123; c.cancel(<span class="literal">true</span>, Canceled) &#125;</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+
+<p>Both scenarios call <code>cancel</code> method: </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *timerCtx)</span></span> cancel(removeFromParent <span class="type">bool</span>, err <span class="type">error</span>) &#123;</span><br><span class="line">	c.cancelCtx.cancel(<span class="literal">false</span>, err) <span class="comment">// close the done channel and set err field</span></span><br><span class="line">	<span class="keyword">if</span> removeFromParent &#123;</span><br><span class="line">		<span class="comment">// Remove this timerCtx from its parent cancelCtx&#x27;s children.</span></span><br><span class="line">		<span class="comment">// Note: timerCtx c&#x27;s parent is c.cancelCtx.Context</span></span><br><span class="line">		removeChild(c.cancelCtx.Context, c)</span><br><span class="line">	&#125;</span><br><span class="line">	c.mu.Lock()</span><br><span class="line">	<span class="comment">// stop and clean the timer</span></span><br><span class="line">	<span class="keyword">if</span> c.timer != <span class="literal">nil</span> &#123;</span><br><span class="line">		c.timer.Stop()</span><br><span class="line">		c.timer = <span class="literal">nil</span></span><br><span class="line">	&#125;</span><br><span class="line">	c.mu.Unlock()</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>timerCtx</code> implements <code>cancel</code> method to stop and reset the timer then delegate to <code>cancelCtx.cancel</code>. </p>
+<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In the second part of this post series, we discussed how <code>timeout</code> and <code>deadline</code> context are implemented in the source code level. In this part, Golang struct embedding technique is used a lot, you can compare it with traditional OOP solution to have a deep understanding.</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +430,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -357,7 +577,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -483,7 +703,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -558,7 +778,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -645,7 +865,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -777,7 +997,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -915,7 +1135,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -1031,7 +1251,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -1045,231 +1265,6 @@
     
     <div class="post-body" itemprop="articleBody">
           
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2020/11/16/golang-service-discovery-consul/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/11/16/golang-service-discovery-consul/" class="post-title-link" itemprop="url">Service registry and discovery in Golang Cloud-Native microservice with Consul and Docker</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-11-16 09:22:23" itemprop="dateCreated datePublished" datetime="2020-11-16T09:22:23+08:00">2020-11-16</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In this post, I will give a real demo application to show how to do service registration and discovery in <code>Cloud-Native</code> microservice architecture based on <code>Consul</code> and <code>Docker</code>. And the service is developed in <code>Golang</code> language.</p>
-<p>It will cover the following technical points:</p>
-<ul>
-<li>Integrate Consul with Golang application for service registration</li>
-<li>Integrate Consul with Golang application for service discovery</li>
-<li>Configure and Run the microservices with Docker(docker-compose)</li>
-</ul>
-<p>As you can see, this post will cover several critical concepts and interesting tools. I will do a quick and brief introduction of them. </p>
-<ul>
-<li><p><strong>Cloud-Native</strong>: this is another buzzword in the software industry. One of the key attributes of Cloud-Native application is <code>containerized</code>. To be considered cloud native, an application must be <code>infrastructure agnostic</code> and use containers. Containers provide applications the ability to run as a stand-alone environment able to move in and out of the cloud and have no dependencies on any certain cloud provider. </p>
-</li>
-<li><p><strong>Service Registration and Service Discovery</strong>: in the microservices application, each service needs to call other services. In order to make a request, your service needs to know the network address of a service instance. In a cloud-based microservices application, the network location is dynamically assigned. So your application needs a service discovery mechanism. On the other hand, the service registry acts as a database storing the available service instances.</p>
-</li>
-<li><p><strong>Consul</strong>: Consul is the tool we used in this demo application for service registry and discovery. Consul is a member in <code>CNCF(Cloud Native Computing Foundation)</code>. I will try to write a post to analyze its source code in the future.</p>
-</li>
-<li><p><strong>Docker-compose</strong>: is a tool to run multi-container applications on Docker. It allows different containers can communicate with each other. In this post, I will show you how to use it as well.</p>
-</li>
-</ul>
-<p>All the code and config file can be found in this <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-discovery-demo">github repo</a>, please checkout the <code>service-discovery</code> branch for this post’s demo. </p>
-<h3 id="Service-registry-and-discovery-demo"><a href="#Service-registry-and-discovery-demo" class="headerlink" title="Service registry and discovery demo"></a>Service registry and discovery demo</h3><p>To explain service registry and discovery, I will run a simple <code>helloworld</code> server and a client which keeps sending requests to the server every 10 seconds. The demo <code>helloworld</code> server will register itself in <code>Consul</code>, and this process is just service registry. On the other side, before the client sends a request to the server, it will first send a request to <code>Consul</code> and find the address of the server. This process is just service discovery.  OK, let’s show some code. </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;log&quot;</span></span><br><span class="line">	<span class="string">&quot;net/http&quot;</span></span><br><span class="line">	<span class="string">&quot;os&quot;</span></span><br><span class="line">	<span class="string">&quot;strconv&quot;</span></span><br><span class="line"></span><br><span class="line">	consulapi <span class="string">&quot;github.com/hashicorp/consul/api&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	serviceRegistryWithConsul()</span><br><span class="line">	log.Println(<span class="string">&quot;Starting Hello World Server...&quot;</span>)</span><br><span class="line">	http.HandleFunc(<span class="string">&quot;/helloworld&quot;</span>, helloworld)</span><br><span class="line">	http.HandleFunc(<span class="string">&quot;/check&quot;</span>, check)</span><br><span class="line">	http.ListenAndServe(getPort(), <span class="literal">nil</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">serviceRegistryWithConsul</span><span class="params">()</span></span> &#123;</span><br><span class="line">	config := consulapi.DefaultConfig()</span><br><span class="line">	consul, err := consulapi.NewClient(config)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Println(err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	serviceID := <span class="string">&quot;helloworld-server&quot;</span></span><br><span class="line">	port, _ := strconv.Atoi(getPort()[<span class="number">1</span>:<span class="built_in">len</span>(getPort())])</span><br><span class="line">	address := getHostname()</span><br><span class="line"></span><br><span class="line">	registration := &amp;consulapi.AgentServiceRegistration&#123;</span><br><span class="line">		ID:      serviceID,</span><br><span class="line">		Name:    <span class="string">&quot;helloworld-server&quot;</span>,</span><br><span class="line">		Port:    port,</span><br><span class="line">		Address: address,</span><br><span class="line">		Check: &amp;consulapi.AgentServiceCheck&#123;</span><br><span class="line">			HTTP:     fmt.Sprintf(<span class="string">&quot;http://%s:%v/check&quot;</span>, address, port),</span><br><span class="line">			Interval: <span class="string">&quot;10s&quot;</span>,</span><br><span class="line">			Timeout:  <span class="string">&quot;30s&quot;</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	regiErr := consul.Agent().ServiceRegister(registration)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> regiErr != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Printf(<span class="string">&quot;Failed to register service: %s:%v &quot;</span>, address, port)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		log.Printf(<span class="string">&quot;successfully register service: %s:%v&quot;</span>, address, port)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">helloworld</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">	log.Println(<span class="string">&quot;helloworld service is called.&quot;</span>)</span><br><span class="line">	w.WriteHeader(http.StatusOK)</span><br><span class="line">	fmt.Fprintf(w, <span class="string">&quot;Hello world.&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">check</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">	w.WriteHeader(http.StatusOK)</span><br><span class="line">	fmt.Fprintf(w, <span class="string">&quot;Consul check&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getPort</span><span class="params">()</span></span> (port <span class="type">string</span>) &#123;</span><br><span class="line">	port = os.Getenv(<span class="string">&quot;PORT&quot;</span>)</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(port) == <span class="number">0</span> &#123;</span><br><span class="line">		port = <span class="string">&quot;8080&quot;</span></span><br><span class="line">	&#125;</span><br><span class="line">	port = <span class="string">&quot;:&quot;</span> + port</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getHostname</span><span class="params">()</span></span> (hostname <span class="type">string</span>) &#123;</span><br><span class="line">	hostname, _ = os.Hostname()</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h5 id="server-go"><a href="#server-go" class="headerlink" title="server.go"></a><strong><code>server.go</code></strong></h5><p>The above <code>server.go</code> file contains many codes, but most of them are easy, and just for setting up the server and handling the request. </p>
-<p>The interesting part is inside function <code>serviceRegistryWithConsul</code>. Consul provides APIs to register service by configuring the necessary information. For now, we can focus on two fields, the first one is <code>ID</code> which is unique for each service and we also use it for search the target service in the discovery process. The second one is <code>Check</code>, which means <code>health check</code>. Consul provides this helpful functionality. In the real microservices application, each service may have multiple instances to handle the increased requests when the concurrency is high, this is called <code>scalability</code>. But some instances may go down or throw exceptions, in service discovery we want to filter these instances out. Health check in Consul is just for this purpose. I will show you how to do that in the <a target="_blank" rel="noopener" href="https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/">next post</a>.  </p>
-<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;io/ioutil&quot;</span></span><br><span class="line">	<span class="string">&quot;net/http&quot;</span></span><br><span class="line">	<span class="string">&quot;time&quot;</span></span><br><span class="line"></span><br><span class="line">	consulapi <span class="string">&quot;github.com/hashicorp/consul/api&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> url <span class="type">string</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	serviceDiscoveryWithConsul()</span><br><span class="line">	fmt.Println(<span class="string">&quot;Starting Client.&quot;</span>)</span><br><span class="line">	<span class="keyword">var</span> client = &amp;http.Client&#123;</span><br><span class="line">		Timeout: time.Second * <span class="number">30</span>,</span><br><span class="line">	&#125;</span><br><span class="line">	callServerEvery(<span class="number">10</span>*time.Second, client)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">serviceDiscoveryWithConsul</span><span class="params">()</span></span> &#123;</span><br><span class="line">	config := consulapi.DefaultConfig()</span><br><span class="line">	consul, <span class="type">error</span> := consulapi.NewClient(config)</span><br><span class="line">	<span class="keyword">if</span> <span class="type">error</span> != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(<span class="type">error</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	services, <span class="type">error</span> := consul.Agent().Services()</span><br><span class="line">	<span class="keyword">if</span> <span class="type">error</span> != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(<span class="type">error</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	service := services[<span class="string">&quot;helloworld-server&quot;</span>]</span><br><span class="line">	address := service.Address</span><br><span class="line">	port := service.Port</span><br><span class="line">	url = fmt.Sprintf(<span class="string">&quot;http://%s:%v/helloworld&quot;</span>, address, port)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">hello</span><span class="params">(t time.Time, client *http.Client)</span></span> &#123;</span><br><span class="line">	response, err := client.Get(url)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	body, _ := ioutil.ReadAll(response.Body)</span><br><span class="line">	fmt.Printf(<span class="string">&quot;%s. Time is %v\n&quot;</span>, body, t)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">callServerEvery</span><span class="params">(d time.Duration, client *http.Client)</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> x := <span class="keyword">range</span> time.Tick(d) &#123;</span><br><span class="line">		hello(x, client)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h5 id="client-go"><a href="#client-go" class="headerlink" title="client.go"></a><strong><code>client.go</code></strong></h5><p>Similarly, in the <code>client.go</code> file, the only key part is <code>serviceDiscoveryWithConsul</code> function. Based on the Consul APIs, we can find out all the services. With the target service id (in this demo is <code>helloworld-server</code>) which is set in the registration part, we can easily find out the address. </p>
-<p>The above parts show how to do the service registry and discovery in a completed demo. It makes use of Consul APIs a lot, I didn’t give too many explanations on that, since you can find out more detailed information in the document. </p>
-<p>In the next section, I will show you how to run this demo application in a Cloud-Native way based on Docker and Docker-compose. </p>
-<h3 id="Containerization"><a href="#Containerization" class="headerlink" title="Containerization"></a>Containerization</h3><p>First let’s create Dockerfile for the server as following:</p>
-<figure class="highlight docker"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">FROM</span> golang:<span class="number">1.14</span>.<span class="number">1</span>-alpine</span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> apk update &amp;&amp; apk upgrade &amp;&amp; apk add --no-cache bash git</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> go get github.com/hashicorp/consul/api</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ENV</span> SOURCES /go/src/github.com/baoqger/service-discovery-demo/</span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> . <span class="variable">$&#123;SOURCES&#125;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">cd</span> <span class="variable">$&#123;SOURCES&#125;</span>server/ &amp;&amp; CGO_ENABLED=0 go build</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ENV</span> CONSUL_HTTP_ADDR localhost:<span class="number">8500</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="language-bash"> <span class="variable">$&#123;SOURCES&#125;</span>server/</span></span><br><span class="line"><span class="keyword">CMD</span><span class="language-bash"> <span class="variable">$&#123;SOURCES&#125;</span>server/server</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<h5 id="Dockerfile-for-server-go"><a href="#Dockerfile-for-server-go" class="headerlink" title="Dockerfile for server.go"></a><strong><code>Dockerfile</code> for server.go</strong></h5><p>This part is straightforward, if you don’t understand some of the commands used here please check the Docker’s manual. </p>
-<p>I will not show the Dockerfile for the client any more, since it’s nearly the same as the above one. But you can find it in this <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-discovery-demo">github repo</a>.</p>
-<p>Now we have both server and client running in containers. We need add the Consul into this application as well, and connect these 3 containers together. We do this with Docker-compose. </p>
-<p>Docker-compose is driven by the <code>yml</code> file. In our case, it goes as following:</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;2&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span> </span><br><span class="line">  <span class="attr">consul:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">consul:0.8.3</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;8500:8500&quot;</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-net</span></span><br><span class="line">      </span><br><span class="line">  <span class="attr">helloworld-server:</span></span><br><span class="line">    <span class="attr">build:</span></span><br><span class="line">      <span class="attr">context:</span> <span class="string">.</span></span><br><span class="line">      <span class="attr">dockerfile:</span> <span class="string">server/Dockerfile</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">helloworld-server:1.0.1</span></span><br><span class="line">    <span class="attr">environment:</span> </span><br><span class="line">      <span class="bullet">-</span> <span class="string">CONSUL_HTTP_ADDR=consul:8500</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">consul</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-net</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">helloworld-client:</span></span><br><span class="line">    <span class="attr">build:</span></span><br><span class="line">      <span class="attr">context:</span> <span class="string">.</span></span><br><span class="line">      <span class="attr">dockerfile:</span> <span class="string">client/Dockerfile</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">helloworld-client:1.0.1</span></span><br><span class="line">    <span class="attr">environment:</span> </span><br><span class="line">      <span class="bullet">-</span> <span class="string">CONSUL_HTTP_ADDR=consul:8500</span> </span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">consul</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">helloworld-server</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-net</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">my-net:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">  </span><br></pre></td></tr></table></figure>
-
-<p>There are several points need to mention about docker-compose usages:</p>
-<ul>
-<li><strong>networks</strong>: we define a network called <code>my-net</code>, and use it in all of the 3 services to make them can talk with each other. </li>
-<li><strong>environment</strong>: we can set up the environment variable in this part. In our case, both server and client need to send requests to Consul for registry and discovery, right? You can check the server and client file, we didn’t set the Consul address explicitly. Since Consul do it in an implicit way, it will get the value from the environment variable named <code>CONSUL_HTTP_ADDR</code>. We set it up with <code>CONSUL_HTTP_ADDR=consul:8500</code>. </li>
-<li><strong>docker-compose up</strong>: this is the command all you need to launch the application. Another helpful command is <code>docker-compose build</code> which is used to build the image defined in the yml file. Of course, <code>docker-compose down</code> can stop the containers when you want to leave the application.</li>
-</ul>
-<p>Everything is setted up, you can verify the result both in the terminal and Consul UI as following:</p>
-<p><img src="/images/service-discovery.png" alt="service-discovery"></p>
-<p><img src="/images/consul-ui.png" alt="consul-ui"></p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2020/10/26/golang-concurrent-twoways/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2020/10/26/golang-concurrent-twoways/" class="post-title-link" itemprop="url">Golang inter Goroutine communication - shared memory or channels</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2020-10-26 10:29:32" itemprop="dateCreated datePublished" datetime="2020-10-26T10:29:32+08:00">2020-10-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>This post will demonstrate how to do inter-thread communication in Golang concurrent programming. Generally speaking, there are two ways for this fundamental question: <code>shared memory</code> and <code>message passing</code>. You’ll see how to do these in Golang based on a case study and some tricky problems around it.</p>
-<h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p><code>Golang</code> is a new popular and powerful programming language that aims to provide a simple, efficient, and safe way to build multi-threaded software. </p>
-<p>Concurrent programming is one of Go’s main selling points. <code>Go</code> uses a concept called <em>goroutine</em> as its concurrency unit. Goroutine is a complex but interesting topic, you can find many articles about it online, This post will not cover concepts about it in detail. Simply speaking, goroutine is a user-space  level thread which is lightweight and easy to create. </p>
-<p>As mentioned above, one of the complicated problems when we do concurrent programming is that inter-thread (or inter-goroutine) communication is very error-prone. In Golang, it provides frameworks for both <code>shared memory</code> and <code>message passing</code>. However, it encourages the use of <em>channels</em> over shared memory. </p>
-<p>You’ll see how both of these methods in Golang based on the following case. </p>
-<h2 id="Case-study"><a href="#Case-study" class="headerlink" title="Case study"></a>Case study</h2><p>The example is very simple: sums a collection (10 million) of integers. In fact this example is based on this good <a target="_blank" rel="noopener" href="https://www.ardanlabs.com/blog/2018/12/scheduling-in-go-part3.html">article</a>. It used the <code>shared memory</code> way to realize the communication between goroutines. I expand this example and implemented the <code>message passing</code> way to show the difference.</p>
-<h3 id="Shared-Memory"><a href="#Shared-Memory" class="headerlink" title="Shared Memory"></a>Shared Memory</h3><p>Go supports traditional shared memory accesses among goroutines. You can use various traditional synchronization primitives such as <em>lock&#x2F;unlock</em> (Mutex), <em>condition variable</em> (Cond) and <em>atomic</em> read&#x2F;write operations(atomic).  </p>
-<p>In the following implementation, you can see Go uses <code>WaitGroup</code> to allow multiple goroutines to do their tasks before a waiting goroutine. This usage is very similar to <code>pthread_join</code> in C. </p>
-<p>Goroutines are added to a WaitGroup by calling <code>Add</code> method. And the goroutines in a WaitGroup call <code>Done</code> method to notify their completion, while a goroutine make a call to <code>Wait</code> method to wait for all goroutines’ completion. </p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;math/rand&quot;</span></span><br><span class="line">	<span class="string">&quot;runtime&quot;</span></span><br><span class="line">	<span class="string">&quot;sync&quot;</span></span><br><span class="line">	<span class="string">&quot;sync/atomic&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	numbers := generateList(<span class="number">1e7</span>)</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;add: &quot;</span>, add(numbers))</span><br><span class="line">	fmt.Println(<span class="string">&quot;add concurrent: &quot;</span>, addConcurrent(runtime.NumCPU(), numbers))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateList</span><span class="params">(totalNumbers <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line">	numbers := <span class="built_in">make</span>([]<span class="type">int</span>, totalNumbers)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; totalNumbers; i++ &#123;</span><br><span class="line">		numbers[i] = rand.Intn(totalNumbers)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> numbers</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(numbers []<span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers &#123;</span><br><span class="line">		v += n</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> v</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">addConcurrent</span><span class="params">(goroutines <span class="type">int</span>, numbers []<span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int64</span></span><br><span class="line">	totalNumbers := <span class="built_in">len</span>(numbers)</span><br><span class="line">	lastGoroutine := goroutines - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	strid := totalNumbers / goroutines</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> wg sync.WaitGroup</span><br><span class="line">	wg.Add(goroutines)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> g := <span class="number">0</span>; g &lt; goroutines; g++ &#123;</span><br><span class="line">		<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(g <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">			start := g * strid</span><br><span class="line">			end := start + strid</span><br><span class="line">			<span class="keyword">if</span> g == lastGoroutine &#123;</span><br><span class="line">				end = totalNumbers</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">var</span> lv <span class="type">int</span></span><br><span class="line">			<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers[start:end] &#123;</span><br><span class="line">				lv += n</span><br><span class="line">			&#125;</span><br><span class="line">			atomic.AddInt64(&amp;v, <span class="type">int64</span>(lv))</span><br><span class="line">			wg.Done()</span><br><span class="line">		&#125;(g)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	wg.Wait()</span><br><span class="line">	<span class="keyword">return</span> <span class="type">int</span>(v)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>In the example above the <code>int64</code> variable <code>v</code> is shared across goroutines. When this variable needs to be updated, an atomic operation was done by calling <code>atomic.AddInt64()</code> method to avoid race condition and nondeterministic result. </p>
-<p>That’s how shared memory across goroutines works in Golang. Let’s go to message passing way in next section. </p>
-<h3 id="Message-Passing"><a href="#Message-Passing" class="headerlink" title="Message Passing"></a>Message Passing</h3><p>In Golang world, there is one sentence is famous:</p>
-<blockquote>
-<p>Don’t communicate by sharing memory; share memory by communicating</p>
-</blockquote>
-<p>For that, <code>Channel</code>(chan) is introduced in Go as a new concurrency primitive to send data across goroutines. This is also the way Golang recommended you to follow.</p>
-<p>So the concurrent program to sum 10 million integers  based on <code>Channel</code> goes as below: </p>
-<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;math/rand&quot;</span></span><br><span class="line">	<span class="string">&quot;runtime&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> result <span class="type">int64</span></span><br><span class="line">	numbers := generateList(<span class="number">1e7</span>)</span><br><span class="line"></span><br><span class="line">	goroutines := runtime.NumCPU()</span><br><span class="line">	lastGoroutine := goroutines - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	totalNumbers := <span class="built_in">len</span>(numbers)</span><br><span class="line">	strid := totalNumbers / goroutines</span><br><span class="line"></span><br><span class="line">	c := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">int</span>)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> g := <span class="number">0</span>; g &lt; goroutines; g++ &#123;</span><br><span class="line">		start := g * strid</span><br><span class="line">		end := start + strid</span><br><span class="line">		<span class="keyword">if</span> g == lastGoroutine &#123;</span><br><span class="line">			end = totalNumbers</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">go</span> add(numbers[start:end], c)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> l := <span class="keyword">range</span> c &#123;</span><br><span class="line">		result += <span class="type">int64</span>(l)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;add concurrent: &quot;</span>, result)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateList</span><span class="params">(totalNumbers <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line">	numbers := <span class="built_in">make</span>([]<span class="type">int</span>, totalNumbers)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; totalNumbers; i++ &#123;</span><br><span class="line">		numbers[i] = rand.Intn(totalNumbers)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> numbers</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(numbers []<span class="type">int</span>, c <span class="keyword">chan</span> <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers &#123;</span><br><span class="line">		v += n</span><br><span class="line">	&#125;</span><br><span class="line">	c &lt;- v</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>To create a typed channel, you can call <code>make</code> method. In this case, since the value we need to pass is an integer, so we create an int type channel with <code>c := make(chan int)</code>. To read and write data to that channel, you can use <code>&lt;-</code> operator. For example, in the <code>add</code> goroutine, when we get the sum of integers, we use <code>c &lt;- v</code> to send data to the channel. </p>
-<p>To read data from the channel in the main goroutine, we use a build-in method <code>range</code> in Golang which can iterate through data structure like slice, map and channel. </p>
-<p>That’s it. Simple and beautiful. </p>
-<h4 id="Hit-the-Deadlock"><a href="#Hit-the-Deadlock" class="headerlink" title="Hit the Deadlock"></a>Hit the Deadlock</h4><p>Let’s build and run the above solution. You’ll get an error message as following:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fatal error: all goroutines are asleep - deadlock!</span><br></pre></td></tr></table></figure>
-
-<p>The <code>deadlock</code> issue occurs because of these two reasons. Firstly by default sends and receives to a channel are blocking. When a data is send to a channel, the control in that goroutine is blocked at the send statement until some other Goroutine reads from the channel. Similarly when data is read from a channel, the read is blocked until some Goroutine writes data to that channel. Secondly, <code>range</code> only stops when the channel is closed. In this case, each <code>add</code> Goroutine send only one value to the channel but didn’t close the channel. And the main Goroutine keeps waiting for something to be written (in fact, it can read 4 values, but after that it doesn’t stop and keep waiting for more data). So all of the Goroutines are blocked and none of them can continue the execution. Then hit a deadlock. </p>
-<h4 id="Fix-the-Deadlock"><a href="#Fix-the-Deadlock" class="headerlink" title="Fix the Deadlock"></a>Fix the Deadlock</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;math/rand&quot;</span></span><br><span class="line">	<span class="string">&quot;runtime&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> result <span class="type">int64</span></span><br><span class="line">	numbers := generateList(<span class="number">1e7</span>)</span><br><span class="line"></span><br><span class="line">	goroutines := runtime.NumCPU()</span><br><span class="line">	lastGoroutine := goroutines - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	totalNumbers := <span class="built_in">len</span>(numbers)</span><br><span class="line">	strid := totalNumbers / goroutines</span><br><span class="line"></span><br><span class="line">	c := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">int</span>)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> g := <span class="number">0</span>; g &lt; goroutines; g++ &#123;</span><br><span class="line">		start := g * strid</span><br><span class="line">		end := start + strid</span><br><span class="line">		<span class="keyword">if</span> g == lastGoroutine &#123;</span><br><span class="line">			end = totalNumbers</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">go</span> add(numbers[start:end], c)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; goroutines; j++ &#123;</span><br><span class="line">		result += <span class="type">int64</span>(&lt;-c)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;add concurrent: &quot;</span>, result)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateList</span><span class="params">(totalNumbers <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line">	numbers := <span class="built_in">make</span>([]<span class="type">int</span>, totalNumbers)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; totalNumbers; i++ &#123;</span><br><span class="line">		numbers[i] = rand.Intn(totalNumbers)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> numbers</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(numbers []<span class="type">int</span>, c <span class="keyword">chan</span> <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers &#123;</span><br><span class="line">		v += n</span><br><span class="line">	&#125;</span><br><span class="line">	c &lt;- v</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>Let use the manual <code>for</code> loop, in each iteration we read the value from the channel and sum together. Run it again. The deadlock is resolved. </p>
-
       
     </div>
 

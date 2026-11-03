@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">77</span>
+          <span class="site-state-item-count">79</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">45</span>
+        <span class="site-state-item-count">47</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,231 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2020/11/16/golang-service-discovery-consul/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/11/16/golang-service-discovery-consul/" class="post-title-link" itemprop="url">Service registry and discovery in Golang Cloud-Native microservice with Consul and Docker</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-11-16 09:22:23" itemprop="dateCreated datePublished" datetime="2020-11-16T09:22:23+08:00">2020-11-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In this post, I will give a real demo application to show how to do service registration and discovery in <code>Cloud-Native</code> microservice architecture based on <code>Consul</code> and <code>Docker</code>. And the service is developed in <code>Golang</code> language.</p>
+<p>It will cover the following technical points:</p>
+<ul>
+<li>Integrate Consul with Golang application for service registration</li>
+<li>Integrate Consul with Golang application for service discovery</li>
+<li>Configure and Run the microservices with Docker(docker-compose)</li>
+</ul>
+<p>As you can see, this post will cover several critical concepts and interesting tools. I will do a quick and brief introduction of them. </p>
+<ul>
+<li><p><strong>Cloud-Native</strong>: this is another buzzword in the software industry. One of the key attributes of Cloud-Native application is <code>containerized</code>. To be considered cloud native, an application must be <code>infrastructure agnostic</code> and use containers. Containers provide applications the ability to run as a stand-alone environment able to move in and out of the cloud and have no dependencies on any certain cloud provider. </p>
+</li>
+<li><p><strong>Service Registration and Service Discovery</strong>: in the microservices application, each service needs to call other services. In order to make a request, your service needs to know the network address of a service instance. In a cloud-based microservices application, the network location is dynamically assigned. So your application needs a service discovery mechanism. On the other hand, the service registry acts as a database storing the available service instances.</p>
+</li>
+<li><p><strong>Consul</strong>: Consul is the tool we used in this demo application for service registry and discovery. Consul is a member in <code>CNCF(Cloud Native Computing Foundation)</code>. I will try to write a post to analyze its source code in the future.</p>
+</li>
+<li><p><strong>Docker-compose</strong>: is a tool to run multi-container applications on Docker. It allows different containers can communicate with each other. In this post, I will show you how to use it as well.</p>
+</li>
+</ul>
+<p>All the code and config file can be found in this <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-discovery-demo">github repo</a>, please checkout the <code>service-discovery</code> branch for this post’s demo. </p>
+<h3 id="Service-registry-and-discovery-demo"><a href="#Service-registry-and-discovery-demo" class="headerlink" title="Service registry and discovery demo"></a>Service registry and discovery demo</h3><p>To explain service registry and discovery, I will run a simple <code>helloworld</code> server and a client which keeps sending requests to the server every 10 seconds. The demo <code>helloworld</code> server will register itself in <code>Consul</code>, and this process is just service registry. On the other side, before the client sends a request to the server, it will first send a request to <code>Consul</code> and find the address of the server. This process is just service discovery.  OK, let’s show some code. </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;log&quot;</span></span><br><span class="line">	<span class="string">&quot;net/http&quot;</span></span><br><span class="line">	<span class="string">&quot;os&quot;</span></span><br><span class="line">	<span class="string">&quot;strconv&quot;</span></span><br><span class="line"></span><br><span class="line">	consulapi <span class="string">&quot;github.com/hashicorp/consul/api&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	serviceRegistryWithConsul()</span><br><span class="line">	log.Println(<span class="string">&quot;Starting Hello World Server...&quot;</span>)</span><br><span class="line">	http.HandleFunc(<span class="string">&quot;/helloworld&quot;</span>, helloworld)</span><br><span class="line">	http.HandleFunc(<span class="string">&quot;/check&quot;</span>, check)</span><br><span class="line">	http.ListenAndServe(getPort(), <span class="literal">nil</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">serviceRegistryWithConsul</span><span class="params">()</span></span> &#123;</span><br><span class="line">	config := consulapi.DefaultConfig()</span><br><span class="line">	consul, err := consulapi.NewClient(config)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Println(err)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	serviceID := <span class="string">&quot;helloworld-server&quot;</span></span><br><span class="line">	port, _ := strconv.Atoi(getPort()[<span class="number">1</span>:<span class="built_in">len</span>(getPort())])</span><br><span class="line">	address := getHostname()</span><br><span class="line"></span><br><span class="line">	registration := &amp;consulapi.AgentServiceRegistration&#123;</span><br><span class="line">		ID:      serviceID,</span><br><span class="line">		Name:    <span class="string">&quot;helloworld-server&quot;</span>,</span><br><span class="line">		Port:    port,</span><br><span class="line">		Address: address,</span><br><span class="line">		Check: &amp;consulapi.AgentServiceCheck&#123;</span><br><span class="line">			HTTP:     fmt.Sprintf(<span class="string">&quot;http://%s:%v/check&quot;</span>, address, port),</span><br><span class="line">			Interval: <span class="string">&quot;10s&quot;</span>,</span><br><span class="line">			Timeout:  <span class="string">&quot;30s&quot;</span>,</span><br><span class="line">		&#125;,</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	regiErr := consul.Agent().ServiceRegister(registration)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> regiErr != <span class="literal">nil</span> &#123;</span><br><span class="line">		log.Printf(<span class="string">&quot;Failed to register service: %s:%v &quot;</span>, address, port)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		log.Printf(<span class="string">&quot;successfully register service: %s:%v&quot;</span>, address, port)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">helloworld</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">	log.Println(<span class="string">&quot;helloworld service is called.&quot;</span>)</span><br><span class="line">	w.WriteHeader(http.StatusOK)</span><br><span class="line">	fmt.Fprintf(w, <span class="string">&quot;Hello world.&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">check</span><span class="params">(w http.ResponseWriter, r *http.Request)</span></span> &#123;</span><br><span class="line">	w.WriteHeader(http.StatusOK)</span><br><span class="line">	fmt.Fprintf(w, <span class="string">&quot;Consul check&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getPort</span><span class="params">()</span></span> (port <span class="type">string</span>) &#123;</span><br><span class="line">	port = os.Getenv(<span class="string">&quot;PORT&quot;</span>)</span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(port) == <span class="number">0</span> &#123;</span><br><span class="line">		port = <span class="string">&quot;8080&quot;</span></span><br><span class="line">	&#125;</span><br><span class="line">	port = <span class="string">&quot;:&quot;</span> + port</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">getHostname</span><span class="params">()</span></span> (hostname <span class="type">string</span>) &#123;</span><br><span class="line">	hostname, _ = os.Hostname()</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h5 id="server-go"><a href="#server-go" class="headerlink" title="server.go"></a><strong><code>server.go</code></strong></h5><p>The above <code>server.go</code> file contains many codes, but most of them are easy, and just for setting up the server and handling the request. </p>
+<p>The interesting part is inside function <code>serviceRegistryWithConsul</code>. Consul provides APIs to register service by configuring the necessary information. For now, we can focus on two fields, the first one is <code>ID</code> which is unique for each service and we also use it for search the target service in the discovery process. The second one is <code>Check</code>, which means <code>health check</code>. Consul provides this helpful functionality. In the real microservices application, each service may have multiple instances to handle the increased requests when the concurrency is high, this is called <code>scalability</code>. But some instances may go down or throw exceptions, in service discovery we want to filter these instances out. Health check in Consul is just for this purpose. I will show you how to do that in the <a target="_blank" rel="noopener" href="https://baoqger.github.io/2020/12/30/golang-load-balancing-fabio/">next post</a>.  </p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;io/ioutil&quot;</span></span><br><span class="line">	<span class="string">&quot;net/http&quot;</span></span><br><span class="line">	<span class="string">&quot;time&quot;</span></span><br><span class="line"></span><br><span class="line">	consulapi <span class="string">&quot;github.com/hashicorp/consul/api&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> url <span class="type">string</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	serviceDiscoveryWithConsul()</span><br><span class="line">	fmt.Println(<span class="string">&quot;Starting Client.&quot;</span>)</span><br><span class="line">	<span class="keyword">var</span> client = &amp;http.Client&#123;</span><br><span class="line">		Timeout: time.Second * <span class="number">30</span>,</span><br><span class="line">	&#125;</span><br><span class="line">	callServerEvery(<span class="number">10</span>*time.Second, client)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">serviceDiscoveryWithConsul</span><span class="params">()</span></span> &#123;</span><br><span class="line">	config := consulapi.DefaultConfig()</span><br><span class="line">	consul, <span class="type">error</span> := consulapi.NewClient(config)</span><br><span class="line">	<span class="keyword">if</span> <span class="type">error</span> != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(<span class="type">error</span>)</span><br><span class="line">	&#125;</span><br><span class="line">	services, <span class="type">error</span> := consul.Agent().Services()</span><br><span class="line">	<span class="keyword">if</span> <span class="type">error</span> != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(<span class="type">error</span>)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	service := services[<span class="string">&quot;helloworld-server&quot;</span>]</span><br><span class="line">	address := service.Address</span><br><span class="line">	port := service.Port</span><br><span class="line">	url = fmt.Sprintf(<span class="string">&quot;http://%s:%v/helloworld&quot;</span>, address, port)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">hello</span><span class="params">(t time.Time, client *http.Client)</span></span> &#123;</span><br><span class="line">	response, err := client.Get(url)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		fmt.Println(err)</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">	body, _ := ioutil.ReadAll(response.Body)</span><br><span class="line">	fmt.Printf(<span class="string">&quot;%s. Time is %v\n&quot;</span>, body, t)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">callServerEvery</span><span class="params">(d time.Duration, client *http.Client)</span></span> &#123;</span><br><span class="line">	<span class="keyword">for</span> x := <span class="keyword">range</span> time.Tick(d) &#123;</span><br><span class="line">		hello(x, client)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h5 id="client-go"><a href="#client-go" class="headerlink" title="client.go"></a><strong><code>client.go</code></strong></h5><p>Similarly, in the <code>client.go</code> file, the only key part is <code>serviceDiscoveryWithConsul</code> function. Based on the Consul APIs, we can find out all the services. With the target service id (in this demo is <code>helloworld-server</code>) which is set in the registration part, we can easily find out the address. </p>
+<p>The above parts show how to do the service registry and discovery in a completed demo. It makes use of Consul APIs a lot, I didn’t give too many explanations on that, since you can find out more detailed information in the document. </p>
+<p>In the next section, I will show you how to run this demo application in a Cloud-Native way based on Docker and Docker-compose. </p>
+<h3 id="Containerization"><a href="#Containerization" class="headerlink" title="Containerization"></a>Containerization</h3><p>First let’s create Dockerfile for the server as following:</p>
+<figure class="highlight docker"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">FROM</span> golang:<span class="number">1.14</span>.<span class="number">1</span>-alpine</span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> apk update &amp;&amp; apk upgrade &amp;&amp; apk add --no-cache bash git</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> go get github.com/hashicorp/consul/api</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ENV</span> SOURCES /go/src/github.com/baoqger/service-discovery-demo/</span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> . <span class="variable">$&#123;SOURCES&#125;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> <span class="built_in">cd</span> <span class="variable">$&#123;SOURCES&#125;</span>server/ &amp;&amp; CGO_ENABLED=0 go build</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">ENV</span> CONSUL_HTTP_ADDR localhost:<span class="number">8500</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="language-bash"> <span class="variable">$&#123;SOURCES&#125;</span>server/</span></span><br><span class="line"><span class="keyword">CMD</span><span class="language-bash"> <span class="variable">$&#123;SOURCES&#125;</span>server/server</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h5 id="Dockerfile-for-server-go"><a href="#Dockerfile-for-server-go" class="headerlink" title="Dockerfile for server.go"></a><strong><code>Dockerfile</code> for server.go</strong></h5><p>This part is straightforward, if you don’t understand some of the commands used here please check the Docker’s manual. </p>
+<p>I will not show the Dockerfile for the client any more, since it’s nearly the same as the above one. But you can find it in this <a target="_blank" rel="noopener" href="https://github.com/baoqger/service-discovery-demo">github repo</a>.</p>
+<p>Now we have both server and client running in containers. We need add the Consul into this application as well, and connect these 3 containers together. We do this with Docker-compose. </p>
+<p>Docker-compose is driven by the <code>yml</code> file. In our case, it goes as following:</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;2&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span> </span><br><span class="line">  <span class="attr">consul:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">consul:0.8.3</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;8500:8500&quot;</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-net</span></span><br><span class="line">      </span><br><span class="line">  <span class="attr">helloworld-server:</span></span><br><span class="line">    <span class="attr">build:</span></span><br><span class="line">      <span class="attr">context:</span> <span class="string">.</span></span><br><span class="line">      <span class="attr">dockerfile:</span> <span class="string">server/Dockerfile</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">helloworld-server:1.0.1</span></span><br><span class="line">    <span class="attr">environment:</span> </span><br><span class="line">      <span class="bullet">-</span> <span class="string">CONSUL_HTTP_ADDR=consul:8500</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">consul</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-net</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">helloworld-client:</span></span><br><span class="line">    <span class="attr">build:</span></span><br><span class="line">      <span class="attr">context:</span> <span class="string">.</span></span><br><span class="line">      <span class="attr">dockerfile:</span> <span class="string">client/Dockerfile</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">helloworld-client:1.0.1</span></span><br><span class="line">    <span class="attr">environment:</span> </span><br><span class="line">      <span class="bullet">-</span> <span class="string">CONSUL_HTTP_ADDR=consul:8500</span> </span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">consul</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">helloworld-server</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">my-net</span></span><br><span class="line"></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">my-net:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line">  </span><br></pre></td></tr></table></figure>
+
+<p>There are several points need to mention about docker-compose usages:</p>
+<ul>
+<li><strong>networks</strong>: we define a network called <code>my-net</code>, and use it in all of the 3 services to make them can talk with each other. </li>
+<li><strong>environment</strong>: we can set up the environment variable in this part. In our case, both server and client need to send requests to Consul for registry and discovery, right? You can check the server and client file, we didn’t set the Consul address explicitly. Since Consul do it in an implicit way, it will get the value from the environment variable named <code>CONSUL_HTTP_ADDR</code>. We set it up with <code>CONSUL_HTTP_ADDR=consul:8500</code>. </li>
+<li><strong>docker-compose up</strong>: this is the command all you need to launch the application. Another helpful command is <code>docker-compose build</code> which is used to build the image defined in the yml file. Of course, <code>docker-compose down</code> can stop the containers when you want to leave the application.</li>
+</ul>
+<p>Everything is setted up, you can verify the result both in the terminal and Consul UI as following:</p>
+<p><img src="/images/service-discovery.png" alt="service-discovery"></p>
+<p><img src="/images/consul-ui.png" alt="consul-ui"></p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2020/10/26/golang-concurrent-twoways/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2020/10/26/golang-concurrent-twoways/" class="post-title-link" itemprop="url">Golang inter Goroutine communication - shared memory or channels</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2020-10-26 10:29:32" itemprop="dateCreated datePublished" datetime="2020-10-26T10:29:32+08:00">2020-10-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>This post will demonstrate how to do inter-thread communication in Golang concurrent programming. Generally speaking, there are two ways for this fundamental question: <code>shared memory</code> and <code>message passing</code>. You’ll see how to do these in Golang based on a case study and some tricky problems around it.</p>
+<h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p><code>Golang</code> is a new popular and powerful programming language that aims to provide a simple, efficient, and safe way to build multi-threaded software. </p>
+<p>Concurrent programming is one of Go’s main selling points. <code>Go</code> uses a concept called <em>goroutine</em> as its concurrency unit. Goroutine is a complex but interesting topic, you can find many articles about it online, This post will not cover concepts about it in detail. Simply speaking, goroutine is a user-space  level thread which is lightweight and easy to create. </p>
+<p>As mentioned above, one of the complicated problems when we do concurrent programming is that inter-thread (or inter-goroutine) communication is very error-prone. In Golang, it provides frameworks for both <code>shared memory</code> and <code>message passing</code>. However, it encourages the use of <em>channels</em> over shared memory. </p>
+<p>You’ll see how both of these methods in Golang based on the following case. </p>
+<h2 id="Case-study"><a href="#Case-study" class="headerlink" title="Case study"></a>Case study</h2><p>The example is very simple: sums a collection (10 million) of integers. In fact this example is based on this good <a target="_blank" rel="noopener" href="https://www.ardanlabs.com/blog/2018/12/scheduling-in-go-part3.html">article</a>. It used the <code>shared memory</code> way to realize the communication between goroutines. I expand this example and implemented the <code>message passing</code> way to show the difference.</p>
+<h3 id="Shared-Memory"><a href="#Shared-Memory" class="headerlink" title="Shared Memory"></a>Shared Memory</h3><p>Go supports traditional shared memory accesses among goroutines. You can use various traditional synchronization primitives such as <em>lock&#x2F;unlock</em> (Mutex), <em>condition variable</em> (Cond) and <em>atomic</em> read&#x2F;write operations(atomic).  </p>
+<p>In the following implementation, you can see Go uses <code>WaitGroup</code> to allow multiple goroutines to do their tasks before a waiting goroutine. This usage is very similar to <code>pthread_join</code> in C. </p>
+<p>Goroutines are added to a WaitGroup by calling <code>Add</code> method. And the goroutines in a WaitGroup call <code>Done</code> method to notify their completion, while a goroutine make a call to <code>Wait</code> method to wait for all goroutines’ completion. </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;math/rand&quot;</span></span><br><span class="line">	<span class="string">&quot;runtime&quot;</span></span><br><span class="line">	<span class="string">&quot;sync&quot;</span></span><br><span class="line">	<span class="string">&quot;sync/atomic&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	numbers := generateList(<span class="number">1e7</span>)</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;add: &quot;</span>, add(numbers))</span><br><span class="line">	fmt.Println(<span class="string">&quot;add concurrent: &quot;</span>, addConcurrent(runtime.NumCPU(), numbers))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateList</span><span class="params">(totalNumbers <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line">	numbers := <span class="built_in">make</span>([]<span class="type">int</span>, totalNumbers)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; totalNumbers; i++ &#123;</span><br><span class="line">		numbers[i] = rand.Intn(totalNumbers)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> numbers</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(numbers []<span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers &#123;</span><br><span class="line">		v += n</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> v</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">addConcurrent</span><span class="params">(goroutines <span class="type">int</span>, numbers []<span class="type">int</span>)</span></span> <span class="type">int</span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int64</span></span><br><span class="line">	totalNumbers := <span class="built_in">len</span>(numbers)</span><br><span class="line">	lastGoroutine := goroutines - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	strid := totalNumbers / goroutines</span><br><span class="line"></span><br><span class="line">	<span class="keyword">var</span> wg sync.WaitGroup</span><br><span class="line">	wg.Add(goroutines)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> g := <span class="number">0</span>; g &lt; goroutines; g++ &#123;</span><br><span class="line">		<span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(g <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">			start := g * strid</span><br><span class="line">			end := start + strid</span><br><span class="line">			<span class="keyword">if</span> g == lastGoroutine &#123;</span><br><span class="line">				end = totalNumbers</span><br><span class="line">			&#125;</span><br><span class="line"></span><br><span class="line">			<span class="keyword">var</span> lv <span class="type">int</span></span><br><span class="line">			<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers[start:end] &#123;</span><br><span class="line">				lv += n</span><br><span class="line">			&#125;</span><br><span class="line">			atomic.AddInt64(&amp;v, <span class="type">int64</span>(lv))</span><br><span class="line">			wg.Done()</span><br><span class="line">		&#125;(g)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	wg.Wait()</span><br><span class="line">	<span class="keyword">return</span> <span class="type">int</span>(v)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>In the example above the <code>int64</code> variable <code>v</code> is shared across goroutines. When this variable needs to be updated, an atomic operation was done by calling <code>atomic.AddInt64()</code> method to avoid race condition and nondeterministic result. </p>
+<p>That’s how shared memory across goroutines works in Golang. Let’s go to message passing way in next section. </p>
+<h3 id="Message-Passing"><a href="#Message-Passing" class="headerlink" title="Message Passing"></a>Message Passing</h3><p>In Golang world, there is one sentence is famous:</p>
+<blockquote>
+<p>Don’t communicate by sharing memory; share memory by communicating</p>
+</blockquote>
+<p>For that, <code>Channel</code>(chan) is introduced in Go as a new concurrency primitive to send data across goroutines. This is also the way Golang recommended you to follow.</p>
+<p>So the concurrent program to sum 10 million integers  based on <code>Channel</code> goes as below: </p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;math/rand&quot;</span></span><br><span class="line">	<span class="string">&quot;runtime&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> result <span class="type">int64</span></span><br><span class="line">	numbers := generateList(<span class="number">1e7</span>)</span><br><span class="line"></span><br><span class="line">	goroutines := runtime.NumCPU()</span><br><span class="line">	lastGoroutine := goroutines - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	totalNumbers := <span class="built_in">len</span>(numbers)</span><br><span class="line">	strid := totalNumbers / goroutines</span><br><span class="line"></span><br><span class="line">	c := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">int</span>)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> g := <span class="number">0</span>; g &lt; goroutines; g++ &#123;</span><br><span class="line">		start := g * strid</span><br><span class="line">		end := start + strid</span><br><span class="line">		<span class="keyword">if</span> g == lastGoroutine &#123;</span><br><span class="line">			end = totalNumbers</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">go</span> add(numbers[start:end], c)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> l := <span class="keyword">range</span> c &#123;</span><br><span class="line">		result += <span class="type">int64</span>(l)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;add concurrent: &quot;</span>, result)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateList</span><span class="params">(totalNumbers <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line">	numbers := <span class="built_in">make</span>([]<span class="type">int</span>, totalNumbers)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; totalNumbers; i++ &#123;</span><br><span class="line">		numbers[i] = rand.Intn(totalNumbers)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> numbers</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(numbers []<span class="type">int</span>, c <span class="keyword">chan</span> <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers &#123;</span><br><span class="line">		v += n</span><br><span class="line">	&#125;</span><br><span class="line">	c &lt;- v</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>To create a typed channel, you can call <code>make</code> method. In this case, since the value we need to pass is an integer, so we create an int type channel with <code>c := make(chan int)</code>. To read and write data to that channel, you can use <code>&lt;-</code> operator. For example, in the <code>add</code> goroutine, when we get the sum of integers, we use <code>c &lt;- v</code> to send data to the channel. </p>
+<p>To read data from the channel in the main goroutine, we use a build-in method <code>range</code> in Golang which can iterate through data structure like slice, map and channel. </p>
+<p>That’s it. Simple and beautiful. </p>
+<h4 id="Hit-the-Deadlock"><a href="#Hit-the-Deadlock" class="headerlink" title="Hit the Deadlock"></a>Hit the Deadlock</h4><p>Let’s build and run the above solution. You’ll get an error message as following:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">fatal error: all goroutines are asleep - deadlock!</span><br></pre></td></tr></table></figure>
+
+<p>The <code>deadlock</code> issue occurs because of these two reasons. Firstly by default sends and receives to a channel are blocking. When a data is send to a channel, the control in that goroutine is blocked at the send statement until some other Goroutine reads from the channel. Similarly when data is read from a channel, the read is blocked until some Goroutine writes data to that channel. Secondly, <code>range</code> only stops when the channel is closed. In this case, each <code>add</code> Goroutine send only one value to the channel but didn’t close the channel. And the main Goroutine keeps waiting for something to be written (in fact, it can read 4 values, but after that it doesn’t stop and keep waiting for more data). So all of the Goroutines are blocked and none of them can continue the execution. Then hit a deadlock. </p>
+<h4 id="Fix-the-Deadlock"><a href="#Fix-the-Deadlock" class="headerlink" title="Fix the Deadlock"></a>Fix the Deadlock</h4><figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> (</span><br><span class="line">	<span class="string">&quot;fmt&quot;</span></span><br><span class="line">	<span class="string">&quot;math/rand&quot;</span></span><br><span class="line">	<span class="string">&quot;runtime&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">main</span><span class="params">()</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> result <span class="type">int64</span></span><br><span class="line">	numbers := generateList(<span class="number">1e7</span>)</span><br><span class="line"></span><br><span class="line">	goroutines := runtime.NumCPU()</span><br><span class="line">	lastGoroutine := goroutines - <span class="number">1</span></span><br><span class="line"></span><br><span class="line">	totalNumbers := <span class="built_in">len</span>(numbers)</span><br><span class="line">	strid := totalNumbers / goroutines</span><br><span class="line"></span><br><span class="line">	c := <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="type">int</span>)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> g := <span class="number">0</span>; g &lt; goroutines; g++ &#123;</span><br><span class="line">		start := g * strid</span><br><span class="line">		end := start + strid</span><br><span class="line">		<span class="keyword">if</span> g == lastGoroutine &#123;</span><br><span class="line">			end = totalNumbers</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">go</span> add(numbers[start:end], c)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> j := <span class="number">0</span>; j &lt; goroutines; j++ &#123;</span><br><span class="line">		result += <span class="type">int64</span>(&lt;-c)</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	fmt.Println(<span class="string">&quot;add concurrent: &quot;</span>, result)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">generateList</span><span class="params">(totalNumbers <span class="type">int</span>)</span></span> []<span class="type">int</span> &#123;</span><br><span class="line">	numbers := <span class="built_in">make</span>([]<span class="type">int</span>, totalNumbers)</span><br><span class="line">	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; totalNumbers; i++ &#123;</span><br><span class="line">		numbers[i] = rand.Intn(totalNumbers)</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> numbers</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(numbers []<span class="type">int</span>, c <span class="keyword">chan</span> <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">	<span class="keyword">var</span> v <span class="type">int</span></span><br><span class="line">	<span class="keyword">for</span> _, n := <span class="keyword">range</span> numbers &#123;</span><br><span class="line">		v += n</span><br><span class="line">	&#125;</span><br><span class="line">	c &lt;- v</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>Let use the manual <code>for</code> loop, in each iteration we read the value from the channel and sum together. Run it again. The deadlock is resolved. </p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +435,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -297,7 +522,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -440,7 +665,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -552,7 +777,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -652,7 +877,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -754,7 +979,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -854,7 +1079,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -975,7 +1200,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
+      <time title="Modified: 2026-11-03 09:35:28" itemprop="dateModified" datetime="2026-11-03T09:35:28+08:00">2026-11-03</time>
     </span>
 
   
@@ -1031,300 +1256,6 @@
 <img src="/images/content_datatar.png" title="sources list" width="600px" height="400px">
 
 <p>take a look into the <code>usr</code> directory, you’ll find the prebuild binaries. </p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2019/08/25/how-to-write-linux-c-program-with-external-library/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2019/08/25/how-to-write-linux-c-program-with-external-library/" class="post-title-link" itemprop="url">How to use libraries in Linux C program</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2019-08-25 16:08:36" itemprop="dateCreated datePublished" datetime="2019-08-25T16:08:36+08:00">2019-08-25</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>After you learn and understand how to write small C programs in Linux (that means you know the syntax of C language and how to compile your programs with <code>gcc</code>), you will want to have some adventures to write more powerful and larger programs. To be a great software engineer, you need this passion to explore, right?</p>
-<p>To write a larger program, you can’t build everything from scratch. This means you need to import and use libraries developed by others in your program.  </p>
-<p>For new developers of Linux C programming, the whole handling of libraries can be a mystery, which requires knowledge about <code>gcc compiler</code>, <code>Linux system</code>, <code>GNU conventions</code> and so on. In this article, I will focus on this topic and piece all these together. After reading this post, I hope you can feel free and confident to add the shared libraries from the open source world to your program. </p>
-<p><strong>Note</strong>: To illustrate the discussion more clearly, this article is based on this demo github <a target="_blank" rel="noopener" href="https://github.com/baoqger/handle-c-library-demo-linux">app</a>. And my demo app is forked from Stephan Avenwedde’s original <a target="_blank" rel="noopener" href="https://opensource.com/article/20/6/linux-libraries">repo</a>. Thanks for that.  </p>
-<p>The code logic of this demo app is very straightforward, so I will not review the code line by line in this article, which is not the target of this post. </p>
-<h3 id="Static-library-vs-Shared-library"><a href="#Static-library-vs-Shared-library" class="headerlink" title="Static library vs Shared library"></a>Static library vs Shared library</h3><p>Generally speaking, there are two types of libraries: <code>Static</code> and <code>Shared</code>. </p>
-<ul>
-<li><strong>static library</strong>: is simply a collection of ordinary object files; conventionally, static libraries end with the <code>.a</code> suffix. This collection is created using <code>ar</code> command. For example, in the demo app, we build the static library like this:</li>
-</ul>
-<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CFLAGS =-Wall -Werror</span><br><span class="line"></span><br><span class="line"><span class="section">libmy_static.a: libmy_static_a.o libmy_static_b.o</span></span><br><span class="line">	ar -rsv ./lib/static/libmy_static.a libmy_static_a.o libmy_static_b.o</span><br><span class="line"></span><br><span class="line"><span class="section">libmy_static_a.o: libmy_static_a.c</span></span><br><span class="line">	cc -c libmy_static_a.c -o libmy_static_a.o <span class="variable">$(CFLAGS)</span></span><br><span class="line"></span><br><span class="line"><span class="section">libmy_static_b.o: libmy_static_b.c</span></span><br><span class="line">	cc -c libmy_static_b.c -o libmy_static_b.o <span class="variable">$(CFLAGS)</span></span><br></pre></td></tr></table></figure>
-<p>In our case, the static library will be installed in the subdirectory <code>./lib/static</code> and named as <code>libmy_static.a</code>.   </p>
-<p>When the application links against a static library, the library’s code becomes part of the resulting executable. So you can run the application without any further setting or configuration. That’s the biggest advantage of the static library, and you’ll see how it works in the next section. </p>
-<p>Static libraries aren’t used as often as they once were, since <code>shared library</code> has more advantages. </p>
-<ul>
-<li><strong>shared library</strong>: end with <code>.so</code> which means <strong>shared object</strong>. The shared library is loaded into memory when the application starts. If multiple applications use the same shared library, the shared library will be loaded only once. In our demo app, the shared library is built as follows:</li>
-</ul>
-<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">libmy_shared.so: libmy_shared.o</span></span><br><span class="line">	cc -shared -o ./lib/shared/libmy_shared.so libmy_shared.o</span><br><span class="line"></span><br><span class="line"><span class="section">libmy_shared.o: libmy_shared.c</span></span><br><span class="line">	cc -c -fPIC libmy_shared.c -o libmy_shared.o</span><br></pre></td></tr></table></figure>
-
-<p>The shared library <code>libmy_shared.so</code> is installed inside <code>./lib/shared</code> subdirectory. Note that the shared library is built with some special options for <code>gcc</code>, like <code>-fPIC</code> and <code>-shared</code>. In detail, you can check the document of gcc. </p>
-<h3 id="Naming-convention"><a href="#Naming-convention" class="headerlink" title="Naming convention"></a>Naming convention</h3><p>Generally speaking, the name of shared library follows the pattern: <code>lib</code> + name of library + <code>.so</code>. Of course, version information is very important, but in this article, let’s ignore the version issue.</p>
-<h3 id="Link-library"><a href="#Link-library" class="headerlink" title="Link library"></a>Link library</h3><p>After building the libraries, next step you need to import the libraries in your app. For our app, the source code is the file of <code>demo/main.c</code> as follows:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;libmy_shared.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;libmy_static_a.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;libmy_static_b.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Press Enter to repeat\n\n&quot;</span>);</span><br><span class="line">    <span class="keyword">do</span>&#123;</span><br><span class="line">        <span class="type">int</span> n = getRandInt();</span><br><span class="line">        n = negateIfOdd(n);</span><br><span class="line">        printInteger(&amp;n);</span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">while</span> (getchar() == <span class="string">&#x27;\n&#x27;</span>);</span><br><span class="line">   </span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>Note that we import three <code>header file</code> of our libraries. The next question is how to build the demo app. </p>
-<p>Let’s recall the building process of a C program as follows:</p>
-<img src="/images/compile_process.png" title="compile process" width="800px" height="600px">
-
-<p>This is a two-step process: <code>compile</code> and <code>link</code>. Firstly, the source code file of <code>main.c</code> will be compiled to an object file, let’s say <code>main.o</code> file. In this step, the critical thing is telling <code>gcc</code> where to find the <code>header file</code> of the libraries. Next, link the <code>main.o</code> object file with our libraries: <code>libmy_static.a</code> and <code>libmy_shared.so</code>. <code>gcc</code> needs to know the name of library it should link and where to find these libraries, right? </p>
-<p>These information can be defined by the following three options:</p>
-<ul>
-<li><code>I</code>: add the include directory for header files,</li>
-<li><code>l</code>: name of the library </li>
-<li><code>L</code>: the directory for the library</li>
-</ul>
-<p>In our case, the <code>make</code> command to build the demo app is as follows:</p>
-<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">LIBS = -L../lib/shared -L../lib/static -lmy_shared -lmy_static -I../</span><br><span class="line"></span><br><span class="line">CFLAGS =-Wall -Werror</span><br><span class="line"></span><br><span class="line"><span class="section">demo: </span></span><br><span class="line">	cc -o my_app main.c <span class="variable">$(CFLAGS)</span> <span class="variable">$(LIBS)</span></span><br></pre></td></tr></table></figure>
-
-<p>Since we have two libraries: <code>libmy_static.a</code> and <code>libmy_shared.so</code>, based on the naming convention we mentioned above, the <code>-l</code> option for library name should be <strong>my_static</strong> and <strong>my_shared</strong>. We can use two <code>-l</code> options for each library.  </p>
-<p>For the <code>-L</code> option, we need to provide the directory path where to find the libraries. We can use the path <code>../lib/shared</code> and <code>../lib/static</code> relative to the demo’s source code file. Right? And the same rule applies to the <code>-I</code> option for the include header file as well. </p>
-<p>Run <code>make demo</code> command, and you can build the demo app with the libraries linked together successfully. </p>
-<h3 id="Filesystem-placement-convention"><a href="#Filesystem-placement-convention" class="headerlink" title="Filesystem placement convention"></a>Filesystem placement convention</h3><p>As I show above, the libraries are placed inside the subdirectory of this project.  This is inconvenient for others to import your library. Most open source software tends to follow the <code>GNU</code> standards. The <code>GNU</code> standards recommend installing by default all libraries in <code>/usr/local/lib</code> and all the header files in <code>/usr/local/include</code> when distributing source code. So let’s add one more <code>make</code> command to install the library file and header file to the directory based on the GNU convention: </p>
-<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">INSTALL ?= install</span><br><span class="line">PREFIX ?= /usr/local</span><br><span class="line">LIBDIR = <span class="variable">$(PREFIX)</span>/lib</span><br><span class="line">INCLUDEDIR = <span class="variable">$(PREFIX)</span>/<span class="keyword">include</span></span><br><span class="line"></span><br><span class="line"><span class="section">install: library</span></span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D libmy_shared.h <span class="variable">$(INCLUDEDIR)</span>/libmy_shared.h</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D libmy_static_a.h <span class="variable">$(INCLUDEDIR)</span>/libmy_static_a.h</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D libmy_static_b.h <span class="variable">$(INCLUDEDIR)</span>/libmy_static_b.h</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D ./lib/static/libmy_static.a <span class="variable">$(LIBDIR)</span>/libmy_static.a</span><br><span class="line">	<span class="variable">$(INSTALL)</span> -D ./lib/shared/libmy_shared.so <span class="variable">$(LIBDIR)</span>/libmy_shared.so</span><br><span class="line"></span><br><span class="line"><span class="section">uninstall:</span></span><br><span class="line">	rm <span class="variable">$(INCLUDEDIR)</span>/libmy_shared.h</span><br><span class="line">	rm <span class="variable">$(INCLUDEDIR)</span>/libmy_static_a.h</span><br><span class="line">	rm <span class="variable">$(INCLUDEDIR)</span>/libmy_static_b.h</span><br><span class="line">	rm <span class="variable">$(LIBDIR)</span>/libmy_static.a</span><br><span class="line">	rm <span class="variable">$(LIBDIR)</span>/libmy_shared.so</span><br></pre></td></tr></table></figure>
-
-<p>You can find the similar make command in my open source projects for this purpose. </p>
-<p>The benefit is <code>gcc</code> compiler (which is also from GNU and follows the same convention) will look for the libraries by default in these two directories: <code>/usr/local/lib</code> and <code>/usr/local/include</code>. So you don’t need to set <code>-L</code> and <code>-I</code> options. For example, after we run <code>make install</code> command above and install the library into the system directory, you can build the demo app as follows: </p>
-<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">GNULIBS = -lmy_shared -lmy_static</span><br><span class="line"></span><br><span class="line">CFLAGS =-Wall -Werror</span><br><span class="line"></span><br><span class="line"><span class="comment"># you can run this make command after you install </span></span><br><span class="line"><span class="comment"># the libraries into the default system directory: /usr/local/bin</span></span><br><span class="line"><span class="section">gnudemo: </span></span><br><span class="line">	cc -o my_app main.c <span class="variable">$(CFLAGS)</span> <span class="variable">$(GNULIBS)</span></span><br></pre></td></tr></table></figure>
-
-<p>Understand the <code>GNU</code> convention can make your development more easier, right? </p>
-<p>Then next step let’s run the demo app by simply calling <code>./my_app</code>, but you’ll get the following error message:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./my_app: error while loading shared libraries: libmy_shared.so: cannot open shared object file: No such file or directroy</span><br></pre></td></tr></table></figure>
-
-<p>What’s happening? </p>
-<h3 id="Dynamic-linker"><a href="#Dynamic-linker" class="headerlink" title="Dynamic linker"></a>Dynamic linker</h3><p>When we start up an executable, the Linux kernel automatically runs the <code>dynamic linker</code> (or dynamic loader). This dynamic linker, in turn, finds and loads all other shared libraries used by the program.</p>
-<p>In fact, the executable file in Linux system is usually in the format of <a target="_blank" rel="noopener" href="https://linux-audit.com/elf-binaries-on-linux-understanding-and-analysis/"><code>ELF</code></a> which abbreviates <code>Executable and Linkable Format</code>. The ELF executable contains linking information, and the dynamic linker just reads that information to load shared libraries. </p>
-<p>In Linux system, the dynamic linker is name <code>ld.so</code></p>
-<p>Based on the above error message, we can say that the dynamic linker cannot find the shared library. We can verify this point by running <code>ldd</code> command, which is used to print the shared objects (shared libraries) required by each program or shared object specified on the command line.</p>
-<img src="/images/ldd-result.png" title="ldd" width="800px" height="600px">
-
-<p>Clearly, our shared library <code>libmy_shared.so</code> is not found. We need to take a look how at <code>ld.so</code> works. The best way to find such information is running <code>man</code> command. We can get the following information in the <code>ld.so</code> man document:</p>
-<img src="/images/ldso.png" title="ld.so" width="800px" height="600px">
-
-<p>Based on this screenshot, we can solve this issue in three ways:</p>
-<ul>
-<li>install the shared library in the directory: <code>/lib</code> or <code>/usr/lib</code></li>
-<li>edit the environment variable <code>LD_LIBRARY_PATH</code> by appending the path of directories containing our library </li>
-<li>update the cache file <code>/etc/ld.so.cache</code></li>
-</ul>
-<p>The first two methods can work well based on my test, but personally I recommend to use the third method, which is a more systematic way to register a library. </p>
-<h3 id="Register-library"><a href="#Register-library" class="headerlink" title="Register library"></a>Register library</h3><p>To register a new library, we need to use command <code>ldconfig</code> which configures dynamic linker run-time bindings. </p>
-<p>How does <code>ldconfig</code> work? It will search <code>.so</code> library files in some specific directories, and the search result will be updated to dynamic linker’s cache file <code>/etc/ld.so.cache</code>. </p>
-<p>And one of the directory <code>ldconfig</code> will look at is <code>/etc/ld.so.conf</code>. In our Ubuntu system, it’s in fact a file as follows:</p>
-<img src="/images/ld.so.conf.png" title="ld.so.conf" width="800px" height="600px">
-
-<p>it is expanded to all the <code>.conf</code> files inside <code>ld.so.conf.d</code>, in my case, there is one default file <code>libc.conf</code> as follows: </p>
-<img src="/images/libc.conf.png" title="libc.conf" width="800px" height="600px">
-
-<p>Note that <code>/usr/local/lib</code> is defined inside the file, then <code>ldconfig</code> will search .so libraries in this directory. </p>
-<p>As we mentioned in above section, <code>/usr/local/lib</code> is just the place to install shared library based on GNU convention. Right? </p>
-<p>So we can simply run <code>ldconfig</code> command without any option to <strong>register a new library</strong> (make sure the library is install in that directory): </p>
-<img src="/images/ldconfig.png" title="ldconfig" width="800px" height="600px">
-
-<p>In the above screenshot, you can see the change before and after running command <code>sudo ldconfig</code>. (<code>ldconfig -p</code> will list the current libraries reading from cache file <code>/etc/ld.so.cache</code>). After registering the library, it is added into the cache file of dynamic linker, right? Let’s verify this again with <code>ldd</code>:   </p>
-<img src="/images/ldd-result-after.png" title="ldd-result" width="800px" height="600px">
-
-<p>Our new shared library can be found! Then we can run the app successfully as well. </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article we discussed several important tools like <code>ld.so</code>, <code>ldd</code>, <code>ldconfig</code> and <code>gcc</code>, which help you build and import shared libraries. Another thing is <code>GNU</code> convention or standard which defines the behavior of these tools.  </p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2019/03/06/https-certificate-manual-verify-openssl/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2019/03/06/https-certificate-manual-verify-openssl/" class="post-title-link" itemprop="url">How HTTPS works: part five - manual verification of SSL/TLS certificates</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2019-03-06 16:00:47" itemprop="dateCreated datePublished" datetime="2019-03-06T16:00:47+08:00">2019-03-06</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-10-29 13:02:56" itemprop="dateModified" datetime="2026-10-29T13:02:56+08:00">2026-10-29</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h3 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h3><p>In the previous articles of this series, we examined how digital signatures and certificates make the <code>TLS handshake</code> process work. Generally speaking, this process is handled by platforms like web browsers. In this article, I want to <strong>demystify the process of TLS handshake by manual verification of SSL&#x2F;TLS certificates step by step</strong>. </p>
-<h3 id="Certificate-chain"><a href="#Certificate-chain" class="headerlink" title="Certificate chain"></a>Certificate chain</h3><p>In this previous <a target="_blank" rel="noopener" href="http://localhost:4000/2019/03/02/https-certificate-anatomy/">article</a>, we mentioned that <strong>the server returns not one, but multiple certificates. These associated certificates form a certificate chain</strong> as follows: </p>
-<img src="/images/https-certificates-chain.png" title="certificates chain" width="800px" height="600px">
-
-<p>The intermediate CA signs the server certificate, and Root CA signs the certificate of the intermediate CA (There can be multiple intermediate CAs). Pay attention to the <code>subject</code> and <code>issuer</code> names of each certificate, and you can notice that one certificate’s issue name is another certificate’s subject name. Certificates can find their CA’s certificate in the chain with this information. </p>
-<p>For example, the following <code>openssl</code> command prints the certificate chain of google.com: </p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl s_client -showcerts -connect google.com:443</span><br></pre></td></tr></table></figure>
-
-<p>The previous <a target="_blank" rel="noopener" href="http://localhost:4000/2019/03/02/https-certificate-anatomy/">article</a> explained that the chain contains three certificates. Let us extract the google.com server certificate into file <a target="_blank" rel="noopener" href="https://gist.github.com/baoqger/8c854336118737db2cb55997ca7888c9"><strong>google_com.pem</strong></a> and the intermediate CA certificate into file <a target="_blank" rel="noopener" href="https://gist.github.com/baoqger/59cd171e2114030a9f70790e99bd86d0"><strong>intermediate_ca.pem</strong></a>. These two files are the input data for this manual verification experiment. </p>
-<h3 id="Manual-verification-of-SSL-TLS-certificates"><a href="#Manual-verification-of-SSL-TLS-certificates" class="headerlink" title="Manual verification of SSL&#x2F;TLS certificates"></a>Manual verification of SSL&#x2F;TLS certificates</h3><p>The entire process can be illustrated as follows: </p>
-<img src="/images/https-manual-verification.png" title="certificates chain" width="800px" height="600px">
-
-<p>Let us go through it step by step. </p>
-<h4 id="Extract-the-public-key-of-intermediate-CA"><a href="#Extract-the-public-key-of-intermediate-CA" class="headerlink" title="Extract the public key of intermediate CA"></a>Extract the public key of intermediate CA</h4><p>Since the certificate of the google.com server is signed with intermediate CA’s private key. The first step is to extract the public key of intermediate CA from its certificate. </p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -in ./intermediate_ca.pem -noout -pubkey &gt; ./intermediate_ca_pub.pem</span><br></pre></td></tr></table></figure>
-
-<p>The content of file <strong>intermediate_ca_pub.pem</strong> goes as follows:</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">-----BEGIN PUBLIC KEY-----</span><br><span class="line">MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA9Yjf52KMHjf4N0KQf2yH</span><br><span class="line">0PtlgiX96MtrpP9t6Voj4pn2HOmSA5kTfAkKivpC1l5WJKp6M4Qf0elpu7l07FdM</span><br><span class="line">ZmiTdzdVU/45EE23NLtfJXc3OxeU6jzlndW8w7RD6y6nR++wRBFj2LRBhd1BMEiT</span><br><span class="line">G7+39uBFAiHglkIXz9krZVY0ByYEDaj9fcou7+pIfDdNPwCfg9/vdYQueVdc/Fdu</span><br><span class="line">Gpb//Iyappm+Jdl/liwG9xEqAoCA62MYPFBJh+WKyl8ZK1mWgQCg+1HbyncLC8mW</span><br><span class="line">T+9wScdcbSD9mbS04soud/0t3Au2axMMjBkrF5aYufCL9qAnu7bjjVGPva7Hm7GJ</span><br><span class="line">nQIDAQAB</span><br><span class="line">-----END PUBLIC KEY-----</span><br></pre></td></tr></table></figure>
-<p>You can look at the public key in PEM format (which is not readable to humans). </p>
-<h4 id="Extract-the-signature"><a href="#Extract-the-signature" class="headerlink" title="Extract the signature"></a>Extract the signature</h4><p>Next, let us extract the digital signature of the google.com server’s certificate. This task is a little bit complex, and we need several Linux commands to form a data stream pipeline as follows: </p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">openssl x509 -in ./google_com.pem -text -noout -certopt ca_default,no_validity,no_serial,no_subject,no_extensions,no_signame \</span><br><span class="line">| grep -v &#x27;Signature Algorithm&#x27; \</span><br><span class="line">| tr -d &#x27;[:space:]:&#x27; \</span><br><span class="line">| xxd -r -p &gt; ./certificate-signature.bin</span><br></pre></td></tr></table></figure>
-<ul>
-<li><code>openssl x509</code>: extract the digital signature. <code>openssl</code> command supports <code>certopt</code> option, which allows multiple arguments separated by commas. The output of the first command should be:</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Signature Algorithm: sha256WithRSAEncryption</span><br><span class="line">        76:6a:8a:d8:44:ac:14:40:92:36:f3:4a:b5:cb:54:36:67:c7:</span><br><span class="line">        &lt;... content omitted ...&gt;</span><br><span class="line">        14:22:3f:2a:90:a5:e4:9b:26:df:33:15:4b:d2:5c:f7:89:8e:</span><br><span class="line">        f7:6a:c4:a6</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><code>grep -v</code>: invert the sense of matching and select non-matching lines (because of -v option).<code>Signature Algorithm: sha256WithRSAEncryption</code> is matched, but only the Hex code lines are selected based on the invert-match rule. The data stream after filtering should be:</li>
-</ul>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">76:6a:8a:d8:44:ac:14:40:92:36:f3:4a:b5:cb:54:36:67:c7:</span><br><span class="line">&lt;... content omitted ...&gt;</span><br><span class="line">14:22:3f:2a:90:a5:e4:9b:26:df:33:15:4b:d2:5c:f7:89:8e:</span><br><span class="line">f7:6a:c4:a6</span><br></pre></td></tr></table></figure>
-
-<p>Note <strong>Signature Algorithm: sha256WithRSAEncryption</strong> means that the signature is signed with <code>SHA-256</code> hash function and <code>RSA</code> encryption algorithm. When we need to re-compute the hash again, we must use the same hash function: <code>SHA-256</code>. </p>
-<ul>
-<li><p><code>tr -d</code>: delete the colons. The colons are to make it more readable. After removing the formatting colons, the output only contains Hex code. </p>
-</li>
-<li><p><code>xxd -r -p</code>: convert the Hex code into binary format and redirect to file <strong>certificate-signature.bin</strong></p>
-</li>
-</ul>
-<h4 id="Decrypt-the-signature"><a href="#Decrypt-the-signature" class="headerlink" title="Decrypt the signature"></a>Decrypt the signature</h4><p>Now that we have both the digital signature and the public key of the intermediate CA. We can decrypt the signature as follows:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl rsautl -verify -inkey ./intermediate_ca_pub.pem -in ./certificate-signature.bin -pubin &gt; ./certificate-signature-decrypted.bin</span><br></pre></td></tr></table></figure>
-
-<p>Store the decrypted signature in file <strong>certificate-signature-decrypted.bin</strong>. We can view the hash with openssl like so:</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl asn1parse -inform der -in ./certificate-signature-decrypted.bin</span><br></pre></td></tr></table></figure>
-<p>The output is: </p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">0:d=0  hl=2 l=  49 cons: SEQUENCE</span><br><span class="line">2:d=1  hl=2 l=  13 cons: SEQUENCE</span><br><span class="line">4:d=2  hl=2 l=   9 prim: OBJECT            :sha256</span><br><span class="line">15:d=2  hl=2 l=   0 prim: NULL</span><br><span class="line">17:d=1  hl=2 l=  32 prim: OCTET STRING      [HEX DUMP]:66EFBE4CEA76272C76CEE8FA297C1BF70C41F8E049C7E0E4D23C965CBE8F1B84</span><br></pre></td></tr></table></figure>
-<p>The hash is in the last line: <code>66EFBE4CEA76272C76CEE8FA297C1BF70C41F8E049C7E0E4D23C965CBE8F1B84</code>. </p>
-<h4 id="Re-compute-the-hash"><a href="#Re-compute-the-hash" class="headerlink" title="Re-compute the hash"></a>Re-compute the hash</h4><p>Now that we got the original hash of the certificate, we need to verify whether we can re-compute the same hash using the same hashing function (as mentioned above SHA-256 in this case).</p>
-<p>The previous <a href="https://organicprogrammer.com/2019/03/05/https-certificate-signature/">article</a> explained that <strong>the digital signature is signed based on all of the information instead of only public key</strong>. We need to extract everything but the signature from the certificate. </p>
-<p>We can extract the data and output it to file <strong>google_com_cert_body.bin</strong> as follows: </p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl asn1parse -i -in ./google_com.pem -strparse 4 -out ./google_com_cert_body.bin  -noout</span><br></pre></td></tr></table></figure>
-
-<p>Note: you can refer to this openssl <a target="_blank" rel="noopener" href="https://linux.die.net/man/1/asn1parse">document</a> to have a deeper understanding about the behavior of this command. </p>
-<p>Finally, let us re-compute the hash with SHA256 as follows: </p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">openssl dgst -sha256 ./google_com_cert_body.bin</span><br><span class="line"></span><br><span class="line">SHA256(./google_com_cert_body.bin)= 66efbe4cea76272c76cee8fa297c1bf70c41f8e049c7e0e4d23c965cbe8f1b84</span><br></pre></td></tr></table></figure>
-
-<p>The re-computed hash is <code>66efbe4cea76272c76cee8fa297c1bf70c41f8e049c7e0e4d23c965cbe8f1b84</code>, which matches with the original hash. So we can get the conclusion that: <strong>the intermediate CA signs the goole.com server certificate</strong>. </p>
-<h3 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h3><p>In this article, we go through the verification process of SSL&#x2F;TLS certificates step by step manually. I have to admit that the concepts of digital signatures and certificates are too abstract to understand, especially in the details. I hope the experiment, which carries out with certificates from the real world, can help you do that.  </p>
-<h3 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h3><p><a target="_blank" rel="noopener" href="https://linuxctl.com/2017/02/x509-certificate-manual-signature-verification/">x509 Certificate Manual Signature Verification</a> written by George Bolo.</p>
 
       
     </div>
