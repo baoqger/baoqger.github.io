@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundIn my previous article, I introduced Entra Agent ID, an identity management service designed specifically for AI agents, and walked through its conceptual model. The design can feel a little">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Entra Agent ID + Sidecar - A Practical Guide to Building Secure AI Agents">
+<meta property="og:url" content="https://organicprogrammer.com/2026/11/09/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundIn my previous article, I introduced Entra Agent ID, an identity management service designed specifically for AI agents, and walked through its conceptual model. The design can feel a little">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Securing_AI_Agents_Architecture.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Pasted%20image%2020261102113718.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Pasted%20image%2020261107214152.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Pasted%20image%2020261108090347.png">
+<meta property="article:published_time" content="2026-11-09T01:35:00.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Azure, Entra ID, AI Agent, Sidecar, OWASP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Securing_AI_Agents_Architecture.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2026/11/09/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2026/11/09/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/","path":"2026/11/09/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/","title":"Entra Agent ID + Sidecar - A Practical Guide to Building Secure AI Agents"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Entra Agent ID + Sidecar - A Practical Guide to Building Secure AI Agents | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>Project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-public-speak"><a href="/public-speak/" rel="section"><i class="fa fa-microphone fa-fw"></i>Public Speak</a></li><li class="menu-item menu-item-training"><a href="/training/" rel="section"><i class="fa fa-graduation-cap fa-fw"></i>Training</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OWASP-Identity-and-Privilege-Abuse"><span class="nav-number">2.</span> <span class="nav-text">OWASP Identity and Privilege Abuse</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#The-Sidecar-Pattern"><span class="nav-number">3.</span> <span class="nav-text">The Sidecar Pattern</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Security-Details"><span class="nav-number">4.</span> <span class="nav-text">Security Details</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#A-Dedicated-Identity"><span class="nav-number">4.1.</span> <span class="nav-text">A Dedicated Identity</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#The-Agent-Does-Not-Store-Secrets"><span class="nav-number">4.2.</span> <span class="nav-text">The Agent Does Not Store Secrets</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Network-Ports"><span class="nav-number">4.3.</span> <span class="nav-text">Network Ports</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Summary"><span class="nav-number">5.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">80</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">48</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/11/09/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Entra Agent ID + Sidecar - A Practical Guide to Building Secure AI Agents | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Entra Agent ID + Sidecar - A Practical Guide to Building Secure AI Agents
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-11-09 09:35:00 / Modified: 09:37:22" itemprop="dateCreated datePublished" datetime="2026-11-09T09:35:00+08:00">2026-11-09</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In my previous article, I introduced <code>Entra Agent ID</code>, an identity management service designed specifically for AI agents, and walked through its conceptual model. The design can feel a little abstract, so in this article, let’s put it into practice and build a more secure cloud-based AI agent using <code>Entra Agent ID</code> and the <code>Sidecar</code> pattern.</p>
+<img src="/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Securing_AI_Agents_Architecture.png" alt="" >
+
+<h2 id="OWASP-Identity-and-Privilege-Abuse"><a href="#OWASP-Identity-and-Privilege-Abuse" class="headerlink" title="OWASP Identity and Privilege Abuse"></a>OWASP Identity and Privilege Abuse</h2><p>In 2026, OWASP published its Top 10 security risks for Agentic Applications. The third item, <code>Identity and Privilege Abuse</code>, addresses risks that arise when AI agents do not have their own identities and permission management. For example, an agent without a dedicated ID may have to use the user’s ID or the ID of its host application, making dedicated management and auditing difficult. Or, to support long-running agents, developers may store identity credentials directly in code, creating a risk of credential exposure.</p>
+<p>OWASP recommends two practices to address this risk:</p>
+<ul>
+<li>Give every AI agent its own identity.</li>
+<li>Do not let agents store identity credentials directly.</li>
+</ul>
+<p>As we discussed in the previous article, the Entra Agent ID model addresses both of these recommendations.</p>
+<img src="/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Pasted%20image%2020261102113718.png" alt="" >
+
+<p>With that context in mind, let’s look at how to put the model into practice.</p>
+<h2 id="The-Sidecar-Pattern"><a href="#The-Sidecar-Pattern" class="headerlink" title="The Sidecar Pattern"></a>The Sidecar Pattern</h2><p>This architecture uses the <code>Sidecar</code> pattern, a familiar approach in cloud-native applications. A <code>Sidecar</code> is a helper process that runs alongside an application and provides capabilities the application needs, while keeping that supporting logic separate from the application itself. The Sidecar and application communicate over a local network and share a lifecycle. Common uses include networking, logging and monitoring, and managing keys or certificates.</p>
+<p>Our example follows the same pattern. As shown below, the architecture consists of four containers:</p>
+<img src="/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Pasted%20image%2020261107214152.png" alt="" >
+
+<ul>
+<li><strong>AI agent:</strong> The main agent application, built here with LangChain and Flask.</li>
+<li><strong>LLM&#x2F;SLM:</strong> The generative AI model. You can use a large model in the cloud or a small model locally. This example uses Ollama with Qwen2.5:3B.</li>
+<li><strong>Downstream API:</strong> A service exposed to the agent as a tool. Here, we use a weather API.</li>
+<li><strong>Sidecar:</strong> This container communicates with Entra ID and handles authentication and token acquisition using the agent’s identity.</li>
+</ul>
+<p>Here is how the workflow operates:</p>
+<ul>
+<li>The user asks the agent a question, such as, “What’s the weather like in New York?”</li>
+<li>The agent communicates with the local small language model, which decides whether to call the weather API tool.</li>
+<li>Before calling the weather API, the agent needs to authenticate and be authorized. The agent itself has no identity credentials or related authentication logic; the Sidecar handles those responsibilities.</li>
+<li>The agent requests a token through the Sidecar’s interface.</li>
+<li>The Sidecar is implemented using the <code>Entra ID Auth SDK</code> and configured with Entra Agent ID information, such as the Blueprint, Agent Identity, and identity credentials. With this information, the Sidecar communicates with Entra ID’s identity and token service at <code>login.microsoftonline.com</code>, completes authentication and authorization, and returns a token to the agent.</li>
+<li>The agent uses the token to call the weather API.</li>
+<li>The weather API validates the token and, if validation succeeds, returns the weather information.</li>
+<li>The agent uses that information to compose a final answer for the user.</li>
+</ul>
+<p>That’s the overall flow. Next, let’s look at a few key implementation details and the security benefits they provide.</p>
+<h2 id="Security-Details"><a href="#Security-Details" class="headerlink" title="Security Details"></a>Security Details</h2><p>A complete configuration for all four interconnected containers would be lengthy, so here are the most relevant parts of the setup:</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="comment"># 1. Identity sidecar: acquires tokens for the agent.</span></span><br><span class="line">  <span class="attr">sidecar:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">mcr.microsoft.com/entra-sdk/auth-sidecar:1.0.0-azurelinux3.0-distroless</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">AzureAd__TenantId=$&#123;TENANT_ID&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">AzureAd__ClientId=$&#123;BLUEPRINT_APP_ID&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">AzureAd__ClientCredentials__0__ClientSecret=$&#123;BLUEPRINT_CLIENT_SECRET&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ASPNETCORE_URLS=http://+:5000</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">agent-network-dev</span></span><br><span class="line">    <span class="comment"># No host port published.</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># 2. Downstream API: receives requests from the agent.</span></span><br><span class="line">  <span class="attr">weather-api:</span></span><br><span class="line">    <span class="attr">build:</span> <span class="string">../weather-api</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">VALIDATE_TOKEN_SIGNATURE=$&#123;VALIDATE_TOKEN_SIGNATURE:-true&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">TENANT_ID=$&#123;TENANT_ID&#125;</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">agent-network-dev</span></span><br><span class="line">    <span class="comment"># No host port published.</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># 3. Agent and chat UI: connects all the pieces.</span></span><br><span class="line">  <span class="attr">llm-agent:</span></span><br><span class="line">    <span class="attr">build:</span> <span class="string">.</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;3003:3000&quot;</span>  <span class="comment"># Host:container</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">SIDECAR_URL=http://sidecar:5000</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WEATHER_API_URL=http://weather-api:8080</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">OLLAMA_URL=http://ollama:11434</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">OLLAMA_MODEL=qwen2.5:1.5b</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">AGENT_APP_ID=$&#123;AGENT_CLIENT_ID&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">BLUEPRINT_APP_ID=$&#123;BLUEPRINT_APP_ID&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">TENANT_ID=$&#123;TENANT_ID&#125;</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">sidecar</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">weather-api</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">agent-network-dev</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># 4. Local language model.</span></span><br><span class="line">  <span class="attr">ollama:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">ollama/ollama:latest</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ollama-data:/root/.ollama</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">agent-network-dev</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Shared internal Docker network.</span></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">agent-network-dev:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Persists Ollama model data.</span></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">ollama-data:</span></span><br></pre></td></tr></table></figure>
+
+<p>The agent and Weather API are implemented in my own code, so their container images need to be built locally first. Ollama and the Sidecar use publicly available images.</p>
+<img src="/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Pasted%20image%2020261108090347.png" alt="" >
+
+<p>The most distinctive part of this architecture is the Sidecar container. It uses Microsoft’s publicly available <code>mcr.microsoft.com/entra-sdk/auth-sidecar</code> image. The implementation is open source and built on the <code>microsoft-identity-web</code> project, which is worth exploring if you’d like to learn more about the details.</p>
+<p>You can find the complete project setup on my GitHub: <a target="_blank" rel="noopener" href="https://github.com/baoqger/entra-agent-id-security-lab">https://github.com/baoqger/entra-agent-id-security-lab</a></p>
+<p>The full project is fairly large and complex, so I can’t cover every detail here. Instead, let’s focus on a few security details and see how the implementation follows the OWASP best practices we discussed above.</p>
+<h5 id="A-Dedicated-Identity"><a href="#A-Dedicated-Identity" class="headerlink" title="A Dedicated Identity"></a>A Dedicated Identity</h5><p>Entra Agent ID gives each agent a dedicated identity, distinct from user IDs and regular application IDs, and manages it separately. This is the foundation of the approach.</p>
+<p>As you can see in the configuration above, the <code>llm-agent</code> environment variables associate the Entra Agent ID definition with the agent running in the container.</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">llm-agent:</span></span><br><span class="line">  <span class="attr">build:</span> <span class="string">.</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">&quot;3003:3000&quot;</span>  <span class="comment"># Host:container</span></span><br><span class="line">  <span class="attr">environment:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">AGENT_APP_ID=$&#123;AGENT_CLIENT_ID&#125;</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">BLUEPRINT_APP_ID=$&#123;BLUEPRINT_APP_ID&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="The-Agent-Does-Not-Store-Secrets"><a href="#The-Agent-Does-Not-Store-Secrets" class="headerlink" title="The Agent Does Not Store Secrets"></a>The Agent Does Not Store Secrets</h5><p>The identity credentials required for authentication and authorization with Entra ID are isolated from the agent container and held by the Sidecar. This way, a compromise of the agent itself does not directly expose those credentials.</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">sidecar:</span></span><br><span class="line">  <span class="attr">image:</span> <span class="string">mcr.microsoft.com/entra-sdk/auth-sidecar:1.0.0-azurelinux3.0-distroless</span></span><br><span class="line">  <span class="attr">environment:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">AzureAd__TenantId=$&#123;TENANT_ID&#125;</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">AzureAd__ClientId=$&#123;BLUEPRINT_APP_ID&#125;</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">AzureAd__ClientCredentials__0__ClientSecret=$&#123;BLUEPRINT_CLIENT_SECRET&#125;</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">ASPNETCORE_URLS=http://+:5000</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="Network-Ports"><a href="#Network-Ports" class="headerlink" title="Network Ports"></a>Network Ports</h5><p>As shown in the configuration, the agent exposes a network port so users can interact with it. The other containers, including the Sidecar, do not publish host ports, so they communicate through the shared network.</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>In this article, I showed how to build a secure cloud-based AI agent architecture using Entra Agent ID and the Sidecar pattern. In future articles, I’ll continue exploring this topic, including cloud deployment and additional agent authorization flows. Stay tuned!</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Azure-Entra-ID-AI-Agent-Sidecar-OWASP/" rel="tag"># Azure, Entra ID, AI Agent, Sidecar, OWASP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/11/03/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/" rel="prev" title="Deep Dive Entra Agent ID - The Complete Identity Chain from Blueprint to Agent Token">
+                  <i class="fa fa-angle-left"></i> Deep Dive Entra Agent ID - The Complete Identity Chain from Blueprint to Agent Token
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>

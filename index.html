@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">79</span>
+          <span class="site-state-item-count">80</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">47</span>
+        <span class="site-state-item-count">48</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,128 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/11/09/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/11/09/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/" class="post-title-link" itemprop="url">Entra Agent ID + Sidecar - A Practical Guide to Building Secure AI Agents</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-11-09 09:35:00 / Modified: 09:37:23" itemprop="dateCreated datePublished" datetime="2026-11-09T09:35:00+08:00">2026-11-09</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In my previous article, I introduced <code>Entra Agent ID</code>, an identity management service designed specifically for AI agents, and walked through its conceptual model. The design can feel a little abstract, so in this article, let’s put it into practice and build a more secure cloud-based AI agent using <code>Entra Agent ID</code> and the <code>Sidecar</code> pattern.</p>
+<img src="/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Securing_AI_Agents_Architecture.png" alt="" >
+
+<h2 id="OWASP-Identity-and-Privilege-Abuse"><a href="#OWASP-Identity-and-Privilege-Abuse" class="headerlink" title="OWASP Identity and Privilege Abuse"></a>OWASP Identity and Privilege Abuse</h2><p>In 2026, OWASP published its Top 10 security risks for Agentic Applications. The third item, <code>Identity and Privilege Abuse</code>, addresses risks that arise when AI agents do not have their own identities and permission management. For example, an agent without a dedicated ID may have to use the user’s ID or the ID of its host application, making dedicated management and auditing difficult. Or, to support long-running agents, developers may store identity credentials directly in code, creating a risk of credential exposure.</p>
+<p>OWASP recommends two practices to address this risk:</p>
+<ul>
+<li>Give every AI agent its own identity.</li>
+<li>Do not let agents store identity credentials directly.</li>
+</ul>
+<p>As we discussed in the previous article, the Entra Agent ID model addresses both of these recommendations.</p>
+<img src="/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Pasted%20image%2020261102113718.png" alt="" >
+
+<p>With that context in mind, let’s look at how to put the model into practice.</p>
+<h2 id="The-Sidecar-Pattern"><a href="#The-Sidecar-Pattern" class="headerlink" title="The Sidecar Pattern"></a>The Sidecar Pattern</h2><p>This architecture uses the <code>Sidecar</code> pattern, a familiar approach in cloud-native applications. A <code>Sidecar</code> is a helper process that runs alongside an application and provides capabilities the application needs, while keeping that supporting logic separate from the application itself. The Sidecar and application communicate over a local network and share a lifecycle. Common uses include networking, logging and monitoring, and managing keys or certificates.</p>
+<p>Our example follows the same pattern. As shown below, the architecture consists of four containers:</p>
+<img src="/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Pasted%20image%2020261107214152.png" alt="" >
+
+<ul>
+<li><strong>AI agent:</strong> The main agent application, built here with LangChain and Flask.</li>
+<li><strong>LLM&#x2F;SLM:</strong> The generative AI model. You can use a large model in the cloud or a small model locally. This example uses Ollama with Qwen2.5:3B.</li>
+<li><strong>Downstream API:</strong> A service exposed to the agent as a tool. Here, we use a weather API.</li>
+<li><strong>Sidecar:</strong> This container communicates with Entra ID and handles authentication and token acquisition using the agent’s identity.</li>
+</ul>
+<p>Here is how the workflow operates:</p>
+<ul>
+<li>The user asks the agent a question, such as, “What’s the weather like in New York?”</li>
+<li>The agent communicates with the local small language model, which decides whether to call the weather API tool.</li>
+<li>Before calling the weather API, the agent needs to authenticate and be authorized. The agent itself has no identity credentials or related authentication logic; the Sidecar handles those responsibilities.</li>
+<li>The agent requests a token through the Sidecar’s interface.</li>
+<li>The Sidecar is implemented using the <code>Entra ID Auth SDK</code> and configured with Entra Agent ID information, such as the Blueprint, Agent Identity, and identity credentials. With this information, the Sidecar communicates with Entra ID’s identity and token service at <code>login.microsoftonline.com</code>, completes authentication and authorization, and returns a token to the agent.</li>
+<li>The agent uses the token to call the weather API.</li>
+<li>The weather API validates the token and, if validation succeeds, returns the weather information.</li>
+<li>The agent uses that information to compose a final answer for the user.</li>
+</ul>
+<p>That’s the overall flow. Next, let’s look at a few key implementation details and the security benefits they provide.</p>
+<h2 id="Security-Details"><a href="#Security-Details" class="headerlink" title="Security Details"></a>Security Details</h2><p>A complete configuration for all four interconnected containers would be lengthy, so here are the most relevant parts of the setup:</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="comment"># 1. Identity sidecar: acquires tokens for the agent.</span></span><br><span class="line">  <span class="attr">sidecar:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">mcr.microsoft.com/entra-sdk/auth-sidecar:1.0.0-azurelinux3.0-distroless</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">AzureAd__TenantId=$&#123;TENANT_ID&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">AzureAd__ClientId=$&#123;BLUEPRINT_APP_ID&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">AzureAd__ClientCredentials__0__ClientSecret=$&#123;BLUEPRINT_CLIENT_SECRET&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ASPNETCORE_URLS=http://+:5000</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">agent-network-dev</span></span><br><span class="line">    <span class="comment"># No host port published.</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># 2. Downstream API: receives requests from the agent.</span></span><br><span class="line">  <span class="attr">weather-api:</span></span><br><span class="line">    <span class="attr">build:</span> <span class="string">../weather-api</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">VALIDATE_TOKEN_SIGNATURE=$&#123;VALIDATE_TOKEN_SIGNATURE:-true&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">TENANT_ID=$&#123;TENANT_ID&#125;</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">agent-network-dev</span></span><br><span class="line">    <span class="comment"># No host port published.</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># 3. Agent and chat UI: connects all the pieces.</span></span><br><span class="line">  <span class="attr">llm-agent:</span></span><br><span class="line">    <span class="attr">build:</span> <span class="string">.</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;3003:3000&quot;</span>  <span class="comment"># Host:container</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">SIDECAR_URL=http://sidecar:5000</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">WEATHER_API_URL=http://weather-api:8080</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">OLLAMA_URL=http://ollama:11434</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">OLLAMA_MODEL=qwen2.5:1.5b</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">AGENT_APP_ID=$&#123;AGENT_CLIENT_ID&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">BLUEPRINT_APP_ID=$&#123;BLUEPRINT_APP_ID&#125;</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">TENANT_ID=$&#123;TENANT_ID&#125;</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">sidecar</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">weather-api</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">agent-network-dev</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># 4. Local language model.</span></span><br><span class="line">  <span class="attr">ollama:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">ollama/ollama:latest</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">ollama-data:/root/.ollama</span></span><br><span class="line">    <span class="attr">networks:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">agent-network-dev</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Shared internal Docker network.</span></span><br><span class="line"><span class="attr">networks:</span></span><br><span class="line">  <span class="attr">agent-network-dev:</span></span><br><span class="line">    <span class="attr">driver:</span> <span class="string">bridge</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Persists Ollama model data.</span></span><br><span class="line"><span class="attr">volumes:</span></span><br><span class="line">  <span class="attr">ollama-data:</span></span><br></pre></td></tr></table></figure>
+
+<p>The agent and Weather API are implemented in my own code, so their container images need to be built locally first. Ollama and the Sidecar use publicly available images.</p>
+<img src="/images/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/Pasted%20image%2020261108090347.png" alt="" >
+
+<p>The most distinctive part of this architecture is the Sidecar container. It uses Microsoft’s publicly available <code>mcr.microsoft.com/entra-sdk/auth-sidecar</code> image. The implementation is open source and built on the <code>microsoft-identity-web</code> project, which is worth exploring if you’d like to learn more about the details.</p>
+<p>You can find the complete project setup on my GitHub: <a target="_blank" rel="noopener" href="https://github.com/baoqger/entra-agent-id-security-lab">https://github.com/baoqger/entra-agent-id-security-lab</a></p>
+<p>The full project is fairly large and complex, so I can’t cover every detail here. Instead, let’s focus on a few security details and see how the implementation follows the OWASP best practices we discussed above.</p>
+<h5 id="A-Dedicated-Identity"><a href="#A-Dedicated-Identity" class="headerlink" title="A Dedicated Identity"></a>A Dedicated Identity</h5><p>Entra Agent ID gives each agent a dedicated identity, distinct from user IDs and regular application IDs, and manages it separately. This is the foundation of the approach.</p>
+<p>As you can see in the configuration above, the <code>llm-agent</code> environment variables associate the Entra Agent ID definition with the agent running in the container.</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">llm-agent:</span></span><br><span class="line">  <span class="attr">build:</span> <span class="string">.</span></span><br><span class="line">  <span class="attr">ports:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">&quot;3003:3000&quot;</span>  <span class="comment"># Host:container</span></span><br><span class="line">  <span class="attr">environment:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">AGENT_APP_ID=$&#123;AGENT_CLIENT_ID&#125;</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">BLUEPRINT_APP_ID=$&#123;BLUEPRINT_APP_ID&#125;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="The-Agent-Does-Not-Store-Secrets"><a href="#The-Agent-Does-Not-Store-Secrets" class="headerlink" title="The Agent Does Not Store Secrets"></a>The Agent Does Not Store Secrets</h5><p>The identity credentials required for authentication and authorization with Entra ID are isolated from the agent container and held by the Sidecar. This way, a compromise of the agent itself does not directly expose those credentials.</p>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">sidecar:</span></span><br><span class="line">  <span class="attr">image:</span> <span class="string">mcr.microsoft.com/entra-sdk/auth-sidecar:1.0.0-azurelinux3.0-distroless</span></span><br><span class="line">  <span class="attr">environment:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">AzureAd__TenantId=$&#123;TENANT_ID&#125;</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">AzureAd__ClientId=$&#123;BLUEPRINT_APP_ID&#125;</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">AzureAd__ClientCredentials__0__ClientSecret=$&#123;BLUEPRINT_CLIENT_SECRET&#125;</span></span><br><span class="line">    <span class="bullet">-</span> <span class="string">ASPNETCORE_URLS=http://+:5000</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="Network-Ports"><a href="#Network-Ports" class="headerlink" title="Network Ports"></a>Network Ports</h5><p>As shown in the configuration, the agent exposes a network port so users can interact with it. The other containers, including the Sidecar, do not publish host ports, so they communicate through the shared network.</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>In this article, I showed how to build a secure cloud-based AI agent architecture using Entra Agent ID and the Sidecar pattern. In future articles, I’ll continue exploring this topic, including cloud deployment and additional agent authorization flows. Stay tuned!</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -202,9 +324,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2026-11-03 09:35:00 / Modified: 09:36:11" itemprop="dateCreated datePublished" datetime="2026-11-03T09:35:00+08:00">2026-11-03</time>
+      <time title="Created: 2026-11-03 09:35:00" itemprop="dateCreated datePublished" datetime="2026-11-03T09:35:00+08:00">2026-11-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-11-09 09:37:23" itemprop="dateModified" datetime="2026-11-09T09:37:23+08:00">2026-11-09</time>
     </span>
 
   
@@ -366,9 +494,15 @@
         <i class="far fa-calendar"></i>
       </span>
       <span class="post-meta-item-text">Posted on</span>
-      
 
-      <time title="Created: 2026-11-03 09:31:00 / Modified: 09:36:11" itemprop="dateCreated datePublished" datetime="2026-11-03T09:31:00+08:00">2026-11-03</time>
+      <time title="Created: 2026-11-03 09:31:00" itemprop="dateCreated datePublished" datetime="2026-11-03T09:31:00+08:00">2026-11-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2026-11-09 09:37:23" itemprop="dateModified" datetime="2026-11-09T09:37:23+08:00">2026-11-09</time>
     </span>
 
   
@@ -473,7 +607,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-03 09:36:11" itemprop="dateModified" datetime="2026-11-03T09:36:11+08:00">2026-11-03</time>
+      <time title="Modified: 2026-11-09 09:37:23" itemprop="dateModified" datetime="2026-11-09T09:37:23+08:00">2026-11-09</time>
     </span>
 
   
@@ -660,7 +794,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-03 09:36:11" itemprop="dateModified" datetime="2026-11-03T09:36:11+08:00">2026-11-03</time>
+      <time title="Modified: 2026-11-09 09:37:23" itemprop="dateModified" datetime="2026-11-09T09:37:23+08:00">2026-11-09</time>
     </span>
 
   
@@ -813,7 +947,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-03 09:36:11" itemprop="dateModified" datetime="2026-11-03T09:36:11+08:00">2026-11-03</time>
+      <time title="Modified: 2026-11-09 09:37:23" itemprop="dateModified" datetime="2026-11-09T09:37:23+08:00">2026-11-09</time>
     </span>
 
   
@@ -937,7 +1071,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-03 09:36:11" itemprop="dateModified" datetime="2026-11-03T09:36:11+08:00">2026-11-03</time>
+      <time title="Modified: 2026-11-09 09:37:23" itemprop="dateModified" datetime="2026-11-09T09:37:23+08:00">2026-11-09</time>
     </span>
 
   
@@ -1125,7 +1259,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-03 09:36:11" itemprop="dateModified" datetime="2026-11-03T09:36:11+08:00">2026-11-03</time>
+      <time title="Modified: 2026-11-09 09:37:23" itemprop="dateModified" datetime="2026-11-09T09:37:23+08:00">2026-11-09</time>
     </span>
 
   
@@ -1251,7 +1385,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-03 09:36:11" itemprop="dateModified" datetime="2026-11-03T09:36:11+08:00">2026-11-03</time>
+      <time title="Modified: 2026-11-09 09:37:23" itemprop="dateModified" datetime="2026-11-09T09:37:23+08:00">2026-11-09</time>
     </span>
 
   
@@ -1355,7 +1489,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-03 09:36:11" itemprop="dateModified" datetime="2026-11-03T09:36:11+08:00">2026-11-03</time>
+      <time title="Modified: 2026-11-09 09:37:23" itemprop="dateModified" datetime="2026-11-09T09:37:23+08:00">2026-11-09</time>
     </span>
 
   
@@ -1435,156 +1569,6 @@
 <p>Great, right? With just a few API calls, we get semantic search plus metadata filtering — a practical building block for cost-sensitive RAG systems.</p>
 <h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>S3 Vector combines S3’s low-cost storage with Serverless vector search. It is a strong option for building cost-sensitive RAG systems — especially when you have large volumes of vector data, moderate query traffic, and relaxed latency requirements.</p>
 <p>As I mentioned in my previous RAG articles, choosing the right vector store is always a trade-off. If your workload does not need millisecond-level retrieval on every query, S3 Vector is worth a closer look.</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2026/09/26/breaking-into-edge-ai-onnx-transformer-autoregressive-loop/" class="post-title-link" itemprop="url">Breaking Into Edge AI: Deconstructing the Transformer Autoregressive Loop with ONNX Small Models</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-09-26 10:00:00" itemprop="dateCreated datePublished" datetime="2026-09-26T10:00:00+08:00">2026-09-26</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-03 09:36:11" itemprop="dateModified" datetime="2026-11-03T09:36:11+08:00">2026-11-03</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>If you have been reading my articles for a while, you probably know that I have focused mainly on <code>Azure</code> and <code>AWS</code> cloud AI services and applications. In this post, I want to step outside that comfort zone and introduce a different direction: <strong>edge AI</strong>.</p>
-<p>In this article, I will share what I learned about <code>ONNX (Open Neural Network Exchange)</code> — an open standard and file format that helps AI models run across platforms. We will look at the problem it solves, the convenience it brings to AI&#x2F;ML applications, and how this capability extends in the GenAI era to make local small-model deployment and inference much easier.</p>
-<p>If those questions interest you, let’s get started.</p>
-<img src="/images/edge-ai-onnx/Local_Edge_AI_Processing_Loop.png" alt="" >
-
-<h2 id="ONNX-Cross-Platform-AI-Models"><a href="#ONNX-Cross-Platform-AI-Models" class="headerlink" title="ONNX: Cross-Platform AI Models"></a>ONNX: Cross-Platform AI Models</h2><h4 id="What-Problem-Does-ONNX-Solve"><a href="#What-Problem-Does-ONNX-Solve" class="headerlink" title="What Problem Does ONNX Solve?"></a>What Problem Does ONNX Solve?</h4><p>What problem is <code>ONNX</code> trying to solve? Let me explain with a story from my own experience.</p>
-<p>At a previous employer, we built a real-time computing system as a cloud service on the <code>.NET</code> stack. Due to business requirements, we needed to explore deploying machine learning models on that system and serving online inference. Before that, the system had no ML requirements or capabilities at all — it was a fairly ordinary <code>.NET</code> backend microservices stack.</p>
-<p>To add ML inference, I researched several approaches:</p>
-<p><strong>Dedicated model inference services</strong>: Platforms like <code>Azure Machine Learning</code> or <code>AWS SageMaker</code> can host models for online inference, and our system would communicate with them over the network. This approach requires significant <strong>infrastructure</strong> investment, and network calls also add <strong>latency</strong>.</p>
-<p><strong>Embedded ML frameworks</strong>: We could integrate frameworks like <code>PyTorch</code> or <code>TensorFlow</code> directly into our system, embed models in-process, avoid extra infrastructure and operations, and skip network calls at inference time — all good for performance. But this approach locks you into a specific framework and reduces flexibility.</p>
-<p>As you can see, each approach has trade-offs. Wouldn’t it be great if one solution combined the strengths of both while avoiding their weaknesses? That is exactly what <code>ONNX</code> does.</p>
-<h4 id="ONNX"><a href="#ONNX" class="headerlink" title="ONNX"></a>ONNX</h4><img src="/images/edge-ai-onnx/Pasted%20image%2020260916153212.png" alt="" width="523px">
-
-<p><code>ONNX (Open Neural Network Exchange)</code> is an open standard that defines a common format for machine learning models, enabling cross-platform deployment. You can think of it as the AI equivalent of <code>POSIX (Portable Operating System Interface)</code> — a standard that lets different UNIX&#x2F;Linux kernels interoperate.</p>
-<p>Today, <code>ONNX</code> is supported by major ML frameworks and vendors.</p>
-<h4 id="ONNX-ONNX-Runtime"><a href="#ONNX-ONNX-Runtime" class="headerlink" title="ONNX &amp; ONNX Runtime"></a>ONNX &amp; ONNX Runtime</h4><img src="/images/edge-ai-onnx/Pasted%20image%2020260916155838.png" alt="" width="700px">
-
-<p>With <code>ONNX</code>, the ML training and deployment workflow naturally splits into two phases:</p>
-<p><strong>Training phase</strong>: <code>ONNX</code> defines the model standard, and mainstream ML frameworks provide tools to convert models into <code>ONNX</code> format. In the example below, the <code>scikit-learn</code> framework uses the <code>skl2onnx</code> library to perform the conversion.</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Convert into ONNX format.</span></span><br><span class="line"><span class="keyword">from</span> skl2onnx <span class="keyword">import</span> to_onnx</span><br><span class="line"></span><br><span class="line">onx = to_onnx(clr, X[:<span class="number">1</span>])</span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&quot;rf_iris.onnx&quot;</span>, <span class="string">&quot;wb&quot;</span>) <span class="keyword">as</span> f:</span><br><span class="line">    f.write(onx.SerializeToString())</span><br></pre></td></tr></table></figure>
-
-<p><strong>Inference phase</strong>: Another key component is <code>ONNX Runtime</code> — the runtime engine that executes models. <code>ONNX Runtime</code> is a native C++ library with binding APIs for different stacks, such as C# and Python.</p>
-<p>In addition, <code>ONNX Runtime</code> provides different libraries for different hardware — CPU, GPU, and more. In this article, we will default to CPU. In a future post, I will dig into how to improve efficiency with GPU.</p>
-<p>The most basic inference flow looks like this. This example uses .NET and C#, based on the <code>Microsoft.ML.OnnxRuntime</code> NuGet package.</p>
-<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntime;</span><br><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntime.Tensors;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 1. Create an inference session</span></span><br><span class="line">session = <span class="keyword">new</span> InferenceSession(onnxModelPath)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. Build tensor from features</span></span><br><span class="line"><span class="keyword">var</span> inputTensor = <span class="keyword">new</span> DenseTensor&lt;<span class="built_in">float</span>&gt;(data, shape);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 3. Wrap for ONNX Runtime (legacy API)</span></span><br><span class="line"><span class="keyword">var</span> featuers_input = NamedOnnxValue.CreateFromTensor&lt;<span class="built_in">float</span>&gt;(<span class="string">&quot;feature_input&quot;</span>, inputTensor);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 4. Run model</span></span><br><span class="line">session.Run(features_input);</span><br></pre></td></tr></table></figure>
-
-<p>Using ONNX for traditional ML models is not the main focus of this article. Next, let’s look at what opportunities ONNX opens up in the GenAI era.</p>
-<h2 id="ONNX-Runtime-GenAI-Evolution-in-the-LLM-Era"><a href="#ONNX-Runtime-GenAI-Evolution-in-the-LLM-Era" class="headerlink" title="ONNX Runtime GenAI: Evolution in the LLM Era"></a>ONNX Runtime GenAI: Evolution in the LLM Era</h2><p>In the <code>GenAI</code> era, <code>ONNX Runtime</code> has a dedicated extension: <code>ONNX Runtime GenAI</code>. It follows the same philosophy as <code>ONNX Runtime</code> — letting applications embed and load models directly.</p>
-<p>In theory, that means large models too. But frontier models today sit in the hundreds of billions or trillions of parameters. In practice, no application can realistically embed those locally.</p>
-<p>We can, however, push the idea to the other extreme: <strong>small models</strong>!</p>
-<p>Because they do not depend on cloud resources, <code>small models</code> fit many scenarios: <strong>limited network connectivity</strong>, <strong>strict data privacy and compliance</strong>, and <strong>lower accuracy requirements but higher latency sensitivity</strong>, among others.</p>
-<p>So <code>ONNX Runtime GenAI</code> is a strong platform for <strong>edge AI built on small models</strong>!</p>
-<p>In the demo below, let’s try it hands-on.</p>
-<h2 id="Demo-Local-Small-Models-with-ONNX"><a href="#Demo-Local-Small-Models-with-ONNX" class="headerlink" title="Demo: Local Small Models with ONNX"></a>Demo: Local Small Models with ONNX</h2><h4 id="Phi-3-Mini-4K-Instruct-ONNX-Model"><a href="#Phi-3-Mini-4K-Instruct-ONNX-Model" class="headerlink" title="Phi-3-Mini-4K-Instruct ONNX Model"></a>Phi-3-Mini-4K-Instruct ONNX Model</h4><p>In this article, we use Microsoft’s <code>Phi</code> family small model: <code>Phi-3-Mini-4K-Instruct</code>.</p>
-<p><code>Phi-3-Mini-4K-Instruct</code> is an instruction-tuned variant built on top of <code>Phi-3-Mini-4K</code> — a model better aligned with how users interact with chat systems. It has 3.8B parameters and a 4K context window.</p>
-<p>The model ships in variants for different compute targets: <code>cuda</code>, <code>directml</code>, and <code>cpu_and_mobile</code>.</p>
-<img src="/images/edge-ai-onnx/Pasted%20image%2020260911153901.png" alt="" >
-
-<p>Today we use the <code>cpu_and_mobile</code> variant. It is <strong>quantized</strong>, with weights compressed to <code>int4</code>, which makes it friendly for ordinary PCs, mobile devices, and edge hardware.</p>
-<img src="/images/edge-ai-onnx/Pasted%20image%2020260911154418.png" alt="" >
-
-<h4 id="Building-a-Transformer-Workflow-with-ONNX-Runtime-GenAI"><a href="#Building-a-Transformer-Workflow-with-ONNX-Runtime-GenAI" class="headerlink" title="Building a Transformer Workflow with ONNX Runtime GenAI"></a>Building a Transformer Workflow with ONNX Runtime GenAI</h4><p>When you call large models on cloud platforms like <code>Azure Foundry</code> or <code>AWS Bedrock</code>, you usually just specify the model name. Some platforms expose a few Transformer parameters — <code>temperature</code>, <code>top_k</code>, <code>top_p</code>, and so on — so you can shape model behavior at a basic level.</p>
-<p><code>ONNX Runtime GenAI</code> is a relatively low-level engine. You need to assemble the <code>Transformer</code> workflow yourself through its APIs.</p>
-<p>On one hand, that is a real challenge. On the other hand, it is an excellent way to learn and practice <code>Transformer</code> fundamentals hands-on. In the sections below, let’s see how to build that workflow with <code>ONNX Runtime GenAI</code>.</p>
-<p>The code examples use C# and .NET.</p>
-<h5 id="Creating-the-Tokenizer"><a href="#Creating-the-Tokenizer" class="headerlink" title="Creating the Tokenizer"></a>Creating the Tokenizer</h5><p>The basic unit of information for large language models is the <code>token</code>, so the first step is to create a <code>Tokenizer</code>.</p>
-<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> tokenizer = <span class="keyword">new</span> Tokenizer(model);</span><br><span class="line"><span class="keyword">var</span> tokenizerStream = tokenizer.CreateStream();</span><br><span class="line"></span><br><span class="line">Console.WriteLine(<span class="string">&quot;Tokenizer created&quot;</span>);</span><br></pre></td></tr></table></figure>
-
-<p>Later, we will see how this <code>Tokenizer</code> converts the user’s prompt into tokens.</p>
-<h5 id="Creating-the-Model"><a href="#Creating-the-Model" class="headerlink" title="Creating the Model"></a>Creating the Model</h5><p>Next, we create the model.</p>
-<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> path = <span class="string">&quot;pathtoonnxmodel&quot;</span></span><br><span class="line"><span class="keyword">var</span> config = <span class="keyword">new</span> Config(path);</span><br><span class="line"><span class="keyword">var</span> model = <span class="keyword">new</span> Model(config);</span><br><span class="line">Console.WriteLine(<span class="string">&quot;Model loaded&quot;</span>);</span><br></pre></td></tr></table></figure>
-
-<p>Pass the model directory path to the engine. It automatically loads the ONNX Runtime GenAI configuration file: <code>genai_config.json</code>. For the <code>Phi-3-Mini-4K-Instruct</code> model we use here, the file looks like this:</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">    <span class="attr">&quot;model&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;bos_token_id&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;context_length&quot;</span><span class="punctuation">:</span> <span class="number">4096</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;decoder&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">            <span class="attr">&quot;session_options&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">                <span class="attr">&quot;log_id&quot;</span><span class="punctuation">:</span> <span class="string">&quot;onnxruntime-genai&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;provider_options&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span><span class="punctuation">]</span></span><br><span class="line">            <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;filename&quot;</span><span class="punctuation">:</span> <span class="string">&quot;phi3-mini-4k-instruct-cpu-int4-rtn-block-32-acc-level-4.onnx&quot;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;head_size&quot;</span><span class="punctuation">:</span> <span class="number">96</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;hidden_size&quot;</span><span class="punctuation">:</span> <span class="number">3072</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;inputs&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">                <span class="attr">&quot;input_ids&quot;</span><span class="punctuation">:</span> <span class="string">&quot;input_ids&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;attention_mask&quot;</span><span class="punctuation">:</span> <span class="string">&quot;attention_mask&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;past_key_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;past_key_values.%d.key&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;past_value_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;past_key_values.%d.value&quot;</span></span><br><span class="line">            <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;outputs&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">                <span class="attr">&quot;logits&quot;</span><span class="punctuation">:</span> <span class="string">&quot;logits&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;present_key_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;present.%d.key&quot;</span><span class="punctuation">,</span></span><br><span class="line">                <span class="attr">&quot;present_value_names&quot;</span><span class="punctuation">:</span> <span class="string">&quot;present.%d.value&quot;</span></span><br><span class="line">            <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;num_attention_heads&quot;</span><span class="punctuation">:</span> <span class="number">32</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;num_hidden_layers&quot;</span><span class="punctuation">:</span> <span class="number">32</span><span class="punctuation">,</span></span><br><span class="line">            <span class="attr">&quot;num_key_value_heads&quot;</span><span class="punctuation">:</span> <span class="number">32</span></span><br><span class="line">        <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;eos_token_id&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">            <span class="number">32000</span><span class="punctuation">,</span></span><br><span class="line">            <span class="number">32001</span><span class="punctuation">,</span></span><br><span class="line">            <span class="number">32007</span></span><br><span class="line">        <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;pad_token_id&quot;</span><span class="punctuation">:</span> <span class="number">32000</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;phi3&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;vocab_size&quot;</span><span class="punctuation">:</span> <span class="number">32064</span></span><br><span class="line">    <span class="punctuation">&#125;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="attr">&quot;search&quot;</span><span class="punctuation">:</span> <span class="punctuation">&#123;</span></span><br><span class="line">        <span class="attr">&quot;diversity_penalty&quot;</span><span class="punctuation">:</span> <span class="number">0.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;do_sample&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">false</span></span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;early_stopping&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;length_penalty&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;max_length&quot;</span><span class="punctuation">:</span> <span class="number">4096</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;min_length&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;no_repeat_ngram_size&quot;</span><span class="punctuation">:</span> <span class="number">0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;num_beams&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;num_return_sequences&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;past_present_share_buffer&quot;</span><span class="punctuation">:</span> <span class="literal"><span class="keyword">true</span></span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;repetition_penalty&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;temperature&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;top_k&quot;</span><span class="punctuation">:</span> <span class="number">1</span><span class="punctuation">,</span></span><br><span class="line">        <span class="attr">&quot;top_p&quot;</span><span class="punctuation">:</span> <span class="number">1.0</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
-
-<p>Beyond basic model metadata, the <code>search</code> section defines many parameters that affect Transformer inference behavior. We cannot cover all of them in this article, but keep in mind they are adjustable. Try changing them and observe the differences — that is one of the best ways to build intuition for how models behave. I will share more on this topic in a future post.</p>
-<h5 id="Configuring-the-Generator"><a href="#Configuring-the-Generator" class="headerlink" title="Configuring the Generator"></a>Configuring the Generator</h5><p>Next we need a <code>Generator</code>. This is not a theoretical Transformer concept — it is a key engine component that orchestrates the entire workflow.</p>
-<p>Transformer models use an <strong>autoregressive</strong> mechanism: generate one token at a time, then predict the next token based on the prompt and all tokens generated so far — forming a loop. The <code>Generator</code> controls that loop.</p>
-<p>When you create the <code>Generator</code>, you can tune the parameters mentioned above to control model behavior:</p>
-<figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> generatorParams = <span class="keyword">new</span> GeneratorParams(model);</span><br><span class="line"><span class="keyword">var</span> generator = <span class="keyword">new</span> Generator(model, generatorParams);</span><br></pre></td></tr></table></figure>
-
-<p>Now let’s look at that loop.</p>
-<h5 id="Token-Generation-Loop"><a href="#Token-Generation-Loop" class="headerlink" title="Token Generation Loop"></a>Token Generation Loop</h5><figure class="highlight c#"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Get input tokens</span></span><br><span class="line"><span class="built_in">string</span> user_prompt = <span class="string">&quot;hello&quot;</span>;</span><br><span class="line"><span class="built_in">string</span> prompt = <span class="string">$@&quot;[&#123;&#123;&quot;&quot;role&quot;&quot;:&quot;&quot;system&quot;&quot;,&quot;&quot;content&quot;&quot;:&quot;&quot;<span class="subst">&#123;systemPrompt&#125;</span>&quot;&quot;&#125;&#125;,&#123;&#123;&quot;&quot;role&quot;&quot;:&quot;&quot;user&quot;&quot;,&quot;&quot;content&quot;&quot;:&quot;&quot;<span class="subst">&#123;user_prompt&#125;</span>&quot;&quot;&#125;&#125;]&quot;</span>;</span><br><span class="line"><span class="keyword">var</span> sequences = tokenizer.Encode(prompt);</span><br><span class="line"></span><br><span class="line"><span class="comment">// append input tokens to generator</span></span><br><span class="line">generator.AppendTokenSequences(sequences);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Run generation loop</span></span><br><span class="line"><span class="keyword">while</span> (<span class="literal">true</span>)</span><br><span class="line">&#123;</span><br><span class="line">    generator.GenerateNextToken();</span><br><span class="line">    <span class="keyword">if</span> (generator.IsDone())</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Get output tokens and decode to string</span></span><br><span class="line"><span class="keyword">var</span> outputSequence = generator.GetSequence(<span class="number">0</span>);</span><br><span class="line"><span class="keyword">var</span> outputString = tokenizer.Decode(outputSequence);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Display output</span></span><br><span class="line">Console.WriteLine(<span class="string">&quot;Output:&quot;</span>);</span><br><span class="line">Console.WriteLine(outputString);</span><br></pre></td></tr></table></figure>
-
-<p>From the code above, the flow breaks down into these steps:</p>
-<ul>
-<li>Use the <code>Tokenizer</code> to convert the user prompt into a token sequence</li>
-<li>Pass the token sequence to the <code>Generator</code></li>
-<li>The <code>Generator</code> produces the next token one at a time until completion</li>
-<li>Read the full sequence from the <code>Generator</code></li>
-<li>Use the <code>Tokenizer</code> to decode the token sequence back into a string</li>
-</ul>
-<p>This code is a clear, hands-on illustration of how Transformer inference works in practice. It is worth reading carefully more than once.</p>
-<p>Build and run it, and you will see a small model answering your questions locally on ordinary CPU hardware. Great, right?</p>
-<img src="/images/edge-ai-onnx/Pasted%20image%2020260915135410.png" alt="" >
 
       
     </div>
