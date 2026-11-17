@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.css" integrity="sha256-mdaMxrItEW6hMIVJJNPKuX0B7KCSJQVEv3mVY4N2we4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"organicprogrammer.com","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.29.0","exturl":false,"sidebar":{"position":"right","width_expanded":320,"width_dual_column":240,"display":"post","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="BackgroundMy earlier article on Entra Agent ID received encouraging feedback. This week I spent some time polishing that work into a project and released it on GitHub so you can clone it, run it, and">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Entra Agent ID Sidecar Lab - Open Source, Runnable, Three Scenarios">
+<meta property="og:url" content="https://organicprogrammer.com/2026/11/17/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/index.html">
+<meta property="og:site_name" content="Chris Bao&#39;s Blog">
+<meta property="og:description" content="BackgroundMy earlier article on Entra Agent ID received encouraging feedback. This week I spent some time polishing that work into a project and released it on GitHub so you can clone it, run it, and">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Agent_Sidecar_Architecture_Overview.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Pasted%20image%2020261114154648.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Pasted%20image%2020261114155809.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Pasted%20image%2020261114155017.png">
+<meta property="og:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Pasted%20image%2020261114160357.png">
+<meta property="article:published_time" content="2026-11-17T01:30:00.000Z">
+<meta property="article:author" content="Chris Bao">
+<meta property="article:tag" content="Azure, Entra ID, AI Agent, Sidecar, OAuth">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://organicprogrammer.com/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Agent_Sidecar_Architecture_Overview.png">
+
+
+<link rel="canonical" href="https://organicprogrammer.com/2026/11/17/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://organicprogrammer.com/2026/11/17/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/","path":"2026/11/17/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/","title":"Entra Agent ID Sidecar Lab - Open Source, Runnable, Three Scenarios"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Entra Agent ID Sidecar Lab - Open Source, Runnable, Three Scenarios | Chris Bao's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fancyapps-ui/6.1.14/fancybox/fancybox.umd.js" integrity="sha256-QnJV4HT5r8i89ovZGRD86iynZqHerEbT2xt69vDM36I=" crossorigin="anonymous" defer></script>
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  
+
+
+
+  <script src="/js/third-party/fancybox.js" defer></script>
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-math@4.0.0/dist/style.css">
+<!-- hexo injector head_end end --><link rel="alternate" href="/atom.xml" title="Chris Bao's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Chris Bao's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="Search" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-project"><a href="/project/" rel="section"><i class="fa fa-folder-open fa-fw"></i>Project</a></li><li class="menu-item menu-item-book-review"><a href="/book-reviews/" rel="section"><i class="fa fa-book fa-fw"></i>Book Review</a></li><li class="menu-item menu-item-public-speak"><a href="/public-speak/" rel="section"><i class="fa fa-microphone fa-fw"></i>Public Speak</a></li><li class="menu-item menu-item-training"><a href="/training/" rel="section"><i class="fa fa-graduation-cap fa-fw"></i>Training</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-rss"><a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>rss</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Background"><span class="nav-number">1.</span> <span class="nav-text">Background</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#scripts"><span class="nav-number">1.1.</span> <span class="nav-text">scripts</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sidecar"><span class="nav-number">1.2.</span> <span class="nav-text">sidecar</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Why-this-repo-is-useful"><span class="nav-number">2.</span> <span class="nav-text">Why this repo is useful</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Chris Bao</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">81</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/11/17/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Entra Agent ID Sidecar Lab - Open Source, Runnable, Three Scenarios | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Entra Agent ID Sidecar Lab - Open Source, Runnable, Three Scenarios
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-11-17 09:30:00 / Modified: 09:26:36" itemprop="dateCreated datePublished" datetime="2026-11-17T09:30:00+08:00">2026-11-17</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>My earlier article on Entra Agent ID received encouraging feedback. This week I spent some time polishing that work into a project and released it on GitHub so you can clone it, run it, and see how things behave end to end.</p>
+<p>As I mentioned in that previous post, Entra Agent ID can feel abstract until you wire up real objects, permissions, and tokens. After reading this article, you should know what the <strong>Entra Agent ID Sidecar Lab</strong> repo contains, how the labs are organized, and why it might save you setup time if you want to experiment on your own.</p>
+<img src="/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Agent_Sidecar_Architecture_Overview.png" alt="" >
+## Project overview
+
+<p>The open-source project is called <strong>Entra Agent ID Sidecar Lab</strong>. Its main goal is to give you a <strong>runnable, end-to-end baseline</strong> you can learn from and extend—not just slides or architecture diagrams.</p>
+<p>Repository: <a target="_blank" rel="noopener" href="https://github.com/baoqger/entra-agent-id-sidecar-lab">https://github.com/baoqger/entra-agent-id-sidecar-lab</a></p>
+<p><code>Entra Agent ID</code> currently supports <strong>three</strong> authentication and authorization patterns:</p>
+<ul>
+<li><strong>Autonomous App Flow</strong> — the agent runs on its own, with no user in the loop.</li>
+<li><strong>On Behalf Of (OBO) Flow</strong> — delegated access on behalf of a user.</li>
+<li><strong>Agent User Flow</strong> — autonomous execution, but acting as a dedicated simulated user.</li>
+</ul>
+<p>The repo is structured around those three scenarios: <strong>one Lab per flow</strong>. Lab 1—the autonomous case—is complete today; I plan to add the other two labs next.</p>
+<p>Each lab has two parts: <code>scripts</code> and <code>sidecar</code>.</p>
+<img src="/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Pasted%20image%2020261114154648.png" alt="" >
+
+<h3 id="scripts"><a href="#scripts" class="headerlink" title="scripts"></a><code>scripts</code></h3><p>The <code>scripts</code> folder holds <strong>Python</strong> automation. To make the material easier to follow, I used <strong>Jupyter notebooks</strong> instead of the PowerShell scripts you often see in official samples. These notebooks create and configure Entra objects and permissions—the blueprint, identities, grants, and related setup you need <strong>before</strong> the sidecar stack can run. Please run them first.</p>
+<img src="/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Pasted%20image%2020261114155809.png" alt="" >
+
+<h3 id="sidecar"><a href="#sidecar" class="headerlink" title="sidecar"></a><code>sidecar</code></h3><p>Under <code>sidecar</code>, <strong>Docker Compose</strong> runs a <strong>four-container</strong> setup that talks to each other on a shared network.</p>
+<img src="/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Pasted%20image%2020261114155017.png" alt="" >
+
+<ul>
+<li><strong><code>llm-agent</code></strong> — a small but real agent built with LangChain</li>
+<li><strong><code>ollama</code></strong> — a local model runtime that backs the agent</li>
+<li><strong><code>weather-api</code></strong> — a downstream API used as a tool in the agent</li>
+<li><strong><code>sidecar</code></strong> — Microsoft’s open-source auth sidecar image (<code>mcr.microsoft.com/entra-sdk/auth-sidecar</code>); you don’t need to build this part yourself</li>
+</ul>
+<p>If you’ve already read [[Entra Agent ID + Sidecar - A Practical Guide to Building Secure AI Agents]], this layout should look familiar—the lab turns that pattern into something you can start with one command after the scripts finish.</p>
+<h2 id="Why-this-repo-is-useful"><a href="#Why-this-repo-is-useful" class="headerlink" title="Why this repo is useful"></a>Why this repo is useful</h2><img src="/images/entra-agent-id-sidecar-lab-open-source-runnable-three-scenarios/Pasted%20image%2020261114160357.png" alt="" >
+
+<p>I hope the project helps in a few concrete ways:</p>
+<ul>
+<li><strong>Entra Agent ID</strong> — the topic is still young, and there are few repos you can run immediately. Rolling your own tenant setup from scratch takes time; this repo is a <strong>complete starting point</strong>.</li>
+<li><strong>OAuth 2.0 on Entra ID</strong> — Entra ID is a well-known identity provider (IdP) for users and applications. The lab exercises real registration, consent, and token flows. You can line up the notebooks and containers with the spec and dig into authorization details hands-on.</li>
+<li><strong>AI agent security</strong> — you can also use the stack as a baseline for offensive and defensive experiments around agent identity and privilege. That space is wide open—I’m sure others will find angles I haven’t thought of yet, and I’d love to hear about them.</li>
+</ul>
+<p>Next step: pick Lab 1, run the notebooks, then bring up Compose. Great way to connect theory to a running agent, right?</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Azure-Entra-ID-AI-Agent-Sidecar-OAuth/" rel="tag"># Azure, Entra ID, AI Agent, Sidecar, OAuth</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/11/09/entra-agent-id-sidecar-a-practical-guide-to-building-secure-ai-agents/" rel="prev" title="Entra Agent ID + Sidecar - A Practical Guide to Building Secure AI Agents">
+                  <i class="fa fa-angle-left"></i> Entra Agent ID + Sidecar - A Practical Guide to Building Secure AI Agents
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Chris Bao</span>
+  </div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
