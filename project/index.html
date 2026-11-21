@@ -195,6 +195,14 @@
 <li>Analyze and track network traffics: TCP session tracking and traffic analysis, TFTP session tracking and traffic analysis</li>
 </ul>
 <p>in detail, please check <a target="_blank" rel="noopener" href="https://github.com/baoqger/cPacketSniffer">here</a>.</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/baoqger/entra-agent-id-sidecar-lab">Entra Agent ID Sidecar Lab</a>: hands-on labs for securing AI agents with Microsoft Entra <strong>Agent ID</strong>—a sample LLM agent, the official <strong>auth sidecar</strong> (token acquisition and exchange), and a JWT-validating downstream API, covering <strong>autonomous (app-only)</strong> and <strong>on-behalf-of (OBO)</strong> patterns:</p>
+<ul>
+<li>For <strong>agent and app developers</strong>: call tools and APIs without putting blueprint <code>client_secret</code>, MSAL, or token caching in agent code</li>
+<li>For <strong>identity and platform engineers</strong>: a runnable Docker Compose reference for the <a target="_blank" rel="noopener" href="https://learn.microsoft.com/en-us/entra/msidweb/agent-id-sdk/overview">Entra Agent ID auth sidecar</a>, with a sample resource API that validates Agent Identity tokens</li>
+<li><strong>Lab1</strong> — PowerShell scripts provision Entra blueprint, Agent Identity, and Weather API; Compose runs the auth sidecar, LangChain&#x2F;Ollama agent, and weather API (autonomous &#x2F; app-only tokens)</li>
+<li><strong>Lab2</strong> — same stack pattern with MSAL browser sign-in and OBO token exchange through the sidecar; separate <code>LabN/scripts/</code> and <code>.env</code> per lab (do not reuse Lab1 app IDs in Lab2)</li>
+</ul>
+<p>in detail, please check <a target="_blank" rel="noopener" href="https://github.com/baoqger/entra-agent-id-sidecar-lab">here</a>.</p>
 
       </div>
       
