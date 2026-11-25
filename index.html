@@ -143,12 +143,12 @@
   <nav class="site-state">
       <div class="site-state-item site-state-posts">
         <a href="/archives/">
-          <span class="site-state-item-count">81</span>
+          <span class="site-state-item-count">82</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-tags">
-        <span class="site-state-item-count">49</span>
+        <span class="site-state-item-count">50</span>
         <span class="site-state-item-name">tags</span>
       </div>
   </nav>
@@ -165,6 +165,150 @@
     </div>
 
     <div class="main-inner index posts-expand">
+
+    
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
+    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/11/25/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Chris Bao">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content=" | Chris Bao's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          <a href="/2026/11/25/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/" class="post-title-link" itemprop="url">MCP Adaptation to OAuth 2.0 PRM - A Lightweight API Gateway-Based Approach</a>
+        </h2>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+      
+
+      <time title="Created: 2026-11-25 10:30:00 / Modified: 02:32:26" itemprop="dateCreated datePublished" datetime="2026-11-25T10:30:00+00:00">2026-11-25</time>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>Compared with today’s AI agents, traditional applications tend to operate in a relatively static world. The resources a user needs through an app are usually known in advance. From an access-control perspective, that makes life much easier.</p>
+<p>AI agents are different. Because they make decisions dynamically, the scope of what they might touch is open-ended. An agent may need resources that were never hard-coded into the application.</p>
+<p>As a resource owner, you also need a better protocol so agents can access your APIs <strong>with permission and in a secure way</strong>, right?</p>
+<p>That brings us to today’s topic: a new member of the OAuth 2.0 family—<strong>Protected Resource Metadata (PRM)</strong>—and how it addresses the problems above.</p>
+<p>Beyond the theory, I will also walk you through a <strong>Gateway-based</strong> implementation that stays light on your MCP service and scales well as you add more resources. Let’s dive in.</p>
+<img src="/images/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/OAuth_2.0_PRM_Gateway_Architecture.png" alt="" >
+
+<h2 id="The-Cross–Trust-Domain-Permission-Problem"><a href="#The-Cross–Trust-Domain-Permission-Problem" class="headerlink" title="The Cross–Trust-Domain Permission Problem"></a>The Cross–Trust-Domain Permission Problem</h2><p>Most OAuth 2.0 extensions give you a reasonable hint from their names. PRM—<em>Protected Resource Metadata</em>—sounds abstract, but its behavior is actually straightforward.</p>
+<p>Its main job is the problem we opened with: <strong>how does a client get permission to access a resource that lives outside its original trust domain?</strong></p>
+<p>Let’s quickly revisit the classic OAuth 2.0 architecture. It has four core roles: the user (resource owner), the client application, the protected resource, and the authorization server.</p>
+<p>The authorization server is the anchor. It defines a <strong>trust domain</strong>: inside that domain, the authorization server decides who may access what.</p>
+<img src="/images/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/Pasted%20image%2020261118103207.png" alt="" >
+
+<p>In a traditional app, things inside that domain are mostly fixed. A user delegates an app to access a resource, and both the app and the resource are governed by the same authorization server. No drama.</p>
+<p>In an AI agent setting, you can easily run into <strong>cross–trust-domain</strong> access: the agent presents a token issued in one domain and tries to call a resource in another. That will not work.</p>
+<p>Next, let’s see how PRM helps.</p>
+<h2 id="OAuth-2-0-Protected-Resource-Metadata"><a href="#OAuth-2-0-Protected-Resource-Metadata" class="headerlink" title="OAuth 2.0 Protected Resource Metadata"></a>OAuth 2.0 Protected Resource Metadata</h2><p>PRM is now published as <strong>RFC 9728</strong>. The flow is simple—three steps:</p>
+<img src="/images/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/Pasted%20image%2020261118111200.png" alt="" width="524px">
+
+<p><strong>Step 1:</strong> The client tries to fetch data from the resource server. With the wrong token, the request fails with <code>401 Unauthorized</code>. Critically, the resource server must also return a URL where the client can discover authorization metadata for that resource. A typical response looks like this:</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">401 Unauthorized</span><br><span class="line"></span><br><span class="line"><span class="attribute">WWW-Authenticate</span><span class="punctuation">: </span>Bearer</span><br><span class="line">  resource_metadata=&quot;.../.well-known/oauth-protected-resource/rs&quot;</span><br></pre></td></tr></table></figure>
+
+<p><strong>Step 2:</strong> The client retrieves the resource metadata from that URL. For example:</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;resource&quot;</span><span class="punctuation">:</span> <span class="string">&quot;https://.../rs&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;authorization_servers&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="string">&quot;https://oauth-authorization-server/.well-known/idp&quot;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;scopes_supported&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="string">&quot;openid&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="string">&quot;profile&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="string">&quot;email&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="string">&quot;read&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="string">&quot;write&quot;</span></span><br><span class="line">  <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;dpop_signing_alg_values_supported&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    <span class="string">&quot;RS256&quot;</span><span class="punctuation">,</span></span><br><span class="line">    <span class="string">&quot;ES256&quot;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>This JSON is all OAuth-related: the authorization server URL is the piece clients care about most. You may also see supported scopes, signing algorithms, and more.</p>
+<p><strong>Step 3:</strong> The client calls the authorization server (or its discovery document) to learn endpoints, supported flows, and how to obtain tokens:</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET https://oauth-authorization-server/.well-known/idp</span><br></pre></td></tr></table></figure>
+
+<p>With that information, the client can start the appropriate OAuth flow and get a valid token. Everything after that is outside PRM itself—but PRM is what tells the client <em>where</em> to start.</p>
+<p>One note: PRM was not invented only for AI agents. It fits any similar scenario; agents simply made the need more urgent.</p>
+<h2 id="A-Gateway-Based-Implementation"><a href="#A-Gateway-Based-Implementation" class="headerlink" title="A Gateway-Based Implementation"></a>A Gateway-Based Implementation</h2><p>As we saw above, PRM is not complicated. Most of the work sits on the <strong>resource server</strong> side—not the authorization server—and you control the resource server, so adoption is practical.</p>
+<p>You can bake PRM behavior directly into your data service. In this article, I will share a <strong>Gateway-based</strong> approach that is lighter on your MCP code and easier to extend. Let’s look at it step by step.</p>
+<h3 id="Scenario"><a href="#Scenario" class="headerlink" title="Scenario"></a>Scenario</h3><p>Imagine you built an MCP server, exposed it for agents to consume, and implemented basic token validation inside the MCP app. Your next goal: support <strong>RFC 9728 PRM</strong> without turning the MCP codebase into an OAuth Swiss Army knife. How would you do that?</p>
+<h3 id="Architecture"><a href="#Architecture" class="headerlink" title="Architecture"></a>Architecture</h3><p>My current implementation uses a few Azure building blocks:</p>
+<img src="/images/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/Pasted%20image%2020261118125543.png" alt="" >
+
+<ul>
+<li><strong>Azure Container Apps (ACA):</strong> The real MCP server runs in a container on ACA. The internals of MCP are not the focus here—you can treat the backend as a black box for now.</li>
+<li><strong>Azure Entra ID:</strong> Acts as the authorization server and issues tokens.</li>
+<li><strong>API Gateway (Azure API Management):</strong> The star of the show. Through proxies and policies, the gateway adapts MCP for PRM. This is what we will configure in detail.</li>
+</ul>
+<h3 id="Gateway-Policy-Configuration"><a href="#Gateway-Policy-Configuration" class="headerlink" title="Gateway Policy Configuration"></a>Gateway Policy Configuration</h3><p>Azure API Management supports two relevant proxy types: standard <strong>API</strong> proxies for HTTP services, and <strong>MCP</strong> proxies for MCP workloads.</p>
+<p>For this architecture you need <strong>two</strong> front doors: one MCP proxy and one API proxy.</p>
+<img src="/images/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/Pasted%20image%2020261118130730.png" alt="" >
+
+<p>First, the MCP proxy. Its backend is the MCP service running on ACA:</p>
+<img src="/images/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/Pasted%20image%2020261118132345.png" alt="" >
+
+<p>The policy looks like this:</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">policies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">inbound</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">base</span> /&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- Validate Azure AD JWT Token --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">validate-azure-ad-token</span> <span class="attr">tenant-id</span>=<span class="string">&quot;&#123;&#123;McpTenantId&#125;&#125;&quot;</span> <span class="attr">failed-validation-httpcode</span>=<span class="string">&quot;401&quot;</span> <span class="attr">failed-validation-error-message</span>=<span class="string">&quot;Unauthorized&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">audiences</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">audience</span>&gt;</span>&#123;&#123;McpClientId&#125;&#125;<span class="tag">&lt;/<span class="name">audience</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">audiences</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">validate-azure-ad-token</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">inbound</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">backend</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">base</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">backend</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">outbound</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">base</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">outbound</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">on-error</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">base</span> /&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">choose</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">when</span> <span class="attr">condition</span>=<span class="string">&quot;@(context.Response.StatusCode == 401)&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">return-response</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">set-status</span> <span class="attr">code</span>=<span class="string">&quot;401&quot;</span> <span class="attr">reason</span>=<span class="string">&quot;Unauthorized&quot;</span> /&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">set-header</span> <span class="attr">name</span>=<span class="string">&quot;WWW-Authenticate&quot;</span> <span class="attr">exists-action</span>=<span class="string">&quot;override&quot;</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">value</span>&gt;</span>Bearer error=&quot;invalid_token&quot;, resource_metadata=&quot;&#123;&#123;APIMGatewayURL&#125;&#125;/.well-known/oauth-protected-resource&quot;<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">set-header</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">return-response</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">when</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">choose</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- Handle authentication/authorization errors --&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">on-error</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">policies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>The <code>validate-azure-ad-token</code> element performs token validation. You can tune the checks; here we validate the <code>aud</code> (audience) claim.</p>
+<p>When validation fails, the <code>on-error</code> block shapes the response. The <code>resource_metadata</code> parameter in <code>WWW-Authenticate</code> tells the client where to fetch protected-resource metadata—<strong>PRM Step 1</strong>.</p>
+<p>That URL is served by the <strong>second</strong> proxy on the gateway—an API route with no backend service; the metadata is returned entirely from policy:</p>
+<img src="/images/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/Pasted%20image%2020261118133848.png" alt="" >
+
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">policies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">inbound</span>&gt;</span></span><br><span class="line">        <span class="comment">&lt;!-- Return Protected Resource Metadata according to RFC 9728 --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">return-response</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">set-status</span> <span class="attr">code</span>=<span class="string">&quot;200&quot;</span> <span class="attr">reason</span>=<span class="string">&quot;OK&quot;</span> /&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">set-header</span> <span class="attr">name</span>=<span class="string">&quot;Content-Type&quot;</span> <span class="attr">exists-action</span>=<span class="string">&quot;override&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">value</span>&gt;</span>application/json<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">set-header</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">set-header</span> <span class="attr">name</span>=<span class="string">&quot;Cache-Control&quot;</span> <span class="attr">exists-action</span>=<span class="string">&quot;override&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">value</span>&gt;</span>public, max-age=3600<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">set-header</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">set-body</span>&gt;</span>@&#123;</span><br><span class="line">                return JsonConvert.SerializeObject(new &#123;</span><br><span class="line">                    resource = &quot;&#123;&#123;APIMGatewayURL&#125;&#125;/&#123;&#123;McpApiPath&#125;&#125;&quot;,</span><br><span class="line">                    authorization_servers = new[] &#123;</span><br><span class="line">                        $&quot;https://login.microsoftonline.com/&#123;&#123;McpTenantId&#125;&#125;/v2.0&quot;</span><br><span class="line">                    &#125;,</span><br><span class="line">                    bearer_methods_supported = new[] &#123;</span><br><span class="line">                        &quot;header&quot;</span><br><span class="line">                    &#125;,</span><br><span class="line">                    scopes_supported = new[] &#123;</span><br><span class="line">                        &quot;&#123;&#123;McpClientId&#125;&#125;/user_impersonate&quot;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;);</span><br><span class="line"></span><br><span class="line">            &#125;<span class="tag">&lt;/<span class="name">set-body</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">return-response</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">inbound</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">backend</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">base</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">backend</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">outbound</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">base</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">outbound</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">on-error</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">base</span> /&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">on-error</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">policies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>This JSON exposes four important fields:</p>
+<ul>
+<li><code>resource</code>: The URL of the protected MCP endpoint this metadata describes.</li>
+<li><code>authorization_servers</code>: Where tokens must come from—here, <code>https://login.microsoftonline.com/...</code> points to Entra ID.</li>
+<li><code>bearer_methods_supported</code>: How the resource accepts bearer tokens (e.g. HTTP header).</li>
+<li><code>scopes_supported</code>: The scopes clients should request.</li>
+</ul>
+<p>That mapping is <strong>PRM Step 2</strong>. With this in hand, an agent (or any OAuth client) knows exactly which authorization server and scopes to use—and can call Entra ID to obtain a token.</p>
+<p>Great, right? The MCP container keeps doing MCP; the gateway owns the OAuth discovery surface.</p>
+<h3 id="Portability"><a href="#Portability" class="headerlink" title="Portability"></a>Portability</h3><p>I used Azure in this walkthrough, but every major cloud offers some form of API gateway. The same pattern—MCP proxy for validation + metadata route for <code>/.well-known</code>—transfers cleanly. I plan to share a similar setup on AWS in a future article when I have cycles to document it.</p>
+<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><ul>
+<li>AI agents widen the set of resources a client might call, which makes <strong>cross–trust-domain</strong> token mistakes common.</li>
+<li><strong>RFC 9728 PRM</strong> uses a <code>401</code> + <code>WWW-Authenticate</code> hint, a metadata document, and authorization-server discovery so clients find the right IdP.</li>
+<li>Putting PRM on <strong>API Management</strong> keeps your MCP service thin: one MCP proxy for JWT validation and error shaping, one API proxy for metadata—Step 1 and Step 2 without code changes in the backend.</li>
+</ul>
+<p>If you are exposing MCP to agents in production, this gateway layer is a practical place to standardize auth. Smart design, right?</p>
+
+      
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+        <div class="post-eof"></div>
+      
+    </footer>
+  </article>
+</div>
+
+
+
 
     
 
@@ -210,7 +354,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
+      <time title="Modified: 2026-11-25 02:32:26" itemprop="dateModified" datetime="2026-11-25T02:32:26+00:00">2026-11-25</time>
     </span>
 
   
@@ -324,7 +468,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
+      <time title="Modified: 2026-11-25 02:32:26" itemprop="dateModified" datetime="2026-11-25T02:32:26+00:00">2026-11-25</time>
     </span>
 
   
@@ -452,7 +596,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
+      <time title="Modified: 2026-11-25 02:32:26" itemprop="dateModified" datetime="2026-11-25T02:32:26+00:00">2026-11-25</time>
     </span>
 
   
@@ -622,7 +766,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
+      <time title="Modified: 2026-11-25 02:32:26" itemprop="dateModified" datetime="2026-11-25T02:32:26+00:00">2026-11-25</time>
     </span>
 
   
@@ -727,7 +871,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
+      <time title="Modified: 2026-11-25 02:32:26" itemprop="dateModified" datetime="2026-11-25T02:32:26+00:00">2026-11-25</time>
     </span>
 
   
@@ -914,7 +1058,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
+      <time title="Modified: 2026-11-25 02:32:26" itemprop="dateModified" datetime="2026-11-25T02:32:26+00:00">2026-11-25</time>
     </span>
 
   
@@ -1067,7 +1211,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
+      <time title="Modified: 2026-11-25 02:32:26" itemprop="dateModified" datetime="2026-11-25T02:32:26+00:00">2026-11-25</time>
     </span>
 
   
@@ -1191,7 +1335,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
+      <time title="Modified: 2026-11-25 02:32:26" itemprop="dateModified" datetime="2026-11-25T02:32:26+00:00">2026-11-25</time>
     </span>
 
   
@@ -1379,7 +1523,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
+      <time title="Modified: 2026-11-25 02:32:26" itemprop="dateModified" datetime="2026-11-25T02:32:26+00:00">2026-11-25</time>
     </span>
 
   
@@ -1443,110 +1587,6 @@
 <p>Great—once delegation is clear, the next question is natural: what does this mean for <strong>AI Agent</strong> authorization?</p>
 <h2 id="AI-Agent-Scenarios"><a href="#AI-Agent-Scenarios" class="headerlink" title="AI Agent Scenarios"></a>AI Agent Scenarios</h2><p>Compared with traditional apps, AI agents stand out because of <strong>autonomy</strong>: an agent can decide its own next steps. One client application may host <strong>multiple</strong> agents, each able to act on its own. For AI agents, an explicit delegation chain is not a nice-to-have—it is often required. That is a big reason many agent authorization designs lean on <strong>Token Exchange</strong>.</p>
 <p>For example, <strong>AWS AgentCore</strong> and <strong>Azure Foundry Agent</strong> both support <strong>On-Behalf-Of Token Exchange</strong>-style authorization. I will dig into how those implementations work in upcoming posts—stay tuned!</p>
-
-      
-    </div>
-
-    
-    
-    
-
-    <footer class="post-footer">
-        <div class="post-eof"></div>
-      
-    </footer>
-  </article>
-</div>
-
-
-
-
-    
-
-
-<div class="post-block">
-  
-  
-
-  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="">
-    <link itemprop="mainEntityOfPage" href="https://organicprogrammer.com/2026/09/27/low-level-genai-apis-too-heavy-a-higher-level-net-path-to-plug-local-small-models-into-agents/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Chris Bao">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-
-    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
-      <meta itemprop="name" content=" | Chris Bao's Blog">
-      <meta itemprop="description" content="">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          <a href="/2026/09/27/low-level-genai-apis-too-heavy-a-higher-level-net-path-to-plug-local-small-models-into-agents/" class="post-title-link" itemprop="url">Low-Level GenAI APIs Too Heavy - A Higher-Level .NET Path to Plug Local Small Models into Agents</a>
-        </h2>
-
-        <div class="post-meta-container">
-          <div class="post-meta">
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar"></i>
-      </span>
-      <span class="post-meta-item-text">Posted on</span>
-
-      <time title="Created: 2026-09-27 10:00:00" itemprop="dateCreated datePublished" datetime="2026-09-27T10:00:00+00:00">2026-09-27</time>
-    </span>
-    <span class="post-meta-item">
-      <span class="post-meta-item-icon">
-        <i class="far fa-calendar-check"></i>
-      </span>
-      <span class="post-meta-item-text">Edited on</span>
-      <time title="Modified: 2026-11-25 02:26:23" itemprop="dateModified" datetime="2026-11-25T02:26:23+00:00">2026-11-25</time>
-    </span>
-
-  
-</div>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-          <h2 id="Background"><a href="#Background" class="headerlink" title="Background"></a>Background</h2><p>In my previous article, I walked through how to load a small language model locally and build an AI app on top of the cross-platform <code>ONNX</code> model standard. That post focused on the <strong>low-level APIs</strong> exposed by <code>ONNX Runtime GenAI</code> — great for studying and practicing how large models work under the hood, but a bit too low-level for day-to-day Agent development.</p>
-<p>In this article, I will share what I learned about how the <strong>.NET</strong> ecosystem supports AI Agents today, and how you can plug <strong>ONNX</strong> into that stack without staying at the <code>Generator</code> &#x2F; tokenizer loop level. After reading this post, you should understand where <code>Microsoft.Extensions.AI</code> (MEAI) fits, how <code>OnnxRuntimeGenAIChatClient</code> simplifies local chat, and how to take one more step with <strong>Microsoft Agent Framework (MAF)</strong> for a minimal on-device Agent.</p>
-<p>If you have already been through the low-level ONNX GenAI walkthrough, this post is the natural next step. Let’s get started.</p>
-<img src="/images/low-level-genai-apis-too-heavy-a-higher-level-net-path-to-plug-local-small-models-into-agents/Evolution_of_Framework_AI_Development.png" alt="" >
-## Microsoft.Extensions.AI (MEAI)
-
-<p>First, the <code>Microsoft.ML.OnnxRuntimeGenAI</code> package exposes a higher-level type: <code>OnnxRuntimeGenAIChatClient</code>. With it, we can talk to a local small model much more easily and skip most of the low-level GenAI API details.</p>
-<p>If you look at the implementation, <code>OnnxRuntimeGenAIChatClient</code> is built on the <code>IChatClient</code> interface — and that leads us to an important piece of the .NET AI stack: <strong><code>Microsoft.Extensions.AI</code> (MEAI)</strong>.</p>
-<p>MEAI is a set of core .NET libraries that provide a unified layer of C# abstractions for AI services: small and large language models, embeddings, middleware, and more. Low-level APIs such as <code>IChatClient</code> were extracted from <strong>Semantic Kernel</strong> and are now part of MEAI. The goal is to act as a <strong>unifying layer</strong> in the .NET ecosystem so you can pick your preferred frameworks while still sharing the same core concepts across libraries.</p>
-<p>Next, let’s see what an app looks like when we combine MEAI with <code>ONNX Runtime GenAI</code>:</p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.Extensions.AI;</span><br><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> modelPath = <span class="string">&quot;path-2-onnx-model&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">var</span> client = <span class="keyword">new</span> OnnxRuntimeGenAIChatClient(modelPath, <span class="keyword">new</span>()</span><br><span class="line">&#123;</span><br><span class="line">    EnableCaching = <span class="literal">false</span>,</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> messages = <span class="keyword">new</span> List&lt;ChatMessage&gt;</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">new</span>(ChatRole.System, <span class="string">&quot;You are a helpful AI assistant.&quot;</span>),</span><br><span class="line">    <span class="keyword">new</span>(ChatRole.User, <span class="string">&quot;hi&quot;</span>),</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">ChatResponse response = <span class="keyword">await</span> client.GetResponseAsync(</span><br><span class="line">    messages,</span><br><span class="line">    <span class="keyword">new</span> ChatOptions</span><br><span class="line">    &#123;</span><br><span class="line">        Temperature = <span class="number">0.7f</span>,</span><br><span class="line">        TopP = <span class="number">0.9f</span>,</span><br><span class="line">        AdditionalProperties = <span class="keyword">new</span>()</span><br><span class="line">        &#123;</span><br><span class="line">            [<span class="string">&quot;num_beams&quot;</span>] = <span class="number">1</span>,</span><br><span class="line">            [<span class="string">&quot;do_sample&quot;</span>] = <span class="literal">true</span>,</span><br><span class="line">        &#125;,</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">Console.WriteLine(response.Text);</span><br></pre></td></tr></table></figure>
-
-<p>As you can see, besides <code>OnnxRuntimeGenAIChatClient</code>, we also use types such as <code>ChatMessage</code> and <code>ChatOptions</code> from <code>Microsoft.Extensions.AI</code>. Generation options like <code>num_beams</code> and <code>do_sample</code> can be passed through <code>AdditionalProperties</code> when you need GenAI-specific knobs — handy, right?</p>
-<p>One more distinction worth keeping in mind: <strong>MEAI alone is not an Agent framework</strong>. You can build one-shot calls, chat, or even tool-call loops on top of MEAI without the system becoming fully “agentic.” When you need <strong>goal-directed, multi-step orchestration</strong>, that is when you reach for <strong>Microsoft Agent Framework (MAF)</strong> instead.</p>
-<p>In the following section, let’s take that next step and wire a local ONNX small model into a minimal edge Agent.</p>
-<h2 id="Microsoft-Agent-Framework-MAF"><a href="#Microsoft-Agent-Framework-MAF" class="headerlink" title="Microsoft Agent Framework (MAF)"></a>Microsoft Agent Framework (MAF)</h2><p>The jump from chat client to Agent is surprisingly small: with the <code>AsAIAgent</code> extension on <code>IChatClient</code>, you can promote a chatbot into an <code>AIAgent</code> with instructions and a name.</p>
-<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">using</span> Microsoft.Agents.AI;</span><br><span class="line"><span class="keyword">using</span> Microsoft.Extensions.AI;</span><br><span class="line"><span class="keyword">using</span> Microsoft.ML.OnnxRuntimeGenAI;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> modelPath = <span class="string">&quot;path-2-onnx-model&quot;</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Get a chat client for ONNX and use it to construct an AIAgent.</span></span><br><span class="line"><span class="keyword">using</span> OnnxRuntimeGenAIChatClient chatClient = <span class="keyword">new</span>(modelPath);</span><br><span class="line">AIAgent agent = chatClient.AsAIAgent(instructions: <span class="string">&quot;You are good at telling jokes.&quot;</span>, name: <span class="string">&quot;Joker&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Invoke the agent and output the text result.</span></span><br><span class="line">Console.WriteLine(<span class="keyword">await</span> agent.RunAsync(<span class="string">&quot;Tell me a joke about a pirate.&quot;</span>));</span><br></pre></td></tr></table></figure>
-
-<p>Same model path, same ONNX runtime underneath — but now you are in MAF’s Agent surface area for orchestration and tooling as your scenarios grow.</p>
-<h2 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h2><p>In this post, we connected three layers:</p>
-<ol>
-<li><strong>ONNX Runtime GenAI</strong> — local inference for small models on device  </li>
-<li><strong>MEAI (<code>IChatClient</code>, <code>ChatMessage</code>, <code>ChatOptions</code>)</strong> — a clean, shared abstraction for model interaction in .NET  </li>
-<li><strong>MAF (<code>AsAIAgent</code>)</strong> — when chat is not enough and you need Agent-style orchestration</li>
-</ol>
-<p>Based on the two examples above, I put together a map of the ONNX-related .NET ecosystem you can refer to when you design your own edge AI or Agent projects:</p>
-<img src="/images/low-level-genai-apis-too-heavy-a-higher-level-net-path-to-plug-local-small-models-into-agents/Pasted%20image%2020260927210507.png" alt="" >
-
-<p>As we mentioned above, the low-level GenAI APIs are still the best classroom for understanding transformers and autoregressive loops. For product-style Agent work on .NET, this higher-level path is the one I reach for first.</p>
 
       
     </div>

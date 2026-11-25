@@ -65,18 +65,18 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2024/05/01/dotnet-gc-memory-leak-windbg/</loc>
+    <loc>https://organicprogrammer.com/2026/11/03/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/</loc>
     
-    <lastmod>2024-05-01</lastmod>
+    <lastmod>2026-11-03</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2026/11/03/deep-dive-entra-agent-id-the-complete-identity-chain-from-blueprint-to-agent-token/</loc>
+    <loc>https://organicprogrammer.com/2024/05/01/dotnet-gc-memory-leak-windbg/</loc>
     
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2024-05-01</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -113,6 +113,15 @@
     <loc>https://organicprogrammer.com/2022/11/02/external-sorting-one/</loc>
     
     <lastmod>2022-11-02</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2022/12/06/external-sorting-two/</loc>
+    
+    <lastmod>2022-12-06</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -479,6 +488,15 @@
   </url>
   
   <url>
+    <loc>https://organicprogrammer.com/2026/11/25/mcp-adaptation-to-oauth-2-0-prm-a-lightweight-api-gateway-based-approach/</loc>
+    
+    <lastmod>2026-11-25</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>https://organicprogrammer.com/2022/01/12/md5-implementation/</loc>
     
     <lastmod>2022-01-12</lastmod>
@@ -551,15 +569,6 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2020/04/12/rxjs-marble-testing/</loc>
-    
-    <lastmod>2020-04-12</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>https://organicprogrammer.com/2020/08/19/stack-frame/</loc>
     
     <lastmod>2020-08-19</lastmod>
@@ -572,6 +581,15 @@
     <loc>https://organicprogrammer.com/2022/02/07/stack-smashing-detect-in-c/</loc>
     
     <lastmod>2022-02-07</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/2020/04/12/rxjs-marble-testing/</loc>
+    
+    <lastmod>2020-04-12</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -722,9 +740,18 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/2022/12/06/external-sorting-two/</loc>
+    <loc>https://organicprogrammer.com/about/index.html</loc>
     
-    <lastmod>2022-12-06</lastmod>
+    <lastmod>2021-06-21</lastmod>
+    
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/book-reviews/index.html</loc>
+    
+    <lastmod>2021-06-21</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -752,24 +779,6 @@
     <loc>https://organicprogrammer.com/training/index.html</loc>
     
     <lastmod>2023-11-19</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/book-reviews/index.html</loc>
-    
-    <lastmod>2021-06-21</lastmod>
-    
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
-    <loc>https://organicprogrammer.com/about/index.html</loc>
-    
-    <lastmod>2021-06-21</lastmod>
     
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -820,14 +829,14 @@
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/tags/dotnet-GC-memory-leak-WinDbg/</loc>
+    <loc>https://organicprogrammer.com/tags/Azure-Entra-ID-AI-Agent-identity/</loc>
     <lastmod>2026-11-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
   </url>
   
   <url>
-    <loc>https://organicprogrammer.com/tags/Azure-Entra-ID-AI-Agent-identity/</loc>
+    <loc>https://organicprogrammer.com/tags/dotnet-GC-memory-leak-WinDbg/</loc>
     <lastmod>2026-11-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
@@ -996,6 +1005,13 @@
   
   <url>
     <loc>https://organicprogrammer.com/tags/AI-ONNX-Edge-AI-dotnet-MEAI/</loc>
+    <lastmod>2026-11-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://organicprogrammer.com/tags/MCP-OAuth-APIM-Agent/</loc>
     <lastmod>2026-11-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
